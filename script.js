@@ -577,11 +577,20 @@ function renderAll(){
   mc.innerHTML=`
     ${renderSettings(srv)}
     ${renderGuilds(srv)}
-    ${renderStatus(srv,issues,wipes)}  <!-- UPDATED: Now passing wipes -->
-    ${renderGrid(srv,days,mapData,issues,wipes)}
-    ${renderScores(srv,scores,target)}
-    ${renderOcc(srv,occ)}
-    ${renderDecTable(srv,days,dec,give)}
+    ${renderStatus(srv,issues,wipes)}
+    
+    <!-- WRAPPER 1: The Grid -->
+    <div id="capture-grid" style="background:var(--bg); padding:2px; border-radius:16px;">
+      ${renderGrid(srv,days,mapData,issues,wipes)}
+    </div>
+
+    <!-- WRAPPER 2: The Stats -->
+    <div id="capture-stats" style="background:var(--bg); padding:2px; border-radius:16px; margin-top:20px;">
+      ${renderScores(srv,scores,target)}
+      ${renderOcc(srv,occ)}
+      ${renderDecTable(srv,days,dec,give)}
+    </div>
+    
     ${renderMsgs(srv,days,dec,give)}
   `;
   // Dynamically set pts-row sticky offset to match the actual first header row height
@@ -621,6 +630,7 @@ function renderSettings(srv){
           <button class="btn" onclick="clearPlan()">Clear Plan</button>
           <button class="btn" onclick="openImport()">📥 Import</button>
           <button class="btn" onclick="exportServer()">📤 Export Server</button>
+          <button class="btn" onclick="takeScreenshots()">📸 Screenshots</button>
           <button class="btn-gold" onclick="autoOptimize()">⚡ Auto-Optimize</button>
           ${srv.undoPlan ? `<button class="btn-accent" onclick="undoOptimize()" style="border-color:var(--gold);color:var(--gold2)">↩ Undo Optimize</button>` : ''}
           <button class="btn-accent" onclick="openRepair()">🔧 Repair</button>
@@ -1189,6 +1199,7 @@ function exportServer(){
       startDate: srv.startDate,
       endDate: srv.endDate,
       guilds: srv.guilds.map(g => ({
+        id: g.id, // <-- ADD THIS LINE
         name: g.name,
         color: g.color,
         basePoints: g.basePoints || 0,
@@ -1253,14 +1264,10 @@ function processImport(){
     // EXPORTED SERVER FORMAT - full server restore
     const imp = parsed.server;
 
-    // Restore guilds with new IDs (or keep if matching names exist)
-    const nameToId = {};
-    srv.guilds.forEach(g => { nameToId[g.name.toLowerCase()] = g.id; });
-
+    // Restore guilds (using the exported ID so the map plan connects properly)
     srv.guilds = imp.guilds.map((g, i) => {
-      const existingId = nameToId[g.name.toLowerCase()];
       return {
-        id: existingId || 'g_' + Date.now() + '_' + i,
+        id: g.id || 'g_' + Date.now() + '_' + i, // <-- GRABS EXPORTED ID
         name: g.name,
         color: g.color || GUILD_COLORS[i % GUILD_COLORS.length],
         basePoints: g.basePoints || 0,
@@ -2443,6 +2450,109 @@ function load(){
   }catch(e){}
 }
 
+async function takeScreenshots() {
+  const btn = event.target;
+  const originalText = btn.textContent;
+  btn.textContent = '📸 Zipping...';
+  
+  try {
+    const gridEl = document.getElementById('capture-grid');
+    const statsEl = document.getElementById('capture-stats');
+    const mainEl = document.getElementById('main-content');
+    
+    // --- BULLETPROOF EXPANSION ---
+    function expandForCapture(el) {
+      const originalStyles = [];
+      const wraps = el.querySelectorAll('.tbl-wrap');
+      wraps.forEach(wrap => {
+        originalStyles.push({ el: wrap, prop: 'overflow', val: wrap.style.overflow });
+        wrap.style.overflow = 'visible';
+      });
+      // Force the wrapper itself to push out to its maximum natural width
+      originalStyles.push({ el: el, prop: 'width', val: el.style.width });
+      el.style.width = 'max-content';
+      return originalStyles;
+    }
+
+    function restoreStyles(styles) {
+      styles.forEach(({ el, prop, val }) => { el.style[prop] = val; });
+    }
+
+    // 1. Expand the target sections
+    const gridStyles = expandForCapture(gridEl);
+    const statsStyles = expandForCapture(statsEl);
+    
+    // Get the new, unconstrained widths
+    const gridWidth = gridEl.scrollWidth;
+    const statsWidth = statsEl.scrollWidth;
+    const maxWidth = Math.max(gridWidth, statsWidth) + 100;
+
+    // 2. Temporarily stretch the body and main container so they don't clip the tables
+    const origBodyWidth = document.body.style.width;
+    const origMainMaxWidth = mainEl.style.maxWidth;
+    document.body.style.width = maxWidth + 'px';
+    mainEl.style.maxWidth = 'none';
+    
+    // 3. Take the screenshots, explicitly telling the camera to use the virtual widths
+    const canvasGrid = await html2canvas(gridEl, {
+      backgroundColor: '#191425',
+      scale: 2,
+      width: gridWidth,
+      windowWidth: gridWidth
+    });
+    
+    const canvasStats = await html2canvas(statsEl, {
+      backgroundColor: '#191425',
+      scale: 2,
+      width: statsWidth,
+      windowWidth: statsWidth
+    });
+    
+    // 4. Immediately shrink everything back to normal
+    restoreStyles(gridStyles);
+    restoreStyles(statsStyles);
+    document.body.style.width = origBodyWidth;
+    mainEl.style.maxWidth = origMainMaxWidth;
+    // ------------------------------
+    
+    const srv = activeSrv();
+    const prefix = srv ? srv.name.replace(/[^a-z0-9]/gi, '_') : 'map';
+    
+    // Extract the raw Base64 image data
+    const gridData = canvasGrid.toDataURL('image/png').split(',')[1];
+    const statsData = canvasStats.toDataURL('image/png').split(',')[1];
+    
+    // Initialize JSZip and create a folder
+    const zip = new JSZip();
+    const folderName = `${prefix}_snapshots`;
+    const imgFolder = zip.folder(folderName);
+    
+    // Add the images into the zip folder
+    imgFolder.file(`${prefix}_grid.png`, gridData, { base64: true });
+    imgFolder.file(`${prefix}_stats.png`, statsData, { base64: true });
+    
+    // Generate the .zip file and trigger a single download
+    const zipContent = await zip.generateAsync({ type: 'blob' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(zipContent);
+    link.download = `${folderName}.zip`;
+    link.click();
+    
+    URL.revokeObjectURL(link.href);
+    
+    btn.textContent = '✓ Saved!';
+    btn.style.color = 'var(--green)';
+    
+  } catch (err) {
+    console.error("Screenshot/Zip failed:", err);
+    btn.textContent = '❌ Error';
+  }
+  
+  setTimeout(() => {
+    btn.textContent = originalText;
+    btn.style.color = '';
+  }, 2000);
+}
 // ══════════════════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════════════════
