@@ -1528,10 +1528,6 @@ function autoOptimize(){
     const basePoints= Object.fromEntries(srv.guilds.map(g=>[g.id, parseInt(g.basePoints||0,10)||0]));
     let   totalBase = srv.guilds.reduce((s,g)=>s+basePoints[g.id],0);
 
-    const { defLv3, defLv2 } = getDefaultCaps(srv);
-    const maxLv3 = srv.optCapLv3 !== undefined ? srv.optCapLv3 : defLv3;
-    const maxLv2 = srv.optCapLv2 !== undefined ? srv.optCapLv2 : defLv2;
-
     // Hardcoded weights — mode-dependent
     const isRagnarok = srv.mode === 'ragnarok';
     const wPts  = isRagnarok ? 15 : 25;  // Ragnarok: lower pts weight (4 guilds balance easier)
@@ -1549,22 +1545,81 @@ function autoOptimize(){
     const lv3Target = (days * numLv3) / n;
     const lv2Target = (days * numLv2) / n;
 
-    // ── QUICK WIN 1: Pre-compute fair integer quotas per guild (largest remainder method) ──
-    function fairQuotas(total, n) {
-      const base = Math.floor(total / n);
-      const rem  = total % n;
-      const quotas = Array(n).fill(base);
-      for (let i = 0; i < rem; i++) quotas[i]++;
-      return quotas;
+    // ── TARGET ASSIGNMENTS (LIST-ORDER BASED) ──
+    const originalGuildIds = srv.guilds.map(g => g.id); 
+    
+    // 1. Dynamically calculate physically available days based on Day 1 adjacency
+    let totalLv3 = 0, totalLv2 = 0, totalLv1 = 0;
+    const day0 = srv.plan[0] || {};
+    const adjLocal = adjMap(srv.mode, srv.mapKey);
+
+    for (let d = 1; d <= days; d++) {
+        for (const k of mapData.kingdoms) {
+            let isClaimable = true;
+            if (d === 1 && !day0[k.id]) {
+                if (k.type !== 'lv1') {
+                    let canReach = false;
+                    for (const g of srv.guilds) {
+                        const held = Object.entries(day0).filter(([,g2])=>g2===g.id).map(([k2])=>k2);
+                        if (held.length > 0 && held.some(pk => adjLocal[pk] && adjLocal[pk].includes(k.id))) {
+                            if (k.id === 'Darkwick' && !canDeclareDarkwick(day0, g.id, mapData)) continue;
+                            canReach = true; break;
+                        }
+                    }
+                    if (!canReach) isClaimable = false;
+                }
+            }
+            if (isClaimable) {
+                if (k.type === 'lv3') totalLv3++;
+                else if (k.type === 'lv2') totalLv2++;
+                else if (k.type === 'lv1') totalLv1++;
+            }
+        }
     }
-    const lv3Quotas = fairQuotas(days * numLv3, n);
-    const lv2Quotas = fairQuotas(days * numLv2, n);
-    const ptsQuotas = fairQuotas(Math.round(totalDayValue * days), n);
-    // Map quotas to guild IDs (sorted by basePoints desc for deterministic assignment)
-    const sortedGuildIds = [...srv.guilds].sort((a,b) => (parseInt(b.basePoints||0,10)) - (parseInt(a.basePoints||0,10))).map(g=>g.id);
-    const targetLv3 = Object.fromEntries(sortedGuildIds.map((id,i)=>[id, lv3Quotas[i] + (baseLv3s[id]||0)]));
-    const targetLv2 = Object.fromEntries(sortedGuildIds.map((id,i)=>[id, lv2Quotas[i] + (baseLv2s[id]||0)]));
-    const targetPts = Object.fromEntries(sortedGuildIds.map((id,i)=>[id, ptsQuotas[i] + (basePoints[id]||0)]));
+
+    // 2. Castle (Lv3) Targets -> Extra days go to the BOTTOM of the list
+    const baseLv3 = Math.floor(totalLv3 / n);
+    let remLv3 = totalLv3 % n;
+    const targetLv3 = {};
+    for (let i = n - 1; i >= 0; i--) {
+        targetLv3[originalGuildIds[i]] = baseLv3 + (remLv3 > 0 ? 1 : 0) + (baseLv3s[originalGuildIds[i]] || 0);
+        if (remLv3 > 0) remLv3--;
+    }
+
+    // 3. Dorm (Lv2) Targets -> Dynamically balances total high-tier value
+    const targetLv2 = {};
+    for (let i = 0; i < n; i++) targetLv2[originalGuildIds[i]] = (baseLv2s[originalGuildIds[i]] || 0);
+    for (let step = 0; step < totalLv2; step++) {
+        const sorted = [...originalGuildIds].sort((a,b) => {
+            const valA = (targetLv3[a] * 3) + (targetLv2[a] * 2);
+            const valB = (targetLv3[b] * 3) + (targetLv2[b] * 2);
+            if (valA !== valB) return valA - valB; // Lowest high-tier points gets the Dorm
+            return originalGuildIds.indexOf(a) - originalGuildIds.indexOf(b); // Tie-breaker: Roster order
+        });
+        targetLv2[sorted[0]]++;
+    }
+
+    // 4. Points Targets -> Extra points go to the TOP of the list
+    const targetPts = {};
+    for (let i = 0; i < n; i++) targetPts[originalGuildIds[i]] = (basePoints[originalGuildIds[i]] || 0);
+    
+    // Distribute only the Lv1 towns one-by-one to whoever has the lowest total value
+    for (let step = 0; step < totalLv1; step++) {
+         const sorted = [...originalGuildIds].sort((a,b) => {
+             const ptsA = (targetLv3[a]*3) + (targetLv2[a]*2) + targetPts[a];
+             const ptsB = (targetLv3[b]*3) + (targetLv2[b]*2) + targetPts[b];
+             if (ptsA !== ptsB) return ptsA - ptsB;
+             return originalGuildIds.indexOf(a) - originalGuildIds.indexOf(b);
+         });
+         targetPts[sorted[0]]++;
+    }
+    
+    // Add the high-tier points back into the target array so it represents the final total
+    for(const id of originalGuildIds) targetPts[id] += (targetLv3[id]*3) + (targetLv2[id]*2);
+
+    // OVERRIDE: Ensure the internal hard limits allow the targets to be fulfilled
+    const maxLv3 = Math.max(...Object.values(targetLv3), srv.optCapLv3 !== undefined ? srv.optCapLv3 : 0);
+    const maxLv2 = Math.max(...Object.values(targetLv2), srv.optCapLv2 !== undefined ? srv.optCapLv2 : 0);
 
     let bestPlan     = null;
     let bestScore    = Infinity;                 
@@ -1584,9 +1639,23 @@ function autoOptimize(){
         const ptsDev = Math.abs(gPtsMap[id] - targetPts[id]);
         const l3Dev  = Math.abs(lv3Map[id]  - targetLv3[id]);
         const l2Dev  = Math.abs(lv2Map[id]  - targetLv2[id]);
-        score += wPts * ptsDev * ptsDev * 0.01;  // quadratic penalty
-        score += wLv3 * l3Dev  * l3Dev  * 10;   // lv3 deviation heavily weighted
-        score += wLv2 * l2Dev  * l2Dev  * 5;    // lv2 deviation weighted
+        
+        score += ptsDev * 500;       // Must hit Exact Points
+        score += l3Dev * 5000;       // Must hit Darkwick targets
+        score += l2Dev * 2000;       // Must hit Dorm targets
+
+        // CONSECUTIVE DARKWICK CHECK
+        let streaks = 0;
+        let heldYesterday = false;
+        for (let dL = 1; dL <= days; dL++) {
+            const planD = tempPlanLocal[dL] || {};
+            const holdsToday = (planD['Darkwick'] === id);
+            if (holdsToday && !heldYesterday) streaks++;
+            heldYesterday = holdsToday;
+        }
+        if (streaks > 1) {
+            score += (streaks - 1) * 20000; // Massive penalty for dropping and re-taking Darkwick
+        }
       }
 
       // Movement penalties (same as before)
@@ -1624,11 +1693,11 @@ function autoOptimize(){
                         if (loserPrevDormsCount <= 1) {
                             movePenalty += 20; // Only home
                         } else {
-                            movePenalty += 5; // Steady Bridge
+                            movePenalty += 10; // Steady Bridge (increased from 5)
                         }
                     }
                 } else {
-                    movePenalty += 1; // Lv1 towns
+                    movePenalty += 5; // Lv1 towns (increased from 1 to stop micro-swapping)
                 }
             }
          }
@@ -1695,13 +1764,21 @@ function autoOptimize(){
         for(const k of kingdoms){
           const prevOwner = prevPlan[k.id]||'';
           let cands = srv.guilds.filter(g=>{
-            if(prevOwner===g.id) return true;
+            if(prevOwner===g.id) return true; // Already owns it
             const held = Object.entries(prevPlan).filter(([,g2])=>g2===g.id).map(([k2])=>k2);
-            if(held.length===0 && k.type==='lv1') return true;
-            return held.some(pk=>adj[pk]&&adj[pk].includes(k.id));
+            
+            // Entering map: only allowed on Lv1
+            if(held.length===0) return k.type === 'lv1';
+            
+            // STRICT ADJACENCY & PREREQUISITES
+            const isAdj = held.some(pk=>adj[pk]&&adj[pk].includes(k.id));
+            if (!isAdj) return false; 
+            
+            // If Darkwick, must meet prerequisites
+            if (k.id === 'Darkwick' && !canDeclareDarkwick(prevPlan, g.id, mapData)) return false;
+            
+            return true;
           }).map(g=>g.id);
-          // NO nuclear fallback — if no guild can legally declare, eligible stays empty                                                    
-          // Phase 4 & Final Guarantee will leave town blank rather than violate adjacency  
           eligible.set(k.id, cands);
         }
 
@@ -1784,11 +1861,11 @@ function autoOptimize(){
                    if(k.type==='lv3') lv3Days[eWinner]++;
                    if(k.type==='lv2') lv2Days[eWinner]++;
                } else {
-                   // Last resort: any guild, fewest points wins — Phase 4 will catch
-                   // adjacency violations and tidy up, but nothing stays blank
+                   // Last resort: only choose from adjacent, eligible guilds
+                   const validLastResort = eligible.get(k.id).sort((a,b) => gPts[a] - gPts[b]);
                    const lastResort = prevOwner
                      ? prevOwner
-                     : [...srv.guilds].sort((a,b) => gPts[a.id] - gPts[b.id])[0]?.id;
+                     : validLastResort[0];
                    if(lastResort){
                      tempPlan[d][k.id] = lastResort;
                      gPts[lastResort] += pts[k.type];
@@ -2173,7 +2250,7 @@ function guildNeedScore(gid, k, gPts, lv3Days, lv2Days, absTgt, l3Tgt, l2Tgt, ta
 
   let score = 0;
 
-  // ── INERTIA / STICKINESS (same logic, calibrated to wMove scale) ──
+  // ── INERTIA / STICKINESS ──
   if (k.id !== 'Darkwick' && prevPlan[k.id] === gid) {
       if (k.type === 'lv2') {
           if (!k.adj.includes('Darkwick')) {
@@ -2186,12 +2263,16 @@ function guildNeedScore(gid, k, gPts, lv3Days, lv2Days, absTgt, l3Tgt, l2Tgt, ta
                       if (kObj && kObj.type === 'lv2') prevDormsCount++;
                   }
               }
-              score += wMove * (prevDormsCount <= 1 ? 30 : 5);
+              score += wMove * (prevDormsCount <= 1 ? 30 : 10);
           }
       } else if (k.type === 'lv1') {
-          score += wMove * 16; // Lv1 town
-      } else {
-          score += wMove * 1;  // Darkwick (rarely held same owner)
+          score += wMove * 40; // MASSIVE stickiness to prevent Lv1 churn
+      }
+  } else if (k.id === 'Darkwick' && prevPlan[k.id] === gid) {
+      // Consecutive Darkwick bonus
+      const remainingTarget = Math.max(0, targetLv3[gid] - lv3Days[gid]);
+      if (remainingTarget > 0) {
+          score += 10000; // Huge gravity to keep Darkwick if they still need it
       }
   }
 
@@ -2248,8 +2329,8 @@ function guildNeedScore(gid, k, gPts, lv3Days, lv2Days, absTgt, l3Tgt, l2Tgt, ta
     if(isSmall){
       score += isEnteringMap ? 20 : 1;
     } else {
-      score += wPts * ptsDeficit * ptsDeficit * 0.02;
-      score += wPts * ptsDeficit * 0.2;
+      // Drive aggressively toward the exact point target
+      score += ptsDeficit * 100;
     }
   }
 
