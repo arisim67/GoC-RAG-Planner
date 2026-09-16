@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GoC / Ragnarok Planner — Tokyo Debunker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- Link to your new external CSS file -->
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-title" style="flex:1;">
+    GoC / Ragnarok Planner <small>made with Claude & Gemini</small>
+    <span id="save-status" style="font-size:11px; color:var(--text3); font-family:var(--font-body); font-weight:500; margin-left:auto; text-shadow:none; transition: color 0.3s;"></span>
+  </div>
+  <div class="tabs-bar" id="tabs-bar"></div>
+</div>
+
+<div class="main" id="main-content">
+  <div style="color:var(--text2);text-align:center;padding:60px 0;font-size:13px;">
+    No servers yet. Click <strong style="color:var(--accent2)">+ Add Server</strong> to get started.
+  </div>
+</div>
+
+<div style="text-align: center; padding: 10px 20px 30px; color: var(--text3); font-size: 11px; font-weight: 500;">
+  <p style="margin: 0;">Find any bugs or have any suggestions? DM <a href="https://discord.com/users/1013812813245988865" target="_blank" rel="noopener noreferrer" style="color: var(--accent2); font-weight: 600; letter-spacing: 0.05em; text-decoration: underline; text-underline-offset: 2px;">arianes.</a> on Discord</p>
+</div>
+
+<!-- ADD IMPORT MODAL -->
+ <div class="modal-bg" id="modal-import">
+  <div class="modal" style="width:min(600px,96vw)">
+    <h3>📥 Bulk Import Data</h3>
+    <div id="import-dropzone" class="import-dropzone"
+         ondragover="handleDragOver(event)"
+         ondragleave="handleDragLeave(event)"
+         ondrop="handleDrop(event)"
+         onclick="document.getElementById('import-file').click()">
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleFileSelect(event)">
+      <div class="dropzone-content">
+        <div style="font-size: 24px; margin-bottom: 8px;">📁</div>
+        <div style="font-weight: 600; color: var(--text);">Drop JSON file here</div>
+        <div style="font-size: 11px; color: var(--text3); margin-top: 4px;">or click to browse .json export</div>
+      </div>
+    </div>
+    <textarea id="import-text" placeholder="Paste data from spreadsheet or type each guild on a new line here..." style="min-height: 150px; margin-top: 12px;"></textarea>
+    <div class="row" style="margin-top:15px; gap: 15px;">
+      <div class="fg">
+        <label>Import Mode</label>
+        <select id="import-mode" onchange="document.getElementById('import-day-container').style.opacity = this.value === 'guilds' ? '0.3' : '1'; document.getElementById('import-day').disabled = this.value === 'guilds';">
+          <option value="day">Import Daily Map Data</option>
+          <option value="guilds">Import Guild List (Setup)</option>
+        </select>
+      </div>
+      <div class="fg" id="import-day-container">
+        <label>Target Day</label>
+        <input type="number" id="import-day" value="0" min="0">
+      </div>
+    </div>
+    <div style="font-size: 11px; color: var(--text3); margin-top: 10px;">
+      <strong>Daily Data:</strong> Pastes a column of guild names straight down the map grid.<br>
+      <strong>Guild List:</strong> Finds unique names in your pasted text and creates new guilds for them.<br>
+      <strong>Exported Server:</strong> Drop/paste a full server export JSON (from 📤 Export Server) to restore everything — guilds, plan, settings.
+    </div>
+    <div class="modal-row" style="margin-top: 20px;">
+      <button class="btn" onclick="document.getElementById('modal-import').classList.remove('open')">Cancel</button>
+      <button class="btn-accent" onclick="processImport()">Import Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SERVER MODAL -->
+<div class="modal-bg" id="modal-add">
+  <div class="modal">
+    <h3>Add Server</h3>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Server Name</label>
+      <input type="text" id="ns-name" placeholder="e.g. EA-43" style="width:100%">
+    </div>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Mode</label>
+      <select id="ns-mode" style="width:100%" onchange="onAddModalModeChange()">
+        <option value="ragnarok">Ragnarok</option>
+        <option value="goc">Game of Claws</option>
+      </select>
+    </div>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Map</label>
+      <select id="ns-map" style="width:100%"></select>
+    </div>
+    <div class="split" style="margin-bottom:10px">
+      <div class="fg">
+        <label>Start Date (Day 1)</label>
+        <input type="date" id="ns-start" style="width:100%" onchange="onAddModalStartChange()">
+      </div>
+      <div class="fg">
+        <label>End Date</label>
+        <input type="date" id="ns-end" style="width:100%">
+      </div>
+    </div>
+    <div class="modal-row">
+      <button class="btn" onclick="closeModal('modal-add')">Cancel</button>
+      <button class="btn-accent" onclick="confirmAdd()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- REPAIR MODAL -->
+<div class="modal-bg" id="modal-repair">
+  <div class="modal" style="width:min(680px,96vw)">
+    <h3>🔧 Repair Plan — Mid-Map Adjustment</h3>
+    <div class="repair-info">
+      Use this when a guild fails to capture a kingdom, gets knocked out unexpectedly, or the actual map
+      state drifts from the plan. Select the day when the deviation happened, then reassign kingdoms
+      from that day onward. Subsequent days are updated automatically.
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <div class="fg">
+        <label>Deviation starts on day</label>
+        <select id="repair-day" style="min-width:120px" onchange="renderRepairTable()"></select>
+      </div>
+      <div class="fg">
+        <label>Kingdom</label>
+        <select id="repair-kingdom" style="min-width:130px" onchange="renderRepairTable()"></select>
+      </div>
+    </div>
+    <div id="repair-body"></div>
+    <div class="modal-row">
+      <button class="btn" onclick="closeModal('modal-repair')">Cancel</button>
+      <button class="btn-gold" onclick="applyRepair()">Apply Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE MODAL -->
+<div class="modal-bg" id="modal-confirm-delete">
+  <div class="modal" style="width:min(360px,92vw);text-align:center;">
+    <h3>🗑 Delete Server</h3>
+    <p id="confirm-delete-msg" style="color:var(--text2);font-size:13px;margin-bottom:8px;"></p>
+    <p style="color:var(--text3);font-size:11px;">This cannot be undone.</p>
+    <div class="modal-row" style="justify-content:center;margin-top:20px;gap:12px;">
+      <button class="btn" onclick="closeModal('modal-confirm-delete')">Cancel</button>
+      <button class="btn" id="confirm-delete-btn"
+        style="border-color:var(--red);color:var(--red);"
+        onclick="confirmDeleteSrv()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB CONTEXT MENU -->
+<div id="tab-ctx">
+  <div class="ctx-item" id="ctx-rename" onclick="ctxRename()">
+    <span class="ctx-icon">✏️</span> Rename
+  </div>
+  <div class="ctx-item" id="ctx-duplicate" onclick="ctxDuplicate()">
+    <span class="ctx-icon">⧉</span> Duplicate
+  </div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" id="ctx-delete" onclick="ctxDelete()" style="color:var(--red)">
+    <span class="ctx-icon">🗑</span> Delete
+  </div>
+</div>
+
+<!-- Link to your new external JS file -->
+<script src="script.js"></script>
+</body>
+</html>
