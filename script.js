@@ -846,7 +846,7 @@ function renderGrid(srv, days, mapData, issues, wipes) {
         <tr class="pts-row">
           <th colspan="3" style="padding:4px 10px;font-size:10px;color:var(--text2);text-align:left;border-bottom:1px solid var(--border);">Running pts →</th>
           ${Array.from({length:totalCols},(_,d)=>{
-            return `<th style="padding:3px 4px;vertical-align:top;border-bottom:1px solid var(--border);">
+            return `<th style="padding:4px 4px 8px;vertical-align:top;border-bottom:1px solid var(--border);">
               ${srv.guilds.map(g => {
                 let pts = 0;
                 if (d === 0) {
@@ -854,7 +854,7 @@ function renderGrid(srv, days, mapData, issues, wipes) {
                 } else if (scores.cumul[g.id]) {
                     pts = scores.cumul[g.id][d-1] || 0;
                 }
-                return `<div style="color:${g.color};font-size:9px;white-space:nowrap">${esc(g.name.length>8?g.name.slice(0,7)+'…':g.name)}: ${pts}</div>`;
+                return `<div style="color:${g.color};font-size:9px;white-space:nowrap;line-height:1.4;margin-bottom:1px;">${esc(g.name.length>8?g.name.slice(0,7)+'…':g.name)}:${pts}</div>`;
               }).join('')}
             </th>`;
           }).join('')}
