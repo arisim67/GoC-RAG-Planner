@@ -20,8 +20,8 @@ The core of the app is the Planning Grid. This table lists every town, its point
 
 *   **Manual Planning:** To manually assign a town, simply click the dropdown under the corresponding Day and select the guild. Use Day 0 to establish their initial footholds. The "Adjacent Towns" column on the far left lets you quickly see which towns connect without needing an external map.
 *   **Importing by Day:** You can import town placement by day using the **📥 Import** button. Paste or type the list of guilds in the exact order of the towns shown in the planning grid, select ‘Import Daily Map Data’, and select the Target Day.
-*   **Full Server Export/Import (New):** Use the **📤 Export Server** button to download a complete backup of your current setup (including all internal guild IDs and settings) as a `.json` file. Drop this file into the Import tool to instantly restore your entire workspace.
-*   **⚡ Auto-Optimize (Updated):** The app can run a massive simulation to find the best route that respects all adjacency rules, prevents map wiping, and balances final scores, Darkwick count, and Dorm count. The engine dynamically accounts for Day 1 constraints, strictly distributes leftover points and days according to your roster order, enforces consecutive Darkwick holds, and heavily penalizes unnecessary map movement. 
+*   **Full Server Export/Import:** Use the **📤 Export Server** button to download a complete backup of your current setup (including all internal guild IDs and settings) as a `.json` file. Drop this file into the Import tool to instantly restore your entire workspace.
+*   **⚡ Auto-Optimize:** The app can run a massive simulation to find the best route that respects all adjacency rules, prevents map wiping, and balances final scores, Darkwick count, and Dorm count. The engine dynamically accounts for Day 1 constraints, strictly distributes leftover points and days according to your roster order, enforces consecutive Darkwick holds, and heavily penalizes unnecessary map movement. 
 *   **Optimizer Settings:** This panel gives you direct control over how the optimizer balances the plan. You can set the maximum number of days any single guild can hold Darkwick or a Dorm. Each field shows the computed “fair” value (total available days ÷ number of guilds) as a reference. Lowering the cap spreads access more tightly; raising it relaxes the restriction. Changes take effect on the next run.
 
 ## 4. Validation and Rules
@@ -35,6 +35,7 @@ The app constantly watches your plan to ensure it is actually legal to execute i
 
 ## 5. Execution and Communication
 Once your plan is finalized and balanced, you need to communicate it to server leadership.
+*   **🔗 Save to Cloud (Live Sync):** Click this button to upload your plan to the database and copy a shareable link to your clipboard. Anyone who opens this link will see your exact workspace. When you make changes, simply click **Save to Cloud** again, and your collaborators can just refresh their browser page to instantly pull your latest updates.
 *   **📸 Screenshots:** Click this button to automatically expand the layout and take unclipped, high-resolution PNG screenshots of your Planning Grid and Stats/Declares tables. The images are bundled into a `.zip` file for quick, organized sharing on Discord.
 *   **Declares & Giveaways Table:** This shows exactly how many declares (▲) and how many giveaways (↓) a guild has scheduled for a specific day.
 *   **Daily Messages:** The app automatically generates formatted text blocks detailing what each guild needs to do. Simply click on a day's card to copy the instructions to your clipboard for easy pasting into Discord.

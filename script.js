@@ -630,6 +630,7 @@ function renderSettings(srv){
           <button class="btn-gold" onclick="autoOptimize()">⚡ Auto-Optimize</button>
           ${srv.undoPlan ? `<button class="btn-accent" onclick="undoOptimize()" style="border-color:var(--gold);color:var(--gold2)">↩ Undo Optimize</button>` : ''}
           <button class="btn-accent" onclick="openRepair()">🔧 Repair</button>
+          <button class="btn-accent" id="btn-share-cloud" style="background:#6baff5;color:#0a1a14;box-shadow:0 4px 12px rgba(107,175,245,0.2)" onclick="publishToCloud()">☁️ Save to Cloud</button>
         </div></div>
     </div>
     <div style="margin-top:8px;font-size:10px;color:var(--text3)">
@@ -2631,6 +2632,75 @@ async function takeScreenshots() {
   }, 2000);
 }
 // ══════════════════════════════════════════════════════════════
+//  CLOUD SYNC & SHARING
+// ══════════════════════════════════════════════════════════════
+
+const WORKER_URL = "https://mio-susuhara.elysesim.workers.dev"; // Replace with your subdomain!
+
+async function publishToCloud() {
+  const srv = activeSrv();
+  if(!srv) return;
+  
+  const btn = document.getElementById('btn-share-cloud');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '⏳ Saving...';
+  btn.disabled = true;
+
+  try {
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      body: JSON.stringify(srv),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if(response.ok) {
+      const shareUrl = window.location.origin + window.location.pathname + '?plan=' + srv.id;
+      await navigator.clipboard.writeText(shareUrl);
+      btn.innerHTML = '✓ Saved & Copied!';
+      setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 2500);
+    } else {
+      throw new Error('Failed to save to cloud');
+    }
+  } catch(err) {
+    console.error(err);
+    alert("Failed to sync to cloud. Check your connection or Worker URL.");
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+}
+
+async function checkUrlForSharedPlan() {
+  const params = new URLSearchParams(window.location.search);
+  const planId = params.get('plan');
+  if(!planId) return;
+
+  // 🚨 URL cleaner removed here so the browser can refresh the shared link
+
+  try {
+    const res = await fetch(`${WORKER_URL}?plan=${planId}`);
+    if(!res.ok) throw new Error('Plan not found');
+    const sharedSrv = await res.json();
+    
+    const existingIdx = servers.findIndex(s => s.id === sharedSrv.id);
+    if(existingIdx >= 0) {
+      servers[existingIdx] = sharedSrv; 
+    } else {
+      sharedSrv.name = sharedSrv.name + " (Shared)";
+      servers.push(sharedSrv); 
+    }
+    activeId = sharedSrv.id;
+    save();
+  } catch(err) {
+    console.error(err);
+    alert("Could not load the shared plan. It may have expired or the link is incorrect.");
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════════════════
-load();renderTabs();renderAll();
+load();
+checkUrlForSharedPlan().then(() => {
+  renderTabs();
+  renderAll();
+});
