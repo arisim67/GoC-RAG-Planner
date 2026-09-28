@@ -624,9 +624,9 @@ function renderSettings(srv){
       <div class="fg"><label>&nbsp;</label>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
           <button class="btn" onclick="clearPlan()">Clear Plan</button>
-          <button class="btn" onclick="openImport()">📥 Import</button>
-          <button class="btn" onclick="exportServer()">📤 Export Server</button>
-          <button class="btn" onclick="takeScreenshots()">📸 Screenshots</button>
+          <button class="btn-accent" style="background:#6bffb4;color:#0a1a14;box-shadow:0 4px 12px rgba(107,255,180,0.2)" onclick="openImport()">📥 Import</button>
+          <button class="btn-accent" style="background:#ffb86b;color:#1a1105;box-shadow:0 4px 12px rgba(255,184,107,0.2)" onclick="exportServer()">📤 Export Server</button>
+          <button class="btn-accent" style="background:#ff6b9d;color:#1a050d;box-shadow:0 4px 12px rgba(255,107,157,0.2)" onclick="takeScreenshots()">📸 Screenshots</button>
           <button class="btn-gold" onclick="autoOptimize()">⚡ Auto-Optimize</button>
           ${srv.undoPlan ? `<button class="btn-accent" onclick="undoOptimize()" style="border-color:var(--gold);color:var(--gold2)">↩ Undo Optimize</button>` : ''}
           <button class="btn-accent" id="btn-share-cloud" style="background:#6baff5;color:#0a1a14;box-shadow:0 4px 12px rgba(107,175,245,0.2)" onclick="publishToCloud()">🔗 Save to Cloud</button>
