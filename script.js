@@ -2561,6 +2561,9 @@ async function publishToCloud() {
     });
     
     if(response.ok) {
+      // 🚨 Fix 1: Force the creator's URL bar to update immediately
+      window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + srv.id);
+      
       const shareUrl = window.location.origin + window.location.pathname + '?plan=' + srv.id;
       await navigator.clipboard.writeText(shareUrl);
       btn.innerHTML = '✓ Saved & Copied!';
@@ -2586,7 +2589,8 @@ async function syncFromCloud() {
   btn.disabled = true;
 
   try {
-    const res = await fetch(`${WORKER_URL}?plan=${srv.id}`);
+    // 🚨 Fix 2: Add timestamp cache-buster so the browser is forced to pull fresh data
+    const res = await fetch(`${WORKER_URL}?plan=${srv.id}&t=${Date.now()}`, { cache: 'no-store' });
     if(!res.ok) throw new Error('Plan not found in cloud');
     
     const sharedSrv = await res.json();
@@ -2594,6 +2598,10 @@ async function syncFromCloud() {
     if(existingIdx >= 0) {
       servers[existingIdx] = sharedSrv; 
     }
+    
+    // 🚨 Fix 3: Ensure the URL updates if they clicked sync while on a base URL
+    window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + srv.id);
+
     save();
     renderAll();
     
