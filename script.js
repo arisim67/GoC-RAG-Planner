@@ -629,7 +629,8 @@ function renderSettings(srv){
           <button class="btn" onclick="takeScreenshots()">📸 Screenshots</button>
           <button class="btn-gold" onclick="autoOptimize()">⚡ Auto-Optimize</button>
           ${srv.undoPlan ? `<button class="btn-accent" onclick="undoOptimize()" style="border-color:var(--gold);color:var(--gold2)">↩ Undo Optimize</button>` : ''}
-          <button class="btn-accent" id="btn-share-cloud" style="background:#6baff5;color:#0a1a14;box-shadow:0 4px 12px rgba(107,175,245,0.2)" onclick="publishToCloud()">☁️ Save to Cloud</button>
+          <button class="btn-accent" id="btn-share-cloud" style="background:#6baff5;color:#0a1a14;box-shadow:0 4px 12px rgba(107,175,245,0.2)" onclick="publishToCloud()">🔗 Save to Cloud</button>
+          <button class="btn-accent" id="btn-sync-cloud" style="background:#b886ee;color:#0a1a14;box-shadow:0 4px 12px rgba(184,134,238,0.2)" onclick="syncFromCloud()">🔄 Sync from Cloud</button>
         </div></div>
     </div>
     <div style="margin-top:8px;font-size:10px;color:var(--text3)">
@@ -2375,7 +2376,14 @@ function confirmAdd(){
   save();renderTabs();renderAll();
 }
 
-function switchSrv(id){activeId=id;save();renderTabs();renderAll();}
+function switchSrv(id){
+  activeId=id;
+  save();
+  // Automatically update the URL so refreshing the page syncs the correct tab
+  window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + id);
+  renderTabs();
+  renderAll();
+}
 
 let _deleteSrvId = null;
 
@@ -2566,6 +2574,37 @@ async function publishToCloud() {
     btn.innerHTML = originalText;
     btn.disabled = false;
   }
+}
+
+async function syncFromCloud() {
+  const srv = activeSrv();
+  if(!srv) return;
+  
+  const btn = document.getElementById('btn-sync-cloud');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '⏳ Syncing...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${WORKER_URL}?plan=${srv.id}`);
+    if(!res.ok) throw new Error('Plan not found in cloud');
+    
+    const sharedSrv = await res.json();
+    const existingIdx = servers.findIndex(s => s.id === sharedSrv.id);
+    if(existingIdx >= 0) {
+      servers[existingIdx] = sharedSrv; 
+    }
+    save();
+    renderAll();
+    
+    btn.innerHTML = '✓ Synced!';
+  } catch(err) {
+    console.error(err);
+    alert("No cloud updates found for this specific server.");
+    btn.innerHTML = '❌ Error';
+  }
+  
+  setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 2500);
 }
 
 async function checkUrlForSharedPlan() {
