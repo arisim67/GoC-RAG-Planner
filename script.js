@@ -629,7 +629,6 @@ function renderSettings(srv){
           <button class="btn" onclick="takeScreenshots()">📸 Screenshots</button>
           <button class="btn-gold" onclick="autoOptimize()">⚡ Auto-Optimize</button>
           ${srv.undoPlan ? `<button class="btn-accent" onclick="undoOptimize()" style="border-color:var(--gold);color:var(--gold2)">↩ Undo Optimize</button>` : ''}
-          <button class="btn-accent" onclick="openRepair()">🔧 Repair</button>
           <button class="btn-accent" id="btn-share-cloud" style="background:#6baff5;color:#0a1a14;box-shadow:0 4px 12px rgba(107,175,245,0.2)" onclick="publishToCloud()">☁️ Save to Cloud</button>
         </div></div>
     </div>
@@ -2332,106 +2331,6 @@ function guildNeedScore(gid, k, gPts, lv3Days, lv2Days, absTgt, l3Tgt, l2Tgt, ta
   }
 
   return score;
-}
-
-// ══════════════════════════════════════════════════════════════
-//  REPAIR
-// ══════════════════════════════════════════════════════════════
-
-let repairChanges={};
-
-function openRepair(){
-  const srv=activeSrv();if(!srv)return;
-  const days=numDays(srv);
-  const mapData=getMapData(srv.mode,srv.mapKey);
-  repairChanges={};
-
-  const daysel=document.getElementById('repair-day');
-  // Account for Day 0 up to the final day
-  daysel.innerHTML=Array.from({length:days+1},(_,d)=>`<option value="${d}">${dateLabelShort(srv,d).replace(/<[^>]+>/g,'')}</option>`).join('');
-
-  const ksel=document.getElementById('repair-kingdom');
-  ksel.innerHTML=mapData.kingdoms.map(k=>`<option value="${k.id}">${k.id}</option>`).join('');
-
-  renderRepairTable();
-  document.getElementById('modal-repair').classList.add('open');
-}
-
-function renderRepairTable(){
-  const srv=activeSrv();if(!srv)return;
-  const fromDay=+document.getElementById('repair-day').value;
-  const focusKingdom=document.getElementById('repair-kingdom').value;
-  const days=numDays(srv);
-  const mapData=getMapData(srv.mode,srv.mapKey);
-  const gOpts=[['','—'],...srv.guilds.map(g=>[g.id,g.name])];
-
-  const k=mapData.kingdoms.find(x=>x.id===focusKingdom);
-  if(!k){document.getElementById('repair-body').innerHTML='';return;}
-
-  let html=`<div style="margin-bottom:8px;font-size:11px;color:var(--text2)">
-    Reassign <strong style="color:var(--accent2)">${k.id}</strong> from ${dateLabelShort(srv,fromDay).replace(/<[^>]+>/g,'')} onwards.
-    Adjacent towns: <span style="color:var(--text)">${k.adj.join(', ')}</span>
-  </div>
-  <table class="repair-tbl">
-    <thead><tr><th>Day</th><th>Current owner</th><th>New owner</th><th>Note</th></tr></thead>
-    <tbody>`;
-
-  // Loop from the deviation day to the end of the event
-  for(let d=fromDay;d<=days;d++){
-    const curGid=(srv.plan[d]||{})[k.id]||'';
-    const curG=srv.guilds.find(x=>x.id===curGid);
-    const repKey=`${d}_${k.id}`;
-    const repVal=repairChanges[repKey]!==undefined?repairChanges[repKey]:curGid;
-    html+=`<tr>
-      <td style="color:var(--text2)">${dateLabelShort(srv,d).replace(/<[^>]+>/g,'')}</td>
-      <td style="color:${curG?curG.color:'var(--text3)'}">
-        ${curG?esc(curG.name):'<em>empty</em>'}
-      </td>
-      <td>
-        <select class="csel" style="background:var(--bg3);padding:3px 6px" 
-          onchange="repairChange(${d},'${k.id}',this.value)">
-          ${gOpts.map(([v,n])=>`<option value="${v}"${v===repVal?' selected':''}>${esc(n)}</option>`).join('')}
-        </select>
-      </td>
-      <td style="font-size:10px;color:var(--text3)">
-        ${d===fromDay?'← deviation day':''}
-      </td>
-    </tr>`;
-  }
-  html+='</tbody></table>';
-
-  html+=`<div style="margin-top:14px;font-size:11px;color:var(--text2)">
-    <strong style="color:var(--text)">Adjacent kingdom owners on ${dateLabelShort(srv,fromDay).replace(/<[^>]+>/g,'')}:</strong>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-    ${k.adj.map(adjId=>{
-      const adjGid=(srv.plan[fromDay]||{})[adjId]||'';
-      const adjG=srv.guilds.find(x=>x.id===adjGid);
-      return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:4px 8px">
-        <span style="color:var(--text)">${adjId}</span>
-        <span style="color:${adjG?adjG.color:'var(--text3)'}"> → ${adjG?esc(adjG.name):'empty'}</span>
-      </div>`;
-    }).join('')}
-    </div>
-  </div>`;
-
-  document.getElementById('repair-body').innerHTML=html;
-}
-
-function repairChange(day,kid,gid){
-  repairChanges[`${day}_${kid}`]=gid;
-}
-
-function applyRepair(){
-  const srv=activeSrv();if(!srv)return;
-  for(const[key,gid]of Object.entries(repairChanges)){
-    const[d,kid]=key.split('_');
-    const dayNum=+d;
-    if(!srv.plan[dayNum])srv.plan[dayNum]={};
-    srv.plan[dayNum][kid]=gid;
-  }
-  repairChanges={};
-  closeModal('modal-repair');
-  save();renderAll();
 }
 
 // ══════════════════════════════════════════════════════════════

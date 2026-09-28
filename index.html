@@ -115,33 +115,6 @@
   </div>
 </div>
 
-<!-- REPAIR MODAL -->
-<div class="modal-bg" id="modal-repair">
-  <div class="modal" style="width:min(680px,96vw)">
-    <h3>🔧 Repair Plan — Mid-Map Adjustment</h3>
-    <div class="repair-info">
-      Use this when a guild fails to capture a kingdom, gets knocked out unexpectedly, or the actual map
-      state drifts from the plan. Select the day when the deviation happened, then reassign kingdoms
-      from that day onward. Subsequent days are updated automatically.
-    </div>
-    <div class="row" style="margin-bottom:12px">
-      <div class="fg">
-        <label>Deviation starts on day</label>
-        <select id="repair-day" style="min-width:120px" onchange="renderRepairTable()"></select>
-      </div>
-      <div class="fg">
-        <label>Kingdom</label>
-        <select id="repair-kingdom" style="min-width:130px" onchange="renderRepairTable()"></select>
-      </div>
-    </div>
-    <div id="repair-body"></div>
-    <div class="modal-row">
-      <button class="btn" onclick="closeModal('modal-repair')">Cancel</button>
-      <button class="btn-gold" onclick="applyRepair()">Apply Changes</button>
-    </div>
-  </div>
-</div>
-
 <!-- CONFIRM DELETE MODAL -->
 <div class="modal-bg" id="modal-confirm-delete">
   <div class="modal" style="width:min(360px,92vw);text-align:center;">

@@ -40,15 +40,6 @@ Once your plan is finalized and balanced, you need to communicate it to server l
 *   **Declares & Giveaways Table:** This shows exactly how many declares (▲) and how many giveaways (↓) a guild has scheduled for a specific day.
 *   **Daily Messages:** The app automatically generates formatted text blocks detailing what each guild needs to do. Simply click on a day's card to copy the instructions to your clipboard for easy pasting into Discord.
 
-## 6. Mid-Event Adjustments: The Repair Tool
-No plan survives contact with the enemy. If someone misses a capture, a rogue guild takes a town, or the map state drifts from your plan, you must fix the timeline. Do NOT just change the dropdowns in the middle of the grid manually, as this can create cascading adjacency errors. Instead, use the Repair Tool.
-
-1. Click the **🔧 Repair** button in the Server Settings.
-2. Select the Day the deviation occurred.
-3. Select the Town that was affected.
-4. The modal will show you who was supposed to own it versus who actually owns it. Change the "New owner" dropdown to reflect reality.
-5. Click **Apply Changes**. The app will safely splice this new reality into your timeline and adjust the following days automatically.
-
-## 7. Support
+## 6. Support
 *   **Automatic Saving:** All your changes are saved instantly to your browser's memory. You can refresh or close the tab, and your plan will be exactly as you left it.
 *   **Support:** Have any issues or improvement suggestions? Contact `arianes.` on Discord.
