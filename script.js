@@ -2357,7 +2357,7 @@ function onAddModalStartChange(){
   const mode  = document.getElementById('ns-mode').value;
   const start = document.getElementById('ns-start').value;
   if(!start) return;
-  const eventDays = mode === 'goc' ? 12 : 6;  // GoC = 12 days, Rag = 6 days
+  const eventDays = mode === 'goc' ? 13 : 6;  // GoC = 13 days, Rag = 6 days
   const [yy, mm, dd] = start.split('-');
   const endDt = new Date(+yy, mm - 1, +dd);
   endDt.setDate(endDt.getDate() + eventDays - 1); // end = start + (days-1)
