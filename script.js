@@ -2448,14 +2448,24 @@ async function takeScreenshots() {
     // --- BULLETPROOF EXPANSION ---
     function expandForCapture(el) {
       const originalStyles = [];
+      
       const wraps = el.querySelectorAll('.tbl-wrap');
       wraps.forEach(wrap => {
         originalStyles.push({ el: wrap, prop: 'overflow', val: wrap.style.overflow });
         wrap.style.overflow = 'visible';
       });
+      
       // Force the wrapper itself to push out to its maximum natural width
       originalStyles.push({ el: el, prop: 'width', val: el.style.width });
       el.style.width = 'max-content';
+      
+      // TEMPORARILY UN-STICK HEADERS: Prevents html2canvas from clipping the bottom of text
+      const stickyHeaders = el.querySelectorAll('th');
+      stickyHeaders.forEach(th => {
+        originalStyles.push({ el: th, prop: 'position', val: th.style.position });
+        th.style.position = 'static';
+      });
+
       return originalStyles;
     }
 
