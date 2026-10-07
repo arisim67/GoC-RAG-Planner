@@ -194,7 +194,7 @@ const GOC_MAPS = {
     ['Frostheim, Mortkranken','G'],['J, Frostheim, Vagastrom','H'],
     ['H, K, Vagastrom, Darkwick','J'],['L, J, Obscuary','K'],
     ['K, N','L'],['P, Darkwick','M'],['L, Q, O, Obscuary','N'],
-    ['N, R, P','O'],['M, O, Obscuary','P'],['N, R, P','Q'],['O, Q','R'],
+    ['N, R, P','O'],['M, O, Obscuary','P'],['N, R','Q'],['O, Q','R'],
   ]),
   woodlands: makeGoCMap('Woodlands', [
     ['Jabberwock, Sinostra, Hotarubi, Frostheim','Darkwick'],
