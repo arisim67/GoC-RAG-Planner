@@ -2445,7 +2445,6 @@ async function takeScreenshots() {
     const statsEl = document.getElementById('capture-stats');
     const mainEl = document.getElementById('main-content');
     
-    // --- BULLETPROOF EXPANSION ---
     function expandForCapture(el) {
       const originalStyles = [];
       const wraps = el.querySelectorAll('.tbl-wrap');
@@ -2454,26 +2453,18 @@ async function takeScreenshots() {
         wrap.style.overflow = 'visible';
       });
       
-      // Expand wrapper
       originalStyles.push({ el: el, prop: 'width', val: el.style.width });
-      el.style.width = 'max-content';
+      originalStyles.push({ el: el, prop: 'maxWidth', val: el.style.maxWidth });
       
-      // Un-stick headers
+      // Force exact pixel width instead of max-content
+      el.style.width = el.scrollWidth + 'px';
+      el.style.maxWidth = 'none';
+      
       const stickyHeaders = el.querySelectorAll('th');
       stickyHeaders.forEach(th => {
         originalStyles.push({ el: th, prop: 'position', val: th.style.position });
         th.style.position = 'static';
       });
-
-      // 🚨 FIX: Force the entire HTML document to expand so mobile doesn't clip the canvas
-      const html = document.documentElement;
-      originalStyles.push({ el: html, prop: 'width', val: html.style.width });
-      originalStyles.push({ el: html, prop: 'overflow', val: html.style.overflow });
-      originalStyles.push({ el: document.body, prop: 'overflow', val: document.body.style.overflow });
-      
-      html.style.width = 'max-content';
-      html.style.overflow = 'visible';
-      document.body.style.overflow = 'visible';
 
       return originalStyles;
     }
@@ -2487,30 +2478,40 @@ async function takeScreenshots() {
     
     const gridWidth = gridEl.scrollWidth;
     const statsWidth = statsEl.scrollWidth;
-    const maxWidth = Math.max(gridWidth, statsWidth) + 100;
-
+    const exactMaxWidth = Math.max(gridWidth, statsWidth) + 40;
+    
+    // Explicitly stretch the entire HTML document using absolute pixels
+    const html = document.documentElement;
+    const origHtmlWidth = html.style.width;
+    const origHtmlOverflow = html.style.overflow;
     const origBodyWidth = document.body.style.width;
+    const origBodyOverflow = document.body.style.overflow;
     const origMainMaxWidth = mainEl.style.maxWidth;
-    document.body.style.width = maxWidth + 'px';
+
+    html.style.width = exactMaxWidth + 'px';
+    html.style.overflow = 'visible';
+    document.body.style.width = exactMaxWidth + 'px';
+    document.body.style.overflow = 'visible';
     mainEl.style.maxWidth = 'none';
     
-    const canvasGrid = await html2canvas(gridEl, {
+    const captureOpts = {
       backgroundColor: '#191425',
       scale: 2,
-      width: gridWidth,
-      windowWidth: maxWidth
-    });
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: exactMaxWidth
+    };
     
-    const canvasStats = await html2canvas(statsEl, {
-      backgroundColor: '#191425',
-      scale: 2,
-      width: statsWidth,
-      windowWidth: maxWidth
-    });
+    const canvasGrid = await html2canvas(gridEl, { ...captureOpts, width: gridWidth });
+    const canvasStats = await html2canvas(statsEl, { ...captureOpts, width: statsWidth });
     
+    // Restore all styles
     restoreStyles(gridStyles);
     restoreStyles(statsStyles);
+    html.style.width = origHtmlWidth;
+    html.style.overflow = origHtmlOverflow;
     document.body.style.width = origBodyWidth;
+    document.body.style.overflow = origBodyOverflow;
     mainEl.style.maxWidth = origMainMaxWidth;
     
     const srv = activeSrv();
@@ -2522,12 +2523,10 @@ async function takeScreenshots() {
     const statsFile = new File([statsBlob], `${prefix}_stats.png`, { type: 'image/png' });
     const filesArray = [gridFile, statsFile];
 
-    // Mobile Fallback: Overlay with integrated Share button
     if (window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent)) {
       const overlay = document.createElement('div');
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;padding:40px 20px;overflow-y:auto;';
 
-      // 🚨 FIX: Button for Share API gives a fresh user-click, bypassing Chrome's security block
       const shareBtnHtml = (navigator.canShare && navigator.canShare({ files: filesArray }))
         ? `<button id="ov-share-btn" style="background:var(--accent);color:#0a1a14;border:none;padding:12px 24px;border-radius:24px;font-weight:bold;font-size:16px;margin-bottom:20px;box-shadow:0 4px 12px var(--accent-glow);cursor:pointer;">📤 Share to Apps</button>`
         : '';
@@ -2545,18 +2544,16 @@ async function takeScreenshots() {
       overlay.onclick = (e) => { if(e.target === overlay) document.body.removeChild(overlay); };
       document.body.appendChild(overlay);
 
-      // Attach listener to the new button
       if (shareBtnHtml) {
         document.getElementById('ov-share-btn').onclick = async () => {
           try { await navigator.share({ files: filesArray }); }
-          catch (e) { console.log("Share cancelled or failed", e); }
+          catch (e) { console.log("Share cancelled", e); }
         };
       }
 
       btn.textContent = '✓ Generated!';
       btn.style.color = 'var(--green)';
     } else {
-      // Desktop Fallback: Standard .zip download
       const zip = new JSZip();
       const folderName = `${prefix}_snapshots`;
       const imgFolder = zip.folder(folderName);
