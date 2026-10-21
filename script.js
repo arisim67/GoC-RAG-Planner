@@ -2445,17 +2445,18 @@ async function takeScreenshots() {
     const statsEl = document.getElementById('capture-stats');
     const mainEl = document.getElementById('main-content');
     
+    // 🚨 FIX 1: Scroll to the top-left to prevent iOS/Android coordinate shifting bugs
+    const origScrollX = window.scrollX;
+    const origScrollY = window.scrollY;
+    window.scrollTo(0, 0);
+    
     const html = document.documentElement;
-    const origHtmlWidth = html.style.width;
     const origHtmlOverflow = html.style.overflow;
-    const origBodyWidth = document.body.style.width;
     const origBodyOverflow = document.body.style.overflow;
     const origMainMaxWidth = mainEl.style.maxWidth;
 
-    // 1. Create a massive sandbox so mobile doesn't crush anything
-    html.style.width = '4000px';
+    // Remove any hidden overflows on the main page that might clip the canvas
     html.style.overflow = 'visible';
-    document.body.style.width = '4000px';
     document.body.style.overflow = 'visible';
     mainEl.style.maxWidth = 'none';
 
@@ -2467,30 +2468,29 @@ async function takeScreenshots() {
         wrap.style.overflow = 'visible';
       });
       
-      // 🚨 FIX: Force the table to shrink-wrap its contents instead of stretching to 4000px
-      const table = el.querySelector('table');
-      if (table) {
-        originalStyles.push({ el: table, prop: 'width', val: table.style.width });
-        table.style.width = 'max-content';
-      }
-
       const stickyHeaders = el.querySelectorAll('th');
       stickyHeaders.forEach(th => {
         originalStyles.push({ el: th, prop: 'position', val: th.style.position });
         th.style.position = 'static';
       });
 
-      // Lock the cell widths AFTER the table is shrink-wrapped
-      const cells = el.querySelectorAll('th, td, .csel');
-      cells.forEach(cell => {
-        originalStyles.push({ el: cell, prop: 'width', val: cell.style.width });
-        originalStyles.push({ el: cell, prop: 'minWidth', val: cell.style.minWidth });
-        const w = cell.getBoundingClientRect().width;
-        if (w > 0) {
-          cell.style.width = w + 'px';
-          cell.style.minWidth = w + 'px';
-        }
-      });
+      const table = el.querySelector('table');
+      if (table) {
+        originalStyles.push({ el: table, prop: 'width', val: table.style.width });
+        originalStyles.push({ el: table, prop: 'minWidth', val: table.style.minWidth });
+        // 🚨 FIX 2: Force the table to use natural text width (no stretching, no squishing)
+        table.style.width = 'max-content';
+        table.style.minWidth = 'max-content';
+      }
+
+      originalStyles.push({ el: el, prop: 'width', val: el.style.width });
+      originalStyles.push({ el: el, prop: 'maxWidth', val: el.style.maxWidth });
+      originalStyles.push({ el: el, prop: 'display', val: el.style.display });
+      
+      // 🚨 FIX 3: Shrink-wrap the container exactly to the table's natural bounds
+      el.style.display = 'inline-block';
+      el.style.width = 'max-content';
+      el.style.maxWidth = 'none';
 
       return originalStyles;
     }
@@ -2502,43 +2502,45 @@ async function takeScreenshots() {
     const gridStyles = expandForCapture(gridEl);
     const statsStyles = expandForCapture(statsEl);
     
-    // 2. Measure the exact, natural, un-stretched pixel width of the tables
-    const gridTable = gridEl.querySelector('table');
-    const statsTable = statsEl.querySelector('table');
-    const gridWidth = (gridTable ? gridTable.scrollWidth : gridEl.scrollWidth) + 20;
-    const statsWidth = (statsTable ? statsTable.scrollWidth : statsEl.scrollWidth) + 20;
-    
-    // 3. Shrink the massive 4000px sandbox down to perfectly hug the tables
-    const exactMaxWidth = Math.max(gridWidth, statsWidth) + 40;
-    html.style.width = exactMaxWidth + 'px';
-    document.body.style.width = exactMaxWidth + 'px';
-    
-    gridEl.style.width = gridWidth + 'px';
-    statsEl.style.width = statsWidth + 'px';
+    // Measure the exact, flawless pixel dimensions of the inline blocks
+    const gridW = gridEl.scrollWidth;
+    const gridH = gridEl.scrollHeight;
+    const statsW = statsEl.scrollWidth;
+    const statsH = statsEl.scrollHeight;
+    const maxWindowWidth = Math.max(gridW, statsW) + 100;
 
     const isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
     
-    const captureOpts = {
+    // 🚨 FIX 4: Explicitly pass the measured bounds to the camera
+    const canvasGrid = await html2canvas(gridEl, {
       backgroundColor: '#191425',
       scale: isMobile ? 1.5 : 2, 
-      scrollX: -window.scrollX,
-      scrollY: -window.scrollY,
-      windowWidth: exactMaxWidth
-    };
+      width: gridW,
+      height: gridH,
+      windowWidth: maxWindowWidth,
+      windowHeight: gridH + 200,
+      scrollX: 0,
+      scrollY: 0
+    });
     
-    const canvasGrid = await html2canvas(gridEl, { ...captureOpts, width: gridWidth });
-    const canvasStats = await html2canvas(statsEl, { ...captureOpts, width: statsWidth });
+    const canvasStats = await html2canvas(statsEl, {
+      backgroundColor: '#191425',
+      scale: isMobile ? 1.5 : 2, 
+      width: statsW,
+      height: statsH,
+      windowWidth: maxWindowWidth,
+      windowHeight: statsH + 200,
+      scrollX: 0,
+      scrollY: 0
+    });
     
-    // Restore all styles back to normal view
+    // Instantly restore the UI back to normal
     restoreStyles(gridStyles);
     restoreStyles(statsStyles);
-    gridEl.style.width = '';
-    statsEl.style.width = '';
-    html.style.width = origHtmlWidth;
     html.style.overflow = origHtmlOverflow;
-    document.body.style.width = origBodyWidth;
     document.body.style.overflow = origBodyOverflow;
     mainEl.style.maxWidth = origMainMaxWidth;
+    window.scrollTo(origScrollX, origScrollY);
     
     const srv = activeSrv();
     const prefix = srv ? srv.name.replace(/[^a-z0-9]/gi, '_') : 'map';
