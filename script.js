@@ -2521,7 +2521,7 @@ async function takeScreenshots() {
     const statsFile = new File([statsBlob], `${prefix}_stats.png`, { type: 'image/png' });
     const filesArray = [gridFile, statsFile];
 
-    // Mobile: Trigger native Share Sheet
+    // Mobile: Try Native Share Sheet
     if (navigator.canShare && navigator.canShare({ files: filesArray })) {
       try {
         await navigator.share({ files: filesArray });
@@ -2529,10 +2529,29 @@ async function takeScreenshots() {
         btn.style.color = 'var(--green)';
       } catch (err) {
         if (err.name !== 'AbortError') throw err;
-        btn.textContent = 'Screenshots';
+        btn.textContent = '📸 Screenshots';
       }
-    } else {
-      // Desktop: Fallback to .zip download
+    } 
+    // Mobile Fallback: Display on screen for long-press saving if Share API is blocked (like in Discord)
+    else if (window.innerWidth <= 768) {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;flex-direction:column;align-items:center;padding:40px 20px;overflow-y:auto;';
+      overlay.innerHTML = `
+        <div style="color:var(--accent);font-weight:bold;margin-bottom:20px;text-align:center;">
+          Long-press each image to save to Photos<br>
+          <span style="font-size:11px;color:var(--text2);font-weight:normal;">(Tap anywhere in the black space to close)</span>
+        </div>
+        <img src="${URL.createObjectURL(gridBlob)}" style="width:100%;max-width:600px;border-radius:8px;margin-bottom:20px;">
+        <img src="${URL.createObjectURL(statsBlob)}" style="width:100%;max-width:600px;border-radius:8px;margin-bottom:40px;">
+      `;
+      overlay.onclick = (e) => { if(e.target === overlay) document.body.removeChild(overlay); };
+      document.body.appendChild(overlay);
+      
+      btn.textContent = '✓ Generated!';
+      btn.style.color = 'var(--green)';
+    } 
+    // Desktop Fallback: Standard .zip download
+    else {
       const zip = new JSZip();
       const folderName = `${prefix}_snapshots`;
       const imgFolder = zip.folder(folderName);
@@ -2561,6 +2580,7 @@ async function takeScreenshots() {
     btn.style.color = '';
   }, 2000);
 }
+
 // ══════════════════════════════════════════════════════════════
 //  CLOUD SYNC & SHARING
 // ══════════════════════════════════════════════════════════════
