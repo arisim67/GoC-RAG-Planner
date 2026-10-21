@@ -26,7 +26,7 @@ The core of the app is the Planning Grid. This table lists every town, its point
 *   **Optimizer Settings:** This panel gives you direct control over how the optimizer balances the plan. You can set the maximum number of days any single guild can hold Darkwick or a Dorm. Each field shows the computed “fair” value (total available days ÷ number of guilds) as a reference. Lowering the cap spreads access more tightly; raising it relaxes the restriction. Changes take effect on the next run.
 
 ## 4. Validation and Rules
-The app constantly watches your plan to ensure it is actually legal to execute in-game. Check the Validation section below the final scores.
+The app constantly watches your plan to ensure it is actually legal to execute in-game. Check the Validation section above the planning grid.
 *   **Green Pills:** Your plan is valid!
 *   **Red Pills:** There is a rule violation. The app highlights exactly which day and town caused the error so you can fix it.
 *   **Common Violations:** 
