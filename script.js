@@ -2438,7 +2438,7 @@ function load(){
 async function takeScreenshots() {
   const btn = event.target;
   const originalText = btn.textContent;
-  btn.textContent = '📸 Zipping...';
+  btn.textContent = '📸 Processing...';
   
   try {
     const gridEl = document.getElementById('capture-grid');
@@ -2448,23 +2448,32 @@ async function takeScreenshots() {
     // --- BULLETPROOF EXPANSION ---
     function expandForCapture(el) {
       const originalStyles = [];
-      
       const wraps = el.querySelectorAll('.tbl-wrap');
       wraps.forEach(wrap => {
         originalStyles.push({ el: wrap, prop: 'overflow', val: wrap.style.overflow });
         wrap.style.overflow = 'visible';
       });
       
-      // Force the wrapper itself to push out to its maximum natural width
+      // Expand wrapper
       originalStyles.push({ el: el, prop: 'width', val: el.style.width });
       el.style.width = 'max-content';
       
-      // TEMPORARILY UN-STICK HEADERS: Prevents html2canvas from clipping the bottom of text
+      // Un-stick headers
       const stickyHeaders = el.querySelectorAll('th');
       stickyHeaders.forEach(th => {
         originalStyles.push({ el: th, prop: 'position', val: th.style.position });
         th.style.position = 'static';
       });
+
+      // 🚨 FIX: Force the entire HTML document to expand so mobile doesn't clip the canvas
+      const html = document.documentElement;
+      originalStyles.push({ el: html, prop: 'width', val: html.style.width });
+      originalStyles.push({ el: html, prop: 'overflow', val: html.style.overflow });
+      originalStyles.push({ el: document.body, prop: 'overflow', val: document.body.style.overflow });
+      
+      html.style.width = 'max-content';
+      html.style.overflow = 'visible';
+      document.body.style.overflow = 'visible';
 
       return originalStyles;
     }
@@ -2473,85 +2482,81 @@ async function takeScreenshots() {
       styles.forEach(({ el, prop, val }) => { el.style[prop] = val; });
     }
 
-    // 1. Expand the target sections
     const gridStyles = expandForCapture(gridEl);
     const statsStyles = expandForCapture(statsEl);
     
-    // Get the new, unconstrained widths
     const gridWidth = gridEl.scrollWidth;
     const statsWidth = statsEl.scrollWidth;
     const maxWidth = Math.max(gridWidth, statsWidth) + 100;
 
-    // 2. Temporarily stretch the body and main container so they don't clip the tables
     const origBodyWidth = document.body.style.width;
     const origMainMaxWidth = mainEl.style.maxWidth;
     document.body.style.width = maxWidth + 'px';
     mainEl.style.maxWidth = 'none';
     
-    // 3. Take the screenshots, explicitly telling the camera to use the virtual widths
     const canvasGrid = await html2canvas(gridEl, {
       backgroundColor: '#191425',
       scale: 2,
       width: gridWidth,
-      windowWidth: gridWidth
+      windowWidth: maxWidth
     });
     
     const canvasStats = await html2canvas(statsEl, {
       backgroundColor: '#191425',
       scale: 2,
       width: statsWidth,
-      windowWidth: statsWidth
+      windowWidth: maxWidth
     });
     
-    // 4. Immediately shrink everything back to normal
     restoreStyles(gridStyles);
     restoreStyles(statsStyles);
     document.body.style.width = origBodyWidth;
     mainEl.style.maxWidth = origMainMaxWidth;
-    // ------------------------------
     
     const srv = activeSrv();
     const prefix = srv ? srv.name.replace(/[^a-z0-9]/gi, '_') : 'map';
     
-    // Convert canvases to Blob objects
     const gridBlob = await new Promise(res => canvasGrid.toBlob(res, 'image/png'));
     const statsBlob = await new Promise(res => canvasStats.toBlob(res, 'image/png'));
-    
     const gridFile = new File([gridBlob], `${prefix}_grid.png`, { type: 'image/png' });
     const statsFile = new File([statsBlob], `${prefix}_stats.png`, { type: 'image/png' });
     const filesArray = [gridFile, statsFile];
 
-    // Mobile: Try Native Share Sheet
-    if (navigator.canShare && navigator.canShare({ files: filesArray })) {
-      try {
-        await navigator.share({ files: filesArray });
-        btn.textContent = '✓ Shared!';
-        btn.style.color = 'var(--green)';
-      } catch (err) {
-        if (err.name !== 'AbortError') throw err;
-        btn.textContent = '📸 Screenshots';
-      }
-    } 
-    // Mobile Fallback: Display on screen for long-press saving if Share API is blocked (like in Discord)
-    else if (window.innerWidth <= 768) {
+    // Mobile Fallback: Overlay with integrated Share button
+    if (window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent)) {
       const overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;flex-direction:column;align-items:center;padding:40px 20px;overflow-y:auto;';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;padding:40px 20px;overflow-y:auto;';
+
+      // 🚨 FIX: Button for Share API gives a fresh user-click, bypassing Chrome's security block
+      const shareBtnHtml = (navigator.canShare && navigator.canShare({ files: filesArray }))
+        ? `<button id="ov-share-btn" style="background:var(--accent);color:#0a1a14;border:none;padding:12px 24px;border-radius:24px;font-weight:bold;font-size:16px;margin-bottom:20px;box-shadow:0 4px 12px var(--accent-glow);cursor:pointer;">📤 Share to Apps</button>`
+        : '';
+
       overlay.innerHTML = `
-        <div style="color:var(--accent);font-weight:bold;margin-bottom:20px;text-align:center;">
+        ${shareBtnHtml}
+        <div style="color:var(--text);font-weight:bold;margin-bottom:20px;text-align:center;">
           Long-press each image to save to Photos<br>
-          <span style="font-size:11px;color:var(--text2);font-weight:normal;">(Tap anywhere in the black space to close)</span>
+          <span style="font-size:11px;color:var(--text2);font-weight:normal;">(Tap the black background to close)</span>
         </div>
-        <img src="${URL.createObjectURL(gridBlob)}" style="width:100%;max-width:600px;border-radius:8px;margin-bottom:20px;">
-        <img src="${URL.createObjectURL(statsBlob)}" style="width:100%;max-width:600px;border-radius:8px;margin-bottom:40px;">
+        <img src="${URL.createObjectURL(gridBlob)}" style="width:100%;max-width:none;border-radius:8px;margin-bottom:20px;">
+        <img src="${URL.createObjectURL(statsBlob)}" style="width:100%;max-width:none;border-radius:8px;margin-bottom:40px;">
       `;
+
       overlay.onclick = (e) => { if(e.target === overlay) document.body.removeChild(overlay); };
       document.body.appendChild(overlay);
-      
+
+      // Attach listener to the new button
+      if (shareBtnHtml) {
+        document.getElementById('ov-share-btn').onclick = async () => {
+          try { await navigator.share({ files: filesArray }); }
+          catch (e) { console.log("Share cancelled or failed", e); }
+        };
+      }
+
       btn.textContent = '✓ Generated!';
       btn.style.color = 'var(--green)';
-    } 
-    // Desktop Fallback: Standard .zip download
-    else {
+    } else {
+      // Desktop Fallback: Standard .zip download
       const zip = new JSZip();
       const folderName = `${prefix}_snapshots`;
       const imgFolder = zip.folder(folderName);
