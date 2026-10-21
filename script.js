@@ -2513,38 +2513,51 @@ async function takeScreenshots() {
     const srv = activeSrv();
     const prefix = srv ? srv.name.replace(/[^a-z0-9]/gi, '_') : 'map';
     
-    // Extract the raw Base64 image data
-    const gridData = canvasGrid.toDataURL('image/png').split(',')[1];
-    const statsData = canvasStats.toDataURL('image/png').split(',')[1];
+    // Convert canvases to Blob objects
+    const gridBlob = await new Promise(res => canvasGrid.toBlob(res, 'image/png'));
+    const statsBlob = await new Promise(res => canvasStats.toBlob(res, 'image/png'));
     
-    // Initialize JSZip and create a folder
-    const zip = new JSZip();
-    const folderName = `${prefix}_snapshots`;
-    const imgFolder = zip.folder(folderName);
-    
-    // Add the images into the zip folder
-    imgFolder.file(`${prefix}_grid.png`, gridData, { base64: true });
-    imgFolder.file(`${prefix}_stats.png`, statsData, { base64: true });
-    
-    // Generate the .zip file and trigger a single download
-    const zipContent = await zip.generateAsync({ type: 'blob' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(zipContent);
-    link.download = `${folderName}.zip`;
-    link.click();
-    
-    URL.revokeObjectURL(link.href);
-    
-    btn.textContent = '✓ Saved!';
-    btn.style.color = 'var(--green)';
+    const gridFile = new File([gridBlob], `${prefix}_grid.png`, { type: 'image/png' });
+    const statsFile = new File([statsBlob], `${prefix}_stats.png`, { type: 'image/png' });
+    const filesArray = [gridFile, statsFile];
+
+    // Mobile: Trigger native Share Sheet
+    if (navigator.canShare && navigator.canShare({ files: filesArray })) {
+      try {
+        await navigator.share({ files: filesArray });
+        btn.textContent = '✓ Shared!';
+        btn.style.color = 'var(--green)';
+      } catch (err) {
+        if (err.name !== 'AbortError') throw err;
+        btn.textContent = 'Screenshots';
+      }
+    } else {
+      // Desktop: Fallback to .zip download
+      const zip = new JSZip();
+      const folderName = `${prefix}_snapshots`;
+      const imgFolder = zip.folder(folderName);
+      
+      imgFolder.file(`${prefix}_grid.png`, gridBlob);
+      imgFolder.file(`${prefix}_stats.png`, statsBlob);
+      
+      const zipContent = await zip.generateAsync({ type: 'blob' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(zipContent);
+      link.download = `${folderName}.zip`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      
+      btn.textContent = '✓ Saved!';
+      btn.style.color = 'var(--green)';
+    }
     
   } catch (err) {
-    console.error("Screenshot/Zip failed:", err);
+    console.error("Screenshot failed:", err);
     btn.textContent = '❌ Error';
   }
   
   setTimeout(() => {
-    btn.textContent = originalText;
+    btn.textContent = '📸 Screenshots';
     btn.style.color = '';
   }, 2000);
 }

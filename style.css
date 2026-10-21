@@ -188,3 +188,26 @@ td.cell-err{
 }
 .import-dropzone .dropzone-content{pointer-events:none;}
 #import-file{display:none;}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE OPTIMIZATIONS
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Shrink outer padding to maximize screen real estate */
+  .main { padding: 10px; }
+  .section { padding: 14px; margin-bottom: 12px; }
+  
+  /* Compress the Adjacent Towns column slightly */
+  table.ptbl th.kadj, table.ptbl td.kadj { min-width: 90px; max-width: 100px; padding-left: 8px; font-size: 9px; }
+  
+  /* Tighten table cells and font sizes, ensuring text stays readable */
+  table.ptbl th, table.ptbl td { padding: 8px 4px; font-size: 11px; }
+  table.ptbl th.kname, table.ptbl td.kname { min-width: 80px; padding-left: 8px; }
+  
+  /* Make the dropdowns taller so they are easier to tap on phones */
+  .csel { font-size: 12px; padding: 10px 4px; }
+  
+  /* Make the final score cards smaller to fit more on screen */
+  .score-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+  .sc-val { font-size: 20px; }
+}
