@@ -2452,11 +2452,10 @@ async function takeScreenshots() {
     const origBodyOverflow = document.body.style.overflow;
     const origMainMaxWidth = mainEl.style.maxWidth;
 
-    // 🚨 MAGIC FIX: Force the phone to render at your exact CSS desktop width (2500px)
-    // This stops the table from over-stretching while overriding mobile squishing.
-    html.style.width = '2500px';
+    // 1. Create a massive sandbox so mobile doesn't crush anything
+    html.style.width = '4000px';
     html.style.overflow = 'visible';
-    document.body.style.width = '2500px';
+    document.body.style.width = '4000px';
     document.body.style.overflow = 'visible';
     mainEl.style.maxWidth = 'none';
 
@@ -2468,18 +2467,25 @@ async function takeScreenshots() {
         wrap.style.overflow = 'visible';
       });
       
+      // 🚨 FIX: Force the table to shrink-wrap its contents instead of stretching to 4000px
+      const table = el.querySelector('table');
+      if (table) {
+        originalStyles.push({ el: table, prop: 'width', val: table.style.width });
+        table.style.width = 'max-content';
+      }
+
       const stickyHeaders = el.querySelectorAll('th');
       stickyHeaders.forEach(th => {
         originalStyles.push({ el: th, prop: 'position', val: th.style.position });
         th.style.position = 'static';
       });
 
-      // Lock the cell widths AFTER the 2500px desktop layout is applied
+      // Lock the cell widths AFTER the table is shrink-wrapped
       const cells = el.querySelectorAll('th, td, .csel');
       cells.forEach(cell => {
         originalStyles.push({ el: cell, prop: 'width', val: cell.style.width });
         originalStyles.push({ el: cell, prop: 'minWidth', val: cell.style.minWidth });
-        const w = cell.offsetWidth;
+        const w = cell.getBoundingClientRect().width;
         if (w > 0) {
           cell.style.width = w + 'px';
           cell.style.minWidth = w + 'px';
@@ -2496,14 +2502,14 @@ async function takeScreenshots() {
     const gridStyles = expandForCapture(gridEl);
     const statsStyles = expandForCapture(statsEl);
     
-    // Measure the exact pixel width of the desktop-sized tables
+    // 2. Measure the exact, natural, un-stretched pixel width of the tables
     const gridTable = gridEl.querySelector('table');
     const statsTable = statsEl.querySelector('table');
     const gridWidth = (gridTable ? gridTable.scrollWidth : gridEl.scrollWidth) + 20;
     const statsWidth = (statsTable ? statsTable.scrollWidth : statsEl.scrollWidth) + 20;
-    const exactMaxWidth = Math.max(gridWidth, statsWidth, 2500) + 40;
     
-    // Ensure the document wraps perfectly around the final table size
+    // 3. Shrink the massive 4000px sandbox down to perfectly hug the tables
+    const exactMaxWidth = Math.max(gridWidth, statsWidth) + 40;
     html.style.width = exactMaxWidth + 'px';
     document.body.style.width = exactMaxWidth + 'px';
     
