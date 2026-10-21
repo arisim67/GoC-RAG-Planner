@@ -2445,30 +2445,27 @@ async function takeScreenshots() {
     const statsEl = document.getElementById('capture-stats');
     const mainEl = document.getElementById('main-content');
     
+    const html = document.documentElement;
+    const origHtmlWidth = html.style.width;
+    const origHtmlOverflow = html.style.overflow;
+    const origBodyWidth = document.body.style.width;
+    const origBodyOverflow = document.body.style.overflow;
+    const origMainMaxWidth = mainEl.style.maxWidth;
+
+    // 🚨 MAGIC FIX 1: Trick the phone into thinking it is a massive 4000px monitor. 
+    // This forces the GoC grid to completely un-squish itself.
+    html.style.width = '4000px';
+    html.style.overflow = 'visible';
+    document.body.style.width = '4000px';
+    document.body.style.overflow = 'visible';
+    mainEl.style.maxWidth = 'none';
+
     function expandForCapture(el) {
       const originalStyles = [];
       const wraps = el.querySelectorAll('.tbl-wrap');
       wraps.forEach(wrap => {
         originalStyles.push({ el: wrap, prop: 'overflow', val: wrap.style.overflow });
         wrap.style.overflow = 'visible';
-      });
-      
-      originalStyles.push({ el: el, prop: 'width', val: el.style.width });
-      originalStyles.push({ el: el, prop: 'maxWidth', val: el.style.maxWidth });
-      
-      el.style.width = el.scrollWidth + 'px';
-      el.style.maxWidth = 'none';
-      
-      // Lock exact pixel widths for every cell and dropdown so mobile Chrome can't squish them
-      const cells = el.querySelectorAll('th, td, .csel');
-      cells.forEach(cell => {
-        originalStyles.push({ el: cell, prop: 'width', val: cell.style.width });
-        originalStyles.push({ el: cell, prop: 'minWidth', val: cell.style.minWidth });
-        const w = cell.offsetWidth;
-        if (w > 0) {
-          cell.style.width = w + 'px';
-          cell.style.minWidth = w + 'px';
-        }
       });
       
       const stickyHeaders = el.querySelectorAll('th');
@@ -2484,30 +2481,31 @@ async function takeScreenshots() {
       styles.forEach(({ el, prop, val }) => { el.style[prop] = val; });
     }
 
-    // Freeze both tables
     const gridStyles = expandForCapture(gridEl);
     const statsStyles = expandForCapture(statsEl);
     
-    const gridWidth = gridEl.scrollWidth;
-    const statsWidth = statsEl.scrollWidth;
+    // Measure the exact un-squished pixel width of the tables
+    const gridTable = gridEl.querySelector('table');
+    const statsTable = statsEl.querySelector('table');
+    const gridWidth = (gridTable ? gridTable.scrollWidth : gridEl.scrollWidth) + 20;
+    const statsWidth = (statsTable ? statsTable.scrollWidth : statsEl.scrollWidth) + 20;
     const exactMaxWidth = Math.max(gridWidth, statsWidth) + 40;
     
-    const html = document.documentElement;
-    const origHtmlWidth = html.style.width;
-    const origHtmlOverflow = html.style.overflow;
-    const origBodyWidth = document.body.style.width;
-    const origBodyOverflow = document.body.style.overflow;
-    const origMainMaxWidth = mainEl.style.maxWidth;
-
+    // Shrink the document down from 4000px to perfectly wrap the table
     html.style.width = exactMaxWidth + 'px';
-    html.style.overflow = 'visible';
     document.body.style.width = exactMaxWidth + 'px';
-    document.body.style.overflow = 'visible';
-    mainEl.style.maxWidth = 'none';
+    
+    // Explicitly lock the container bounds so html2canvas doesn't guess
+    gridEl.style.width = gridWidth + 'px';
+    statsEl.style.width = statsWidth + 'px';
+
+    const isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
     
     const captureOpts = {
       backgroundColor: '#191425',
-      scale: 2,
+      // 🚨 MAGIC FIX 2: Lower the scale slightly on mobile so the ultra-wide GoC grid 
+      // doesn't exceed the phone's internal memory limit for canvas drawing
+      scale: isMobile ? 1.5 : 2, 
       scrollX: -window.scrollX,
       scrollY: -window.scrollY,
       windowWidth: exactMaxWidth
@@ -2516,8 +2514,11 @@ async function takeScreenshots() {
     const canvasGrid = await html2canvas(gridEl, { ...captureOpts, width: gridWidth });
     const canvasStats = await html2canvas(statsEl, { ...captureOpts, width: statsWidth });
     
+    // Restore all styles back to normal mobile view
     restoreStyles(gridStyles);
     restoreStyles(statsStyles);
+    gridEl.style.width = '';
+    statsEl.style.width = '';
     html.style.width = origHtmlWidth;
     html.style.overflow = origHtmlOverflow;
     document.body.style.width = origBodyWidth;
@@ -2533,7 +2534,7 @@ async function takeScreenshots() {
     const statsFile = new File([statsBlob], `${prefix}_stats.png`, { type: 'image/png' });
     const filesArray = [gridFile, statsFile];
 
-    if (window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent)) {
+    if (isMobile) {
       const overlay = document.createElement('div');
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;padding:40px 20px;overflow-y:auto;';
 
