@@ -2452,11 +2452,11 @@ async function takeScreenshots() {
     const origBodyOverflow = document.body.style.overflow;
     const origMainMaxWidth = mainEl.style.maxWidth;
 
-    // 🚨 MAGIC FIX 1: Trick the phone into thinking it is a massive 4000px monitor. 
-    // This forces the GoC grid to completely un-squish itself.
-    html.style.width = '4000px';
+    // 🚨 MAGIC FIX: Force the phone to render at your exact CSS desktop width (1440px)
+    // This stops the table from over-stretching while overriding mobile squishing.
+    html.style.width = '1440px';
     html.style.overflow = 'visible';
-    document.body.style.width = '4000px';
+    document.body.style.width = '1440px';
     document.body.style.overflow = 'visible';
     mainEl.style.maxWidth = 'none';
 
@@ -2474,6 +2474,18 @@ async function takeScreenshots() {
         th.style.position = 'static';
       });
 
+      // Lock the cell widths AFTER the 1440px desktop layout is applied
+      const cells = el.querySelectorAll('th, td, .csel');
+      cells.forEach(cell => {
+        originalStyles.push({ el: cell, prop: 'width', val: cell.style.width });
+        originalStyles.push({ el: cell, prop: 'minWidth', val: cell.style.minWidth });
+        const w = cell.offsetWidth;
+        if (w > 0) {
+          cell.style.width = w + 'px';
+          cell.style.minWidth = w + 'px';
+        }
+      });
+
       return originalStyles;
     }
 
@@ -2484,18 +2496,17 @@ async function takeScreenshots() {
     const gridStyles = expandForCapture(gridEl);
     const statsStyles = expandForCapture(statsEl);
     
-    // Measure the exact un-squished pixel width of the tables
+    // Measure the exact pixel width of the desktop-sized tables
     const gridTable = gridEl.querySelector('table');
     const statsTable = statsEl.querySelector('table');
     const gridWidth = (gridTable ? gridTable.scrollWidth : gridEl.scrollWidth) + 20;
     const statsWidth = (statsTable ? statsTable.scrollWidth : statsEl.scrollWidth) + 20;
-    const exactMaxWidth = Math.max(gridWidth, statsWidth) + 40;
+    const exactMaxWidth = Math.max(gridWidth, statsWidth, 1440) + 40;
     
-    // Shrink the document down from 4000px to perfectly wrap the table
+    // Ensure the document wraps perfectly around the final table size
     html.style.width = exactMaxWidth + 'px';
     document.body.style.width = exactMaxWidth + 'px';
     
-    // Explicitly lock the container bounds so html2canvas doesn't guess
     gridEl.style.width = gridWidth + 'px';
     statsEl.style.width = statsWidth + 'px';
 
@@ -2503,8 +2514,6 @@ async function takeScreenshots() {
     
     const captureOpts = {
       backgroundColor: '#191425',
-      // 🚨 MAGIC FIX 2: Lower the scale slightly on mobile so the ultra-wide GoC grid 
-      // doesn't exceed the phone's internal memory limit for canvas drawing
       scale: isMobile ? 1.5 : 2, 
       scrollX: -window.scrollX,
       scrollY: -window.scrollY,
@@ -2514,7 +2523,7 @@ async function takeScreenshots() {
     const canvasGrid = await html2canvas(gridEl, { ...captureOpts, width: gridWidth });
     const canvasStats = await html2canvas(statsEl, { ...captureOpts, width: statsWidth });
     
-    // Restore all styles back to normal mobile view
+    // Restore all styles back to normal view
     restoreStyles(gridStyles);
     restoreStyles(statsStyles);
     gridEl.style.width = '';
