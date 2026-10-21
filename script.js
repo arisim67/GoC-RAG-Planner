@@ -2456,9 +2456,20 @@ async function takeScreenshots() {
       originalStyles.push({ el: el, prop: 'width', val: el.style.width });
       originalStyles.push({ el: el, prop: 'maxWidth', val: el.style.maxWidth });
       
-      // Force exact pixel width instead of max-content
       el.style.width = el.scrollWidth + 'px';
       el.style.maxWidth = 'none';
+      
+      // Lock exact pixel widths for every cell and dropdown so mobile Chrome can't squish them
+      const cells = el.querySelectorAll('th, td, .csel');
+      cells.forEach(cell => {
+        originalStyles.push({ el: cell, prop: 'width', val: cell.style.width });
+        originalStyles.push({ el: cell, prop: 'minWidth', val: cell.style.minWidth });
+        const w = cell.offsetWidth;
+        if (w > 0) {
+          cell.style.width = w + 'px';
+          cell.style.minWidth = w + 'px';
+        }
+      });
       
       const stickyHeaders = el.querySelectorAll('th');
       stickyHeaders.forEach(th => {
@@ -2473,6 +2484,7 @@ async function takeScreenshots() {
       styles.forEach(({ el, prop, val }) => { el.style[prop] = val; });
     }
 
+    // Freeze both tables
     const gridStyles = expandForCapture(gridEl);
     const statsStyles = expandForCapture(statsEl);
     
@@ -2480,7 +2492,6 @@ async function takeScreenshots() {
     const statsWidth = statsEl.scrollWidth;
     const exactMaxWidth = Math.max(gridWidth, statsWidth) + 40;
     
-    // Explicitly stretch the entire HTML document using absolute pixels
     const html = document.documentElement;
     const origHtmlWidth = html.style.width;
     const origHtmlOverflow = html.style.overflow;
@@ -2497,15 +2508,14 @@ async function takeScreenshots() {
     const captureOpts = {
       backgroundColor: '#191425',
       scale: 2,
-      scrollX: 0,
-      scrollY: 0,
+      scrollX: -window.scrollX,
+      scrollY: -window.scrollY,
       windowWidth: exactMaxWidth
     };
     
     const canvasGrid = await html2canvas(gridEl, { ...captureOpts, width: gridWidth });
     const canvasStats = await html2canvas(statsEl, { ...captureOpts, width: statsWidth });
     
-    // Restore all styles
     restoreStyles(gridStyles);
     restoreStyles(statsStyles);
     html.style.width = origHtmlWidth;
