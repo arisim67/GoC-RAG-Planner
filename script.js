@@ -2452,11 +2452,11 @@ async function takeScreenshots() {
     const origBodyOverflow = document.body.style.overflow;
     const origMainMaxWidth = mainEl.style.maxWidth;
 
-    // 🚨 MAGIC FIX: Force the phone to render at your exact CSS desktop width (2000px)
+    // 🚨 MAGIC FIX: Force the phone to render at your exact CSS desktop width (2500px)
     // This stops the table from over-stretching while overriding mobile squishing.
-    html.style.width = '2000px';
+    html.style.width = '2500px';
     html.style.overflow = 'visible';
-    document.body.style.width = '2000px';
+    document.body.style.width = '2500px';
     document.body.style.overflow = 'visible';
     mainEl.style.maxWidth = 'none';
 
@@ -2474,7 +2474,7 @@ async function takeScreenshots() {
         th.style.position = 'static';
       });
 
-      // Lock the cell widths AFTER the 2000px desktop layout is applied
+      // Lock the cell widths AFTER the 2500px desktop layout is applied
       const cells = el.querySelectorAll('th, td, .csel');
       cells.forEach(cell => {
         originalStyles.push({ el: cell, prop: 'width', val: cell.style.width });
@@ -2501,7 +2501,7 @@ async function takeScreenshots() {
     const statsTable = statsEl.querySelector('table');
     const gridWidth = (gridTable ? gridTable.scrollWidth : gridEl.scrollWidth) + 20;
     const statsWidth = (statsTable ? statsTable.scrollWidth : statsEl.scrollWidth) + 20;
-    const exactMaxWidth = Math.max(gridWidth, statsWidth, 2000) + 40;
+    const exactMaxWidth = Math.max(gridWidth, statsWidth, 2500) + 40;
     
     // Ensure the document wraps perfectly around the final table size
     html.style.width = exactMaxWidth + 'px';
