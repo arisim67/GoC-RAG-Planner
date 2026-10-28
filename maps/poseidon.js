@@ -1,0 +1,30 @@
+export const poseidonMap = {
+  id: 'poseidon',
+  name: 'Sea of Poseidon',
+  mode: 'ragnarok',
+  kingdoms: [
+    { id: 'Darkwick',   type: 'lv3', adj: ['N', 'Vagastrom', 'Jabberwock', 'Obscuary'] },
+    { id: 'Vagastrom',  type: 'lv2', adj: ['M', 'L', 'B', 'Darkwick'] },
+    { id: 'Jabberwock', type: 'lv2', adj: ['B', 'C', 'O', 'Darkwick'] },
+    { id: 'Obscuary',   type: 'lv2', adj: ['G', 'F', 'Q', 'Dionysia', 'Darkwick'] },
+    { id: 'Dionysia',   type: 'lv2', adj: ['H', 'G', 'Obscuary'] },
+    { id: 'Sinostra',   type: 'lv2', adj: ['K', 'J', 'N'] },
+    { id: 'Hotarubi',   type: 'lv2', adj: ['E', 'P', 'D'] },
+    { id: 'A', type: 'lv1', adj: ['K', 'L', 'B'] },
+    { id: 'B', type: 'lv1', adj: ['A', 'Vagastrom', 'Jabberwock', 'C'] },
+    { id: 'C', type: 'lv1', adj: ['B', 'Jabberwock', 'D'] },
+    { id: 'D', type: 'lv1', adj: ['C', 'O', 'Hotarubi'] },
+    { id: 'E', type: 'lv1', adj: ['F', 'Hotarubi'] },
+    { id: 'F', type: 'lv1', adj: ['G', 'Obscuary', 'E'] },
+    { id: 'G', type: 'lv1', adj: ['H', 'Dionysia', 'Obscuary', 'F'] },
+    { id: 'H', type: 'lv1', adj: ['J', 'N', 'Dionysia', 'G'] },
+    { id: 'J', type: 'lv1', adj: ['Sinostra', 'H'] },
+    { id: 'K', type: 'lv1', adj: ['Sinostra', 'M', 'L', 'A'] },
+    { id: 'L', type: 'lv1', adj: ['A', 'K', 'Vagastrom'] },
+    { id: 'M', type: 'lv1', adj: ['K', 'N', 'Vagastrom'] },
+    { id: 'N', type: 'lv1', adj: ['Sinostra', 'M', 'Darkwick', 'H'] },
+    { id: 'O', type: 'lv1', adj: ['Jabberwock', 'Q', 'D'] },
+    { id: 'P', type: 'lv1', adj: ['Q', 'Hotarubi'] },
+    { id: 'Q', type: 'lv1', adj: ['Obscuary', 'O', 'P'] }
+  ]
+};

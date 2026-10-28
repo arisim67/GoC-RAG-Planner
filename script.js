@@ -2,6 +2,8 @@
 // ══════════════════════════════════════════════════════════════
 //  MAP DATA
 // ══════════════════════════════════════════════════════════════
+import { getMaps, getMapList, getMapData } from './maps/index.js';
+import { MilpBuilder } from './milp.js';
 
 const DORM_NAMES = {
   Darkwick:'Darkwick', Vagastrom:'Vagastrom', Hotarubi:'Hotarubi',
@@ -2814,3 +2816,21 @@ checkUrlForSharedPlan().then(() => {
   renderTabs();
   renderAll();
 });
+
+// 🚨 TEMPORARY HIGHS TEST BLOCK 
+const solverWorker = new Worker('worker.js', { type: 'module' });
+
+solverWorker.onmessage = (e) => {
+  if (e.data.status === 'success') {
+    console.log('🟢', e.data.message);
+  } else {
+    console.error('🔴 Worker Error:', e.data.error);
+  }
+};
+
+// 🚨 NEW: Catch fatal crashes that happen before the worker even boots
+solverWorker.onerror = (err) => {
+  console.error('💥 Fatal Worker Crash. Message:', err.message);
+};
+
+solverWorker.postMessage({ type: 'INIT_TEST' });

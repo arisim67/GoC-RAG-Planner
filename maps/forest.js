@@ -1,0 +1,31 @@
+export const forestMap = {
+  id: 'forest',
+  name: 'Forest',
+  mode: 'goc',
+  kingdoms: [
+    { id: 'Darkwick',    type: 'lv3', adj: ['Hotarubi', 'Obscuary', 'Sinostra', 'L'] },
+    { id: 'Vagastrom',   type: 'lv2', adj: ['Sinostra', 'Jabberwock', 'Q'] },
+    { id: 'Sinostra',    type: 'lv2', adj: ['Darkwick', 'Vagastrom', 'M', 'P'] },
+    { id: 'Hotarubi',    type: 'lv2', adj: ['Darkwick', 'F', 'G'] },
+    { id: 'Obscuary',    type: 'lv2', adj: ['Darkwick', 'O'] },
+    { id: 'Mortkranken', type: 'lv2', adj: ['E', 'J', 'K'] },
+    { id: 'Jabberwock',  type: 'lv2', adj: ['Vagastrom', 'J', 'H'] },
+    { id: 'A', type: 'lv1', adj: ['B', 'F'] },
+    { id: 'B', type: 'lv1', adj: ['A', 'C'] },
+    { id: 'C', type: 'lv1', adj: ['B', 'D', 'G'] },
+    { id: 'D', type: 'lv1', adj: ['C', 'E'] },
+    { id: 'E', type: 'lv1', adj: ['D', 'Mortkranken'] },
+    { id: 'F', type: 'lv1', adj: ['A', 'L', 'Hotarubi'] },
+    { id: 'G', type: 'lv1', adj: ['C', 'H', 'M', 'Hotarubi'] },
+    { id: 'H', type: 'lv1', adj: ['G', 'M', 'Jabberwock'] },
+    { id: 'J', type: 'lv1', adj: ['Jabberwock', 'Mortkranken'] },
+    { id: 'K', type: 'lv1', adj: ['Mortkranken', 'N'] },
+    { id: 'L', type: 'lv1', adj: ['F', 'Darkwick'] },
+    { id: 'M', type: 'lv1', adj: ['G', 'H', 'Sinostra'] },
+    { id: 'N', type: 'lv1', adj: ['K', 'R'] },
+    { id: 'O', type: 'lv1', adj: ['P', 'Obscuary'] },
+    { id: 'P', type: 'lv1', adj: ['O', 'Q', 'Sinostra'] },
+    { id: 'Q', type: 'lv1', adj: ['P', 'R', 'Vagastrom'] },
+    { id: 'R', type: 'lv1', adj: ['Q', 'N'] }
+  ]
+};

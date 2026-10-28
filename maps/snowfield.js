@@ -1,0 +1,32 @@
+export const snowfieldMap = {
+  id: 'snowfield',
+  name: 'Snowfield',
+  mode: 'goc',
+  kingdoms: [
+    { id: 'Darkwick',    type: 'lv3', adj: ['Vagastrom', 'J', 'Obscuary', 'M'] },
+    { id: 'Vagastrom',   type: 'lv2', adj: ['H', 'J', 'Mortkranken', 'Darkwick'] },
+    { id: 'Jabberwock',  type: 'lv2', adj: [] },
+    { id: 'Obscuary',    type: 'lv2', adj: ['K', 'N', 'P', 'Darkwick'] },
+    { id: 'Frostheim',   type: 'lv2', adj: ['A', 'G', 'H'] },
+    { id: 'Sinostra',    type: 'lv2', adj: [] },
+    { id: 'Mortkranken', type: 'lv2', adj: ['E', 'G', 'F', 'Vagastrom'] },
+    { id: 'Hotarubi',    type: 'lv2', adj: [] },
+    { id: 'A', type: 'lv1', adj: ['B', 'Frostheim'] },
+    { id: 'B', type: 'lv1', adj: ['A', 'C'] },
+    { id: 'C', type: 'lv1', adj: ['B', 'D', 'E'] },
+    { id: 'D', type: 'lv1', adj: ['C', 'E', 'F'] },
+    { id: 'E', type: 'lv1', adj: ['C', 'D', 'Mortkranken'] },
+    { id: 'F', type: 'lv1', adj: ['D', 'Mortkranken'] },
+    { id: 'G', type: 'lv1', adj: ['Frostheim', 'Mortkranken'] },
+    { id: 'H', type: 'lv1', adj: ['J', 'Frostheim', 'Vagastrom'] },
+    { id: 'J', type: 'lv1', adj: ['H', 'K', 'Vagastrom', 'Darkwick'] },
+    { id: 'K', type: 'lv1', adj: ['L', 'J', 'Obscuary'] },
+    { id: 'L', type: 'lv1', adj: ['K', 'N'] },
+    { id: 'M', type: 'lv1', adj: ['P', 'Darkwick'] },
+    { id: 'N', type: 'lv1', adj: ['L', 'Q', 'O', 'Obscuary'] },
+    { id: 'O', type: 'lv1', adj: ['N', 'R', 'P'] },
+    { id: 'P', type: 'lv1', adj: ['M', 'O', 'Obscuary'] },
+    { id: 'Q', type: 'lv1', adj: ['N', 'R'] },
+    { id: 'R', type: 'lv1', adj: ['O', 'Q'] }
+  ]
+};

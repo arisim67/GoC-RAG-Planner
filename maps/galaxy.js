@@ -1,0 +1,31 @@
+export const galaxyMap = {
+  id: 'galaxy',
+  name: 'Galaxy Terminal',
+  mode: 'ragnarok',
+  kingdoms: [
+    { id: 'Darkwick',   type: 'lv3', adj: ['Frostheim', 'Hotarubi', 'Obscuary', 'L'] },
+    { id: 'Frostheim',  type: 'lv2', adj: ['Vagastrom', 'M', 'Darkwick', 'P'] },
+    { id: 'Hotarubi',   type: 'lv2', adj: ['G', 'F', 'Darkwick'] },
+    { id: 'Obscuary',   type: 'lv2', adj: ['Darkwick', 'O'] },
+    { id: 'Vagastrom',  type: 'lv2', adj: ['Dionysia', 'Q', 'Frostheim'] },
+    { id: 'Dionysia',   type: 'lv2', adj: ['J', 'H', 'Vagastrom'] },
+    { id: 'Sinostra',   type: 'lv2', adj: ['K', 'J', 'E'] },
+    { id: 'A', type: 'lv1', adj: ['B', 'F'] },
+    { id: 'B', type: 'lv1', adj: ['A', 'C'] },
+    { id: 'C', type: 'lv1', adj: ['B', 'D', 'G'] },
+    { id: 'D', type: 'lv1', adj: ['C', 'E'] },
+    { id: 'E', type: 'lv1', adj: ['D', 'Sinostra'] },
+    { id: 'F', type: 'lv1', adj: ['A', 'Hotarubi', 'L'] },
+    { id: 'G', type: 'lv1', adj: ['C', 'H', 'Hotarubi', 'M'] },
+    { id: 'H', type: 'lv1', adj: ['G', 'Dionysia', 'M'] },
+    { id: 'J', type: 'lv1', adj: ['Sinostra', 'Dionysia'] },
+    { id: 'K', type: 'lv1', adj: ['N', 'Sinostra'] },
+    { id: 'L', type: 'lv1', adj: ['Darkwick', 'F'] },
+    { id: 'M', type: 'lv1', adj: ['Frostheim', 'G', 'H'] },
+    { id: 'N', type: 'lv1', adj: ['K', 'R'] },
+    { id: 'O', type: 'lv1', adj: ['Obscuary', 'P'] },
+    { id: 'P', type: 'lv1', adj: ['Frostheim', 'O', 'Q'] },
+    { id: 'Q', type: 'lv1', adj: ['P', 'R', 'Vagastrom'] },
+    { id: 'R', type: 'lv1', adj: ['N', 'Q'] }
+  ]
+};
