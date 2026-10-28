@@ -468,7 +468,19 @@ function renderTabs(){
     b.className='tab-btn'+(s.id===activeId?' active':'');
     b.dataset.srvId=s.id;
     b.innerHTML=`<span class="tab-label" onclick="switchSrv('${s.id}')">${esc(s.name)}</span><span class="tab-close" onclick="removeSrv('${s.id}')">✕</span>`;
+    
+    // Desktop Right-Click
     b.addEventListener('contextmenu', e=>{ e.preventDefault(); openTabCtx(e, s.id); });
+    
+    // Mobile Long-Press (500ms)
+    let pressTimer;
+    b.addEventListener('touchstart', e => {
+      pressTimer = setTimeout(() => { openTabCtx(e, s.id); }, 500);
+    }, {passive: true});
+    b.addEventListener('touchend', () => clearTimeout(pressTimer));
+    b.addEventListener('touchmove', () => clearTimeout(pressTimer));
+    b.addEventListener('touchcancel', () => clearTimeout(pressTimer));
+
     bar.appendChild(b);
   }
   const a=document.createElement('button');
@@ -485,8 +497,20 @@ function openTabCtx(e, srvId){
   if(activeId !== srvId){ switchSrv(srvId); }
   const menu = document.getElementById('tab-ctx');
   menu.classList.add('open');
-  const x = Math.min(e.clientX, window.innerWidth  - menu.offsetWidth  - 8);
-  const y = Math.min(e.clientY, window.innerHeight - menu.offsetHeight - 8);
+  
+  // Figure out if it's a mouse click or a touch tap
+  let clientX = e.clientX;
+  let clientY = e.clientY;
+  
+  if (e.touches && e.touches.length > 0) {
+    clientX = e.touches[0].clientX;
+    clientY = e.touches[0].clientY;
+    // Prevent the default browser context menu from popping up
+    if(e.cancelable) e.preventDefault();
+  }
+
+  const x = Math.min(clientX, window.innerWidth  - menu.offsetWidth  - 8);
+  const y = Math.min(clientY, window.innerHeight - menu.offsetHeight - 8);
   menu.style.left = x + 'px';
   menu.style.top  = y + 'px';
 }
@@ -2507,7 +2531,11 @@ async function takeScreenshots() {
     const gridH = gridEl.scrollHeight;
     const statsW = statsEl.scrollWidth;
     const statsH = statsEl.scrollHeight;
-    const maxWindowWidth = Math.max(gridW, statsW) + 100;
+    // Keep the clone's viewport the same width as the real one so the @media (max-width:768px)
+    // rules apply identically when measuring and when html2canvas renders its cloned copy.
+    // (A wider windowWidth flips the clone to desktop CSS: wider cells, bigger fonts, so the
+    // table grows past the width we measured and the right-hand day columns get cropped.)
+    const captureWindowWidth = window.innerWidth;
 
     const isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
     
@@ -2517,7 +2545,7 @@ async function takeScreenshots() {
       scale: isMobile ? 1.5 : 2, 
       width: gridW,
       height: gridH,
-      windowWidth: maxWindowWidth,
+      windowWidth: captureWindowWidth,
       windowHeight: gridH + 200,
       scrollX: 0,
       scrollY: 0
@@ -2528,7 +2556,7 @@ async function takeScreenshots() {
       scale: isMobile ? 1.5 : 2, 
       width: statsW,
       height: statsH,
-      windowWidth: maxWindowWidth,
+      windowWidth: captureWindowWidth,
       windowHeight: statsH + 200,
       scrollX: 0,
       scrollY: 0

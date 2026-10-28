@@ -27,7 +27,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .app-title{font-family:var(--font-head);font-size:20px;color:var(--gold);letter-spacing:.05em;margin-bottom:14px;display:flex;align-items:center;gap:12px;text-shadow: 0 2px 4px rgba(0,0,0,0.5);}
 .app-title small{font-size:11px;color:var(--text2);font-family:var(--font-body);letter-spacing:0;font-weight:400;text-shadow:none;}
 .tabs-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
-.tab-btn{padding:10px 18px;border:none;border-bottom:3px solid transparent;background:transparent;color:var(--text3);cursor:pointer;font-size:13px;font-family:var(--font-body);font-weight:600;transition:all .2s;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.tab-btn {
+  padding:10px 18px;border:none;border-bottom:3px solid transparent;background:transparent;color:var(--text3);cursor:pointer;font-size:13px;font-family:var(--font-body);font-weight:600;transition:all .2s;display:flex;align-items:center;gap:8px;white-space:nowrap;
+  /* Add these to disable mobile text highlighting on long-press */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
 .tab-btn:hover{color:var(--text2);}
 .tab-btn.active{color:var(--accent);border-bottom:3px solid var(--accent);text-shadow: 0 0 8px var(--accent-glow);}
 .tab-close{opacity:.4;font-size:11px;padding:2px 5px;border-radius:4px;cursor:pointer;transition:all .2s;}
