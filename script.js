@@ -473,11 +473,17 @@ function renderTabs(){
     b.addEventListener('contextmenu', e=>{ e.preventDefault(); openTabCtx(e, s.id); });
     
     // Mobile Long-Press (500ms)
-    let pressTimer;
+    let pressTimer, longPressed = false;
     b.addEventListener('touchstart', e => {
-      pressTimer = setTimeout(() => { openTabCtx(e, s.id); }, 500);
+      longPressed = false;
+      pressTimer = setTimeout(() => { longPressed = true; openTabCtx(e, s.id); }, 500);
     }, {passive: true});
-    b.addEventListener('touchend', () => clearTimeout(pressTimer));
+    b.addEventListener('touchend', e => {
+      clearTimeout(pressTimer);
+      // If the long-press opened the menu, swallow the click that follows the lift,
+      // otherwise the document click-handler closes the menu instantly.
+      if (longPressed && e.cancelable) e.preventDefault();
+    }, {passive: false});
     b.addEventListener('touchmove', () => clearTimeout(pressTimer));
     b.addEventListener('touchcancel', () => clearTimeout(pressTimer));
 
@@ -594,6 +600,11 @@ function renderAll(){
   const totalBase=srv.guilds.reduce((s,g)=>s+(parseInt(g.basePoints||0,10)||0),0);
   const target=Math.floor((totalPts+totalBase)/srv.guilds.length);
 
+  // Remember scroll positions so editing a cell doesn't snap the grid back to the left
+  const scrollSel = '.tbl-wrap, .guild-list';
+  const hScroll = [...mc.querySelectorAll(scrollSel)].map(w => w.scrollLeft);
+  const pageY = window.scrollY;
+
   mc.innerHTML=`
     ${renderSettings(srv)}
     ${renderGuilds(srv)}
@@ -613,6 +624,9 @@ function renderAll(){
     
     ${renderMsgs(srv,days,dec,give)}
   `;
+  mc.querySelectorAll(scrollSel).forEach((w,i) => { w.scrollLeft = hScroll[i] || 0; });
+  window.scrollTo(0, pageY);
+
   // Dynamically set pts-row sticky offset to match the actual first header row height
   requestAnimationFrame(()=>{
     const firstTh = document.querySelector('table.ptbl thead tr:first-child th');
@@ -865,7 +879,7 @@ function renderGrid(srv, days, mapData, issues, wipes) {
           <th class="ktype">Type</th>
           ${Array.from({length:totalCols},(_,d)=>`<th>
             ${dateLabel(srv,d)}
-            <div style="margin-top:6px;"><button onclick="clearDay(${d})" style="background:var(--bg3);border:1px solid var(--border);color:var(--text3);font-size:9px;padding:2px 6px;border-radius:4px;cursor:pointer;">Clear</button></div>
+            <div style="margin-top:6px;"><button class="clear-day-btn" onclick="clearDay(${d})" style="background:var(--bg3);border:1px solid var(--border);color:var(--text3);font-size:9px;padding:2px 6px;border-radius:4px;cursor:pointer;">Clear</button></div>
           </th>`).join('')}
         </tr>
         <tr class="pts-row">
@@ -1238,10 +1252,13 @@ function exportServer(){
 
   const json = JSON.stringify(exportData, null, 2);
 
+  // `event` only exists during the click, so grab the button now (not inside .then)
+  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target.closest('button') : null;
+
   // Copy to clipboard
-  navigator.clipboard.writeText(json).then(() => {
+  Promise.resolve().then(() => navigator.clipboard.writeText(json)).then(() => {
     // Visual feedback
-    const btn = event.target;
+    if (!btn) return;
     const originalText = btn.textContent;
     btn.textContent = '✓ Copied!';
     btn.style.background = 'var(--green-glow)';
@@ -1529,6 +1546,19 @@ function canDeclareDarkwick(prevPlan, gid, mapData) {
 // ══════════════════════════════════════════════════════════════
 
 function autoOptimize(){
+  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target.closest('button') : null;
+  const label = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳ Optimizing…'; btn.disabled = true; }
+  // Two frames so the browser actually paints the new label before the main thread gets busy
+  requestAnimationFrame(() => setTimeout(() => {
+    try { _autoOptimizeSync(); }
+    finally {
+      if (btn && document.body.contains(btn)) { btn.textContent = label; btn.disabled = false; }
+    }
+  }, 0));
+}
+
+function _autoOptimizeSync(){
   try {
     const srv = activeSrv();
     if(!srv) return;
@@ -2444,7 +2474,18 @@ function save(){
       ss.style.color = 'var(--accent)';
       clearTimeout(window.saveTimer);
       window.saveTimer = setTimeout(()=>{
-        ss.textContent = '✓ Saved to browser';
+        
+        // 🚨 NEW: Check if the URL's plan ID matches the currently active tab
+        const urlParams = new URLSearchParams(window.location.search);
+        const isCloudLinked = urlParams.get('plan') === activeId && activeId !== null;
+        
+        // Inject the cloud icon and bold text if it's a shared plan
+        if (isCloudLinked) {
+          ss.innerHTML = '☁️ <b style="color:#6baff5">Cloud Linked</b> &nbsp;·&nbsp; ✓ Saved locally';
+        } else {
+          ss.innerHTML = '✓ Saved to browser';
+        }
+        
         ss.style.color = 'var(--text3)';
       }, 800);
     }
@@ -2465,6 +2506,11 @@ async function takeScreenshots() {
   btn.textContent = '📸 Processing...';
   
   try {
+    // Make sure web fonts are loaded so measured widths match rendered widths
+    if (document.fonts && document.fonts.ready) { await document.fonts.ready; }
+    // Pins screenshot-only sizing (see style.css) so phone and desktop captures match
+    document.documentElement.classList.add('capturing');
+
     const gridEl = document.getElementById('capture-grid');
     const statsEl = document.getElementById('capture-stats');
     const mainEl = document.getElementById('main-content');
@@ -2496,6 +2542,16 @@ async function takeScreenshots() {
       stickyHeaders.forEach(th => {
         originalStyles.push({ el: th, prop: 'position', val: th.style.position });
         th.style.position = 'static';
+      });
+
+      // Sticky first columns (added for mobile scrolling) must be flat for the capture
+      el.querySelectorAll('td.kname').forEach(td => {
+        originalStyles.push({ el: td, prop: 'position', val: td.style.position });
+        td.style.position = 'static';
+      });
+      el.querySelectorAll('td.kname, th.kname').forEach(c => {
+        originalStyles.push({ el: c, prop: 'boxShadow', val: c.style.boxShadow });
+        c.style.boxShadow = 'none';
       });
 
       const table = el.querySelector('table');
@@ -2538,11 +2594,14 @@ async function takeScreenshots() {
     const captureWindowWidth = window.innerWidth;
 
     const isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
+    // iOS Safari refuses canvases above ~16.7M pixels, so shrink the scale if a big GoC map would exceed it
+    const baseScale = isMobile ? 1.5 : 2;
+    const fitScale = (w, h) => isMobile ? Math.min(baseScale, Math.sqrt(16000000 / (w * h))) : baseScale;
     
     // 🚨 FIX 4: Explicitly pass the measured bounds to the camera
     const canvasGrid = await html2canvas(gridEl, {
       backgroundColor: '#191425',
-      scale: isMobile ? 1.5 : 2, 
+      scale: fitScale(gridW, gridH),
       width: gridW,
       height: gridH,
       windowWidth: captureWindowWidth,
@@ -2553,7 +2612,7 @@ async function takeScreenshots() {
     
     const canvasStats = await html2canvas(statsEl, {
       backgroundColor: '#191425',
-      scale: isMobile ? 1.5 : 2, 
+      scale: fitScale(statsW, statsH),
       width: statsW,
       height: statsH,
       windowWidth: captureWindowWidth,
@@ -2568,6 +2627,7 @@ async function takeScreenshots() {
     html.style.overflow = origHtmlOverflow;
     document.body.style.overflow = origBodyOverflow;
     mainEl.style.maxWidth = origMainMaxWidth;
+    document.documentElement.classList.remove('capturing');
     window.scrollTo(origScrollX, origScrollY);
     
     const srv = activeSrv();
@@ -2630,6 +2690,7 @@ async function takeScreenshots() {
     
   } catch (err) {
     console.error("Screenshot failed:", err);
+    document.documentElement.classList.remove('capturing');
     btn.textContent = '❌ Error';
   }
   
@@ -2666,9 +2727,13 @@ async function publishToCloud() {
       window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + srv.id);
       
       const shareUrl = window.location.origin + window.location.pathname + '?plan=' + srv.id;
-      await navigator.clipboard.writeText(shareUrl);
-      btn.innerHTML = '✓ Saved & Copied!';
+      // Safari drops the "user gesture" after an awaited fetch, so the clipboard write can be
+      // refused even though the save worked. Treat that as a copy failure, not a save failure.
+      let copied = false;
+      try { await navigator.clipboard.writeText(shareUrl); copied = true; } catch (e) { console.warn('Clipboard blocked', e); }
+      btn.innerHTML = copied ? '✓ Saved & Copied!' : '✓ Saved!';
       setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 2500);
+      if (!copied) setTimeout(() => window.prompt('Saved! Copy this share link:', shareUrl), 50);
     } else {
       throw new Error('Failed to save to cloud');
     }
@@ -2721,8 +2786,6 @@ async function checkUrlForSharedPlan() {
   const planId = params.get('plan');
   if(!planId) return;
 
-  // 🚨 URL cleaner removed here so the browser can refresh the shared link
-
   try {
     const res = await fetch(`${WORKER_URL}?plan=${planId}`);
     if(!res.ok) throw new Error('Plan not found');
@@ -2732,7 +2795,7 @@ async function checkUrlForSharedPlan() {
     if(existingIdx >= 0) {
       servers[existingIdx] = sharedSrv; 
     } else {
-      sharedSrv.name = sharedSrv.name + " (Shared)";
+      // 🚨 REMOVED: The line that appended " (Shared)" to the name
       servers.push(sharedSrv); 
     }
     activeId = sharedSrv.id;

@@ -24,7 +24,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
 
 .app-header{padding:16px 24px 0;border-bottom:1px solid var(--bg);background:linear-gradient(180deg, #1f1930 0%, var(--bg) 100%);box-shadow: 0 4px 12px rgba(0,0,0,0.4);}
-.app-title{font-family:var(--font-head);font-size:20px;color:var(--gold);letter-spacing:.05em;margin-bottom:14px;display:flex;align-items:center;gap:12px;text-shadow: 0 2px 4px rgba(0,0,0,0.5);}
+.app-title{font-family:var(--font-head);font-size:20px;color:var(--gold);letter-spacing:.05em;margin-bottom:14px;display:flex;align-items:center;gap:12px;text-shadow: 0 2px 4px rgba(0,0,0,0.5);flex-wrap:wrap;}
 .app-title small{font-size:11px;color:var(--text2);font-family:var(--font-body);letter-spacing:0;font-weight:400;text-shadow:none;}
 .tabs-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
 .tab-btn {
@@ -63,11 +63,11 @@ select option{background:var(--bg2);color:var(--text);}
 textarea{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:8px;font-family:var(--font-body);font-size:13px;resize:vertical;min-height:70px;outline:none;transition:all .2s;width:100%;line-height:1.5;}
 
 .btn{padding:8px 16px;border:none;background:var(--bg3);color:var(--text);border-radius:20px;cursor:pointer;font-size:12px;font-weight:500;font-family:var(--font-body);transition:all .2s;box-shadow: 0 2px 6px rgba(0,0,0,0.2);}
-.btn:hover{background:var(--bg4);transform:translateY(-1px);}
+@media (hover:hover){.btn:hover{background:var(--bg4);transform:translateY(-1px);}}
 .btn-accent{padding:8px 16px;border:none;background:var(--accent);color:#0a1a14;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;font-family:var(--font-body);transition:all .2s;box-shadow: 0 4px 12px var(--accent-glow);}
-.btn-accent:hover{background:var(--accent2);transform:translateY(-1px);box-shadow: 0 6px 16px var(--accent-glow);}
+@media (hover:hover){.btn-accent:hover{background:var(--accent2);transform:translateY(-1px);box-shadow: 0 6px 16px var(--accent-glow);}}
 .btn-gold{padding:8px 16px;border:none;background:var(--gold);color:#241d08;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;font-family:var(--font-body);transition:all .2s;box-shadow: 0 4px 12px rgba(226, 200, 131, 0.2);}
-.btn-gold:hover{background:var(--gold2);transform:translateY(-1px);}
+@media (hover:hover){.btn-gold:hover{background:var(--gold2);transform:translateY(-1px);}}
 
 .guild-list {
   display: flex;
@@ -123,6 +123,11 @@ table.ptbl td.kname{font-weight:600;white-space:nowrap;padding-left:14px;font-si
 table.ptbl td.ktype{text-align:center;}
 table.ptbl tr:hover td{background:rgba(255,255,255,0.02);}
 table.ptbl tr:last-child td{border-bottom:none;}
+/* Keep the Town column visible while scrolling across day columns */
+table.ptbl td.kname,table.ptbl th.kname{position:sticky;left:0;box-shadow:2px 0 4px rgba(0,0,0,0.3);}
+table.ptbl td.kname{background:var(--bg2);z-index:1;}
+table.ptbl th.kname{z-index:3;}
+table.ptbl tr:hover td.kname{background:var(--bg3);}
 
 /* Updated Badge Classes */
 .badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:600;letter-spacing:.05em;}
@@ -159,12 +164,12 @@ td.cell-err{
 .msg-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s;margin-bottom:8px;word-break:break-word;}
 
 .msg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%, 280px),1fr));gap:12px;}
-.msg-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.2);}
+@media (hover:hover){.msg-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.2);}}
 
 
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(10,8,15,0.85);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;}
 .modal-bg.open{display:flex;}
-.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:28px;width:min(480px,92vw);max-height:90vh;overflow-y:auto;box-shadow:0 12px 32px rgba(0,0,0,0.5);}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:28px;width:min(480px,92vw);max-height:90vh;max-height:90dvh;overflow-y:auto;box-shadow:0 12px 32px rgba(0,0,0,0.5);}
 .modal h3{font-family:var(--font-head);color:var(--gold);margin-bottom:20px;font-size:18px;text-align:center;letter-spacing:0.05em;}
 .modal-row{display:flex;gap:12px;justify-content:flex-end;margin-top:24px;}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
@@ -211,9 +216,32 @@ td.cell-err{
   table.ptbl th.kname, table.ptbl td.kname { min-width: 80px; padding-left: 8px; }
   
   /* Make the dropdowns taller so they are easier to tap on phones */
-  .csel { font-size: 12px; padding: 10px 4px; }
+  .csel { font-size: 16px; padding: 10px 4px; }
   
   /* Make the final score cards smaller to fit more on screen */
   .score-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
   .sc-val { font-size: 20px; }
+
+  /* iOS Safari zooms the page when focusing any field under 16px */
+  input, textarea, select { font-size: 16px !important; }
+  input[type=number][data-guild-field] { width: 60px !important; }
+
+  /* Header */
+  .app-header { padding: 12px 12px 0; }
+  .app-title { font-size: 17px; gap: 8px; margin-bottom: 10px; }
+
+  /* Bigger touch targets */
+  .btn, .btn-accent, .btn-gold, .add-tab-btn { min-height: 40px; }
+  .tab-btn { padding: 12px 14px; }
+  .tab-close { font-size: 14px; padding: 8px 10px; margin: -6px -6px -6px 0; }
+  .guild-remove { font-size: 18px; padding: 10px; }
+  .guild-small-check { width: 22px; height: 22px; }
+  .guild-small-label { font-size: 11px; padding: 8px 0; }
+  .clear-day-btn { font-size: 11px !important; padding: 8px 12px !important; }
+  .ctx-item { padding: 12px 14px; font-size: 14px; }
 }
+
+/* Screenshot mode: identical sizing on phone and desktop (class set by takeScreenshots) */
+html.capturing .csel { font-size: 12px !important; padding: 4px 6px !important; }
+html.capturing .clear-day-btn { font-size: 9px !important; padding: 2px 6px !important; }
+html.capturing input[type=number][data-guild-field] { width: 40px !important; font-size: 12px !important; }
