@@ -1,222 +1,54 @@
-// Full names for Lv2 dorms (shared across maps)
-// ══════════════════════════════════════════════════════════════
-//  MAP DATA
-// ══════════════════════════════════════════════════════════════
 import { getMaps, getMapList, getMapData } from './maps/index.js';
 import { MilpBuilder } from './milp.js';
+import { buildModel, getPerfectTargets } from './model.js';
 
-const DORM_NAMES = {
-  Darkwick:'Darkwick', Vagastrom:'Vagastrom', Hotarubi:'Hotarubi',
-  Obscuary:'Obscuary', Sinostra:'Sinostra', Frostheim:'Frostheim',
-  Jabberwock:'Jabberwock', Mortkranken:'Mortkranken', Dionysia:'Dionysia'
-};
+const solverWorker = new Worker('worker.js', { type: 'module' });
 
-const ALIAS = {
-  'Castle':'Darkwick','DW':'Darkwick',
-  'Vaga':'Vagastrom','Vagastrom':'Vagastrom',
-  'Hota':'Hotarubi','Hotarubi':'Hotarubi',
-  'Obs':'Obscuary','Obscuary':'Obscuary','Obscurary':'Obscuary','Obscuaary':'Obscuary',
-  'Sino':'Sinostra','Sinostra':'Sinostra','SInostra':'Sinostra','Sionstra':'Sinostra',
-  'Frost':'Frostheim','Frostheim':'Frostheim',
-  'Jabber':'Jabberwock','Jabberwock':'Jabberwock',
-  'Mort':'Mortkranken','Mortkranken':'Mortkranken','Mortkraken':'Mortkranken',
-  'Dio':'Dionysia','Dionysia':'Dionysia'
-};
-
-function canon(s){ return ALIAS[s.trim()] || s.trim(); }
-
-const RAG_MAPS = {
-  floating:{
-    name:'Floating City',
-    kingdoms:[
-      {id:'Darkwick',   type:'lv3',  adj:['Dionysia','Vagastrom','Hotarubi','Obscuary']},
-      {id:'Vagastrom',  type:'lv2', adj:['B','C','G','Frostheim','Darkwick']},
-      {id:'Hotarubi',   type:'lv2', adj:['Darkwick','J','N']},
-      {id:'Obscuary',   type:'lv2', adj:['Darkwick','N','O','L']},
-      {id:'Dionysia',   type:'lv2', adj:['B','Darkwick','L','H']},
-      {id:'Frostheim',  type:'lv2', adj:['D','G','Vagastrom','J']},
-      {id:'Jabberwock', type:'lv2', adj:['M','N','R']},
-      {id:'Mortkranken',type:'lv2', adj:['K','L','O','Q']},
-      {id:'A',type:'lv1',adj:['E','F','B']},
-      {id:'B',type:'lv1',adj:['A','F','Dionysia','Vagastrom','C']},
-      {id:'C',type:'lv1',adj:['B','Vagastrom','D']},
-      {id:'D',type:'lv1',adj:['C','G','Frostheim']},
-      {id:'E',type:'lv1',adj:['A','F','K']},
-      {id:'F',type:'lv1',adj:['A','B','H','E']},
-      {id:'G',type:'lv1',adj:['Vagastrom','D','Frostheim']},
-      {id:'H',type:'lv1',adj:['F','Dionysia','K','L']},
-      {id:'J',type:'lv1',adj:['Frostheim','Hotarubi','M']},
-      {id:'K',type:'lv1',adj:['E','H','Mortkranken']},
-      {id:'L',type:'lv1',adj:['H','Dionysia','Obscuary','Mortkranken']},
-      {id:'M',type:'lv1',adj:['J','Jabberwock']},
-      {id:'N',type:'lv1',adj:['Obscuary','Hotarubi','Jabberwock','P']},
-      {id:'O',type:'lv1',adj:['Mortkranken','Obscuary','P']},
-      {id:'P',type:'lv1',adj:['O','N','R','Q']},
-      {id:'Q',type:'lv1',adj:['Mortkranken','P','R']},
-      {id:'R',type:'lv1',adj:['Q','P','Jabberwock']},
-    ]
-  },
-  galaxy:{
-    name:'Galaxy Terminal',
-    kingdoms:[
-      {id:'Darkwick',   type:'lv3',  adj:['Frostheim','Hotarubi','Obscuary','L']},
-      {id:'Frostheim',  type:'lv2', adj:['Vagastrom','M','Darkwick','P']},
-      {id:'Hotarubi',   type:'lv2', adj:['G','F','Darkwick']},
-      {id:'Obscuary',   type:'lv2', adj:['Darkwick','O']},
-      {id:'Vagastrom',  type:'lv2', adj:['Dionysia','Q','Frostheim']},
-      {id:'Dionysia', type:'lv2', adj:['J','H','Vagastrom']},
-      {id:'Sinostra',   type:'lv2', adj:['K','J','E']},
-      {id:'A',type:'lv1',adj:['B','F']},
-      {id:'B',type:'lv1',adj:['A','C']},
-      {id:'C',type:'lv1',adj:['B','D','G']},
-      {id:'D',type:'lv1',adj:['C','E']},
-      {id:'E',type:'lv1',adj:['D','Sinostra']},
-      {id:'F',type:'lv1',adj:['A','Hotarubi','L']},
-      {id:'G',type:'lv1',adj:['C','H','Hotarubi','M']},
-      {id:'H',type:'lv1',adj:['G','Dionysia','M']},
-      {id:'J',type:'lv1',adj:['Sinostra','Dionysia']},
-      {id:'K',type:'lv1',adj:['N','Sinostra']},
-      {id:'L',type:'lv1',adj:['Darkwick','F']},
-      {id:'M',type:'lv1',adj:['Frostheim','G','H']},
-      {id:'N',type:'lv1',adj:['K','R']},
-      {id:'O',type:'lv1',adj:['Obscuary','P']},
-      {id:'P',type:'lv1',adj:['Frostheim','O','Q']},
-      {id:'Q',type:'lv1',adj:['P','R','Vagastrom']},
-      {id:'R',type:'lv1',adj:['N','Q']},
-    ]
-  },
-  poseidon:{
-    name:'Sea of Poseidon',
-    kingdoms:[
-      {id:'Darkwick',   type:'lv3',  adj:['N','Vagastrom','Jabberwock','Obscuary']},
-      {id:'Vagastrom',  type:'lv2', adj:['M','L','B','Darkwick']},
-      {id:'Jabberwock', type:'lv2', adj:['B','C','O','Darkwick']},
-      {id:'Obscuary',   type:'lv2', adj:['G','F','Q','Dionysia','Darkwick']},
-      {id:'Dionysia',  type:'lv2', adj:['H','G','Obscuary']},
-      {id:'Sinostra',   type:'lv2', adj:['K','J','N']},
-      {id:'Hotarubi',   type:'lv2', adj:['E','P','D']},
-      {id:'A',type:'lv1',adj:['K','L','B']},
-      {id:'B',type:'lv1',adj:['A','Vagastrom','Jabberwock','C']},
-      {id:'C',type:'lv1',adj:['B','Jabberwock','D']},
-      {id:'D',type:'lv1',adj:['C','O','Hotarubi']},
-      {id:'E',type:'lv1',adj:['F','Hotarubi']},
-      {id:'F',type:'lv1',adj:['G','Obscuary','E']},
-      {id:'G',type:'lv1',adj:['H','Dionysia','Obscuary','F']},
-      {id:'H',type:'lv1',adj:['J','N','Dionysia','G']},
-      {id:'J',type:'lv1',adj:['Sinostra','H']},
-      {id:'K',type:'lv1',adj:['Sinostra','M','L','A']},
-      {id:'L',type:'lv1',adj:['A','K','Vagastrom']},
-      {id:'M',type:'lv1',adj:['K','N','Vagastrom']},
-      {id:'N',type:'lv1',adj:['Sinostra','M','Darkwick','H']},
-      {id:'O',type:'lv1',adj:['Jabberwock','Q','D']},
-      {id:'P',type:'lv1',adj:['Q','Hotarubi']},
-      {id:'Q',type:'lv1',adj:['Obscuary','O','P']},
-    ]
-  }
-};
-
-function makeGoCMap(name, rows) {
-  const kingdoms = [];
-  for (const [adjRaw, kidRaw] of rows) {
-    // 🚨 Skip this town completely if it has no adjacencies (null)
-    if (!kidRaw || !adjRaw) continue; 
-    
-    const kid = canon(kidRaw.trim());
-    if (!kid) continue;
-    
-    // Since we know adjRaw is not null, we can safely split it
-    const adj = adjRaw.split(',').map(s => canon(s.trim())).filter(s=>s&&s!==kid);
-    let type = 'lv1';
-    
-    if (kid === 'Darkwick') type = 'lv3';
-    else if (DORM_NAMES[kid]) type = 'lv2';
-    
-    kingdoms.push({id:kid, type, adj});
-  }
-  return {name, kingdoms};
+// A helper function to turn the Worker's message events into a clean async Promise
+function runHighsSolver(matrixData) {
+  return new Promise((resolve, reject) => {
+    const handler = (e) => {
+      if (e.data.status === 'success') {
+        solverWorker.removeEventListener('message', handler);
+        resolve(e.data.result);
+      } else if (e.data.status === 'error') {
+        solverWorker.removeEventListener('message', handler);
+        reject(new Error(e.data.error));
+      }
+    };
+    solverWorker.addEventListener('message', handler);
+    solverWorker.postMessage({ type: 'SOLVE', payload: matrixData });
+  });
 }
 
-const GOC_MAPS = {
-  forest: makeGoCMap('Forest', [
-    ['Hota, Obs, Sino, L','Darkwick'],
-    ['Sino, Jabber, Q','Vagastrom'],
-    ['Castle, Vaga, M, P','Sinostra'],
-    ['Castle, F, G','Hotarubi'],
-    ['Castle, O','Obscuary'],
-    ['E, J, K','Mortkranken'],
-    ['Vaga, J, H','Jabberwock'],
-    ['B, F','A'],['A, C','B'],['B, D, G','C'],['C, E','D'],['D, Mort','E'],
-    ['A, L, Hota','F'],['C, H, M, Hota','G'],['G, M, Jabber','H'],
-    ['Jabber, Mort','J'],['Mort, N','K'],['F, Castle','L'],
-    ['G, H, Sino','M'],['K, R','N'],['P, Obs','O'],
-    ['O, Q, Sino','P'],['P, R, Vaga','Q'],['Q, N','R'],
-  ]),
-  wetland: makeGoCMap('Wetland', [
-    ['E, Mortkranken, Jabberwock, Obscuary','Darkwick'],
-    ['C, D, F, H','Vagastrom'],
-    ['Sinostra, Darkwick','Jabberwock'],
-    ['F, H, J, Darkwick','Obscuary'],
-    [null,'Frostheim'],
-    ['K, N, J, Jabberwock','Sinostra'],
-    ['B, D, Darkwick','Mortkranken'],
-    [null,'Hotarubi'],
-    ['B, C','A'],['A, Mortkranken','B'],['A, Vagastrom','C'],
-    ['Mortkranken, Vagastrom','D'],['G, Darkwick','E'],
-    ['Vagastrom, Obscuary','F'],['E, K','G'],
-    ['L, Obscuary, Vagastrom','H'],['M, Sinostra, Obscuary','J'],
-    ['G, N, Sinostra','K'],['M, H','L'],['L, J','M'],['K, Sinostra','N'],
-  ]),
-  badlands: makeGoCMap('Badlands', [
-    ['A, Dio, G','Darkwick'],
-    ['K, M, P, O','Vagastrom'],
-    ['Castle, E, H, J','Dionysia'],
-    [null,'Obscuary'],
-    ['G, Sino, M','Frostheim'],
-    ['Frost, G, J','Sinostra'],
-    [null,'Mortkranken'],
-    ['N, P, R','Hotarubi'],
-    ['B, Castle','A'],['A, C','B'],['B, D','C'],['C, E','D'],
-    ['D, F, Dio','E'],['E, H','F'],
-    ['Castle, Sino, Frost, K','G'],['F, Dio','H'],
-    ['Dio, Sino','J'],['G, Vaga','K'],['M, N','L'],
-    ['Frost, Vaga, L','M'],['L, Hota','N'],['Q, Vaga','O'],
-    ['Vaga, Hota, Q','P'],['O, P, R','Q'],['Hota, Q','R'],
-  ]),
-  snowfield: makeGoCMap('Snowfield', [
-    ['Vagastrom, J, Obscuary, M','Darkwick'],
-    ['H, J, Mortkranken, Darkwick','Vagastrom'],
-    [null,'Jabberwock'],
-    ['K, N, P, Darkwick','Obscuary'],
-    ['A, G, H','Frostheim'],
-    [null,'Sinostra'],
-    ['E, G, F, Vagastrom','Mortkranken'],
-    [null,'Hotarubi'],
-    ['B, Frostheim','A'],['A, C','B'],['B, D, E','C'],['C, E, F','D'],
-    ['C, D, Mortkranken','E'],['D, Mortkranken','F'],
-    ['Frostheim, Mortkranken','G'],['J, Frostheim, Vagastrom','H'],
-    ['H, K, Vagastrom, Darkwick','J'],['L, J, Obscuary','K'],
-    ['K, N','L'],['P, Darkwick','M'],['L, Q, O, Obscuary','N'],
-    ['N, R, P','O'],['M, O, Obscuary','P'],['N, R','Q'],['O, Q','R'],
-  ]),
-  woodlands: makeGoCMap('Woodlands', [
-    ['Jabberwock, Sinostra, Hotarubi, Frostheim','Darkwick'],
-    ['E, C, Darkwick, G','Jabberwock'],
-    ['A, E, F','Obscuary'],
-    ['H, K, Darkwick','Frostheim'],
-    ['C, D, Darkwick','Sinostra'],
-    ['F, H, J','Mortkranken'],
-    ['D, L, Darkwick','Hotarubi'],
-    ['Obscuary, B','A'],['A, C','B'],['B, Sinostra, Jabberwock','C'],
-    ['Sinostra, Hotarubi','D'],['Obscuary, Jabberwock','E'],
-    ['G, Obscuary, Mortkranken','F'],['F, H, Jabberwock','G'],
-    ['G, Mortkranken, Frostheim','H'],['Mortkranken, K','J'],
-    ['J, L, Frostheim','K'],['K, Hotarubi','L'],
-  ]),
-};
+function showToast(msg, isError = true) {
+  const toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.style.cssText = `
+    position: fixed; bottom: 24px; right: 24px; 
+    background: ${isError ? 'var(--red)' : 'var(--green)'}; 
+    color: ${isError ? '#fff' : '#000'}; 
+    padding: 14px 24px; border-radius: 8px; 
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5); 
+    z-index: 9999; font-weight: 600; 
+    transform: translateY(100px); opacity: 0; 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  `;
+  document.body.appendChild(toast);
+  
+  // Animate in
+  requestAnimationFrame(() => {
+    toast.style.transform = 'translateY(0)';
+    toast.style.opacity = '1';
+  });
 
-function getMaps(mode){ return mode==='ragnarok' ? RAG_MAPS : GOC_MAPS; }
-function getMapList(mode){ return Object.entries(getMaps(mode)).map(([k,v])=>({key:k,name:v.name})); }
-function getMapData(mode,mapKey){ return getMaps(mode)[mapKey]; }
+  // Animate out and remove after 5 seconds
+  setTimeout(() => {
+    toast.style.transform = 'translateY(100px)';
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 5000);
+}
 
 // ══════════════════════════════════════════════════════════════
 //  STATE
@@ -600,7 +432,7 @@ function renderAll(){
   const{dec,give}=calcDec(srv);
   const totalPts=mapData.kingdoms.reduce((s,k)=>s+kPts(k.type),0)*days;
   const totalBase=srv.guilds.reduce((s,g)=>s+(parseInt(g.basePoints||0,10)||0),0);
-  const target=Math.floor((totalPts+totalBase)/srv.guilds.length);
+  const targets=getPerfectTargets(srv, mapData);
 
   // Remember scroll positions so editing a cell doesn't snap the grid back to the left
   const scrollSel = '.tbl-wrap, .guild-list';
@@ -619,7 +451,7 @@ function renderAll(){
 
     <!-- WRAPPER 2: The Stats -->
     <div id="capture-stats" style="background:var(--bg); padding:2px; border-radius:16px; margin-top:20px;">
-      ${renderScores(srv,scores,target)}
+      ${renderScores(srv,scores,targets)}
       ${renderOcc(srv,occ)}
       ${renderDecTable(srv,days,dec,give)}
     </div>
@@ -667,7 +499,7 @@ function renderSettings(srv){
           <button class="btn-accent" style="background:#6bffb4;color:#0a1a14;box-shadow:0 4px 12px rgba(107,255,180,0.2)" onclick="openImport()">📥 Import</button>
           <button class="btn-accent" style="background:#ffb86b;color:#1a1105;box-shadow:0 4px 12px rgba(255,184,107,0.2)" onclick="exportServer()">📤 Export Server</button>
           <button class="btn-accent" style="background:#ff6b9d;color:#1a050d;box-shadow:0 4px 12px rgba(255,107,157,0.2)" onclick="takeScreenshots()">📸 Screenshots</button>
-          <button class="btn-gold" onclick="autoOptimize()">⚡ Auto-Optimize</button>
+          <button id="opt-btn" class="btn-gold" onclick="autoOptimize()">⚡ Auto-Optimize</button>
           ${srv.undoPlan ? `<button class="btn-accent" onclick="undoOptimize()" style="border-color:var(--gold);color:var(--gold2)">↩ Undo Optimize</button>` : ''}
           <button class="btn-accent" id="btn-share-cloud" style="background:#6baff5;color:#0a1a14;box-shadow:0 4px 12px rgba(107,175,245,0.2)" onclick="publishToCloud()">🔗 Save to Cloud</button>
           <button class="btn-accent" id="btn-sync-cloud" style="background:#b886ee;color:#0a1a14;box-shadow:0 4px 12px rgba(184,134,238,0.2)" onclick="syncFromCloud()">🔄 Sync from Cloud</button>
@@ -676,74 +508,7 @@ function renderSettings(srv){
     <div style="margin-top:8px;font-size:10px;color:var(--text3)">
       ${days} days planned · ${getMapData(srv.mode,srv.mapKey).kingdoms.length} kingdoms · ${srv.guilds.length} guilds
     </div>
-  </div>
-  ${renderOptimizerSettings(srv)}`;
-}
-
-// ── DEFAULT CAP HELPERS ──────────────────────────────────────────────────────
-function getDefaultCaps(srv) {
-  const mapData  = getMapData(srv.mode, srv.mapKey);
-  const days     = numDays(srv); // Use actual planned days, not mode default
-  const n        = srv.guilds.length;
-  const numLv3   = mapData.kingdoms.filter(k => k.type === 'lv3').length;
-  const numLv2   = mapData.kingdoms.filter(k => k.type === 'lv2').length;
-
-  // Use ceiling for fair cap: ensures total capacity >= total available slots
-  // So with 6 Darkwick over 12 guilds, cap=1 (6 guilds get 1, 6 get 0)
-  const defLv3   = numLv3 > 0 ? Math.floor((days * numLv3) / n) : 0;
-  const defLv2   = Math.floor((days * numLv2) / n);
-  return { defLv3, defLv2 };
-}
-
-function renderOptimizerSettings(srv) {
-  const { defLv3, defLv2 } = getDefaultCaps(srv);
-  const capLv3 = srv.optCapLv3 !== undefined ? srv.optCapLv3 : defLv3;
-  const capLv2 = srv.optCapLv2 !== undefined ? srv.optCapLv2 : defLv2; 
-
-  return `<div class="section">
-    <div class="sec-title">Optimizer Settings
-      <span style="font-size:9px;color:var(--text3);font-family:var(--font-body);font-weight:400;letter-spacing:0;margin-left:4px">
-        Controls how ⚡ Auto-Optimize distributes kingdoms. Changes take effect on the next run.
-      </span>
-    </div>
-    <div class="row" style="gap:20px;align-items:flex-start;flex-wrap:wrap;">
-
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;flex:1;min-width:220px;">
-        <div style="font-size:11px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">
-          Per-Guild Caps <span style="font-size:9px;color:var(--text3);font-weight:400">(max days on each tier)</span>
-        </div>
-        <div class="row" style="gap:14px;">
-          <div class="fg">
-            <label style="color:var(--lv3)">Darkwick days ≤</label>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <input type="number" min="0" max="30" step="1" value="${capLv3}"
-                style="width:58px;" onchange="updOptCap('lv3',+this.value)" title="Max times any one guild can hold Darkwick">
-              <span style="font-size:10px;color:var(--text3)">(fair = ${defLv3})</span>
-            </div>
-          </div>
-          <div class="fg">
-            <label style="color:var(--lv2)">Dorm days ≤</label>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <input type="number" min="0" max="60" step="1" value="${capLv2}"
-                style="width:58px;" onchange="updOptCap('lv2',+this.value)" title="Max times any one guild can hold any single dorm">
-              <span style="font-size:10px;color:var(--text3)">(fair = ${defLv2})</span>
-            </div>
-          </div>
-        </div>
-        <div style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.5;">
-          "Fair" = total available days ÷ guilds, rounded <strong>up</strong> (ceiling). This ensures enough total capacity for all kingdoms. Lower the cap to spread Darkwick/dorm time more tightly; raise it if too restrictive.
-        </div>
-      </div>
-
-    </div>
   </div>`;
-}
-
-function updOptCap(tier, val){
-  const s = activeSrv(); if(!s) return;
-  if(tier==='lv3') s.optCapLv3 = Math.max(0,val);
-  if(tier==='lv2') s.optCapLv2 = Math.max(0,val);
-  save();
 }
 
 function renderGuilds(srv){
@@ -761,10 +526,17 @@ function renderGuilds(srv){
           <input class="guild-name-inp" data-guild-id="${g.id}" data-guild-field="name" value="${esc(g.name)}" placeholder="Guild name"
             oninput="updGuildName('${g.id}',this.value)" style="flex:1;">
             
-          <input type="checkbox" id="sm_${g.id}" class="guild-small-check" ${g.isSmall ? 'checked' : ''} 
-            onchange="updGuildSmall('${g.id}', this.checked)">
-          <label for="sm_${g.id}" class="guild-small-label" title="Check this if this is a smaller guild. The optimizer will limit them to 1 declare and deprioritize their point totals, while still giving them fair Castle/Dorm time.">Small Guild</label>
-          
+          ${srv.mode === 'ragnarok' ? `
+            <input type="checkbox" id="exc_${g.id}" class="guild-small-check" ${g.isExcluded ? 'checked' : ''} 
+              onchange="updGuildExcluded('${g.id}', this.checked)">
+            <label for="exc_${g.id}" class="guild-small-label"
+             title="Exclude from map (keeps Day 0 holdings, does not declare, ignores point balancing)">Exclude Guild</label>
+          ` : `
+            <input type="checkbox" id="sm_${g.id}" class="guild-small-check" ${g.isSmall ? 'checked' : ''} 
+              onchange="updGuildSmall('${g.id}', this.checked)">
+            <label for="sm_${g.id}" class="guild-small-label" title="Check this if this is a smaller guild. The optimizer will limit them to 1 declare and deprioritize their point totals, while still giving them fair Castle/Dorm time.">Small Guild</label>
+          `}
+
           <input type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="points" value="${esc(g.basePoints||0)}" style="width:50px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 6px;margin-left:12px;"
             onchange="updGuildPoints('${g.id}',this.value)" title="Current points">
             
@@ -788,23 +560,44 @@ function renderGuilds(srv){
   </div>`;
 }
 
-function renderScores(srv,scores,target){
-  const days=numDays(srv);
-  const final=srv.guilds.map(g=>({g,pts:scores.cumul[g.id][days-1]}));
-  final.sort((a,b)=>b.pts-a.pts);
-  const maxPts=Math.max(...final.map(x=>x.pts),1);
+function renderScores(srv, scores, targets) {
+  const days = numDays(srv);
+  
+  // Calculate the target range for the header (e.g., "47-48")
+  const isGoC = srv.mode === 'goc';
+  const active = srv.guilds.filter(g => isGoC || !g.isExcluded);
+  const targetVals = active.map(g => targets[g.id] ? targets[g.id].grandPts : 0);
+  
+  let targetHeader = 0;
+  if (targetVals.length > 0) {
+    const minT = Math.min(...targetVals);
+    const maxT = Math.max(...targetVals);
+    targetHeader = minT === maxT ? minT : `${minT}-${maxT}`;
+  }
+
+  // Pull the actual points from your cumulative score tracker
+  const final = srv.guilds.map(g => ({ g, pts: scores.cumul[g.id][days - 1] || 0 }));
+  final.sort((a, b) => b.pts - a.pts);
+  
+  const maxPts = Math.max(...final.map(x => x.pts), 1);
+  
   return `<div class="section">
-    <div class="sec-title">Final Scores <span style="font-size:9px;color:var(--text3);font-family:var(--font-body);font-weight:400;letter-spacing:0"> Even target: ${target} pts</span></div>
+    <div class="sec-title">Final Scores <span style="font-size:9px;color:var(--text3);font-family:var(--font-body);font-weight:400;letter-spacing:0"> Even target: ${targetHeader} pts</span></div>
     <div class="score-grid">
-      ${final.map(({g,pts})=>{
-        const diff=pts-target;
-        const cls=Math.abs(diff)<=1?'diff-ok':Math.abs(diff)<=3?'diff-warn':'diff-bad';
-        const pct=Math.round(pts/maxPts*100);
+      ${final.map(({g, pts}) => {
+        
+        // Extract the mathematically perfect target for this specific guild
+        const t = targets[g.id] ? targets[g.id].grandPts : 0;
+        const diff = pts - t;
+        
+        const cls = Math.abs(diff) <= 1 ? 'diff-ok' : Math.abs(diff) <= 3 ? 'diff-warn' : 'diff-bad';
+        const pct = Math.round(pts / maxPts * 100);
+        
         return `<div class="score-card">
           <div class="sc-label"><div class="guild-dot" style="background:${g.color}"></div>${esc(g.name)}</div>
           <div class="sc-val" style="color:${g.color}">${pts}</div>
-          <div class="sc-sub">target: ${target}</div>
-          <div class="sc-diff ${cls}">${diff>=0?'+':''}${diff}</div>
+          <div class="sc-sub">target: ${t}</div>
+          <div class="sc-diff ${cls}">${diff >= 0 ? '+' : ''}${diff}</div>
           <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${g.color}"></div></div>
         </div>`;
       }).join('')}
@@ -885,7 +678,9 @@ function renderGrid(srv, days, mapData, issues, wipes) {
           </th>`).join('')}
         </tr>
         <tr class="pts-row">
-          <th colspan="3" style="padding:4px 10px;font-size:10px;color:var(--text2);text-align:left;border-bottom:1px solid var(--border);">Running pts →</th>
+          <th class="kadj" style="background:var(--bg, #191425); border-bottom:1px solid var(--border);"></th>
+          <th class="kname" style="position:sticky; left:0; z-index:40; background:var(--bg, #191425); padding:4px 10px; font-size:10px; color:var(--text2); text-align:right; border-bottom:1px solid var(--border);">Running pts →</th>
+          <th class="ktype" style="background:var(--bg, #191425); border-bottom:1px solid var(--border);"></th>
           ${Array.from({length:totalCols},(_,d)=>{
             return `<th style="padding:4px 4px 8px;vertical-align:top;border-bottom:1px solid var(--border);">
               ${srv.guilds.map(g => {
@@ -1247,8 +1042,6 @@ function exportServer(){
       })),
       plan: srv.plan,
       notes: srv.notes || '',
-      optCapLv3: srv.optCapLv3,
-      optCapLv2: srv.optCapLv2
     }
   };
 
@@ -1325,8 +1118,6 @@ function processImport(){
     srv.startDate = imp.startDate || srv.startDate;
     srv.endDate = imp.endDate || srv.endDate;
     srv.notes = imp.notes || '';
-    srv.optCapLv3 = imp.optCapLv3;
-    srv.optCapLv2 = imp.optCapLv2;
 
     // Restore plan (guild IDs will match since we preserved them by name)
     srv.plan = imp.plan || {};
@@ -1492,902 +1283,73 @@ function getEligibleGuilds(srv, kId, d) {
   return eligible.length > 0 ? eligible : srv.guilds;
 }
 
-// Helper for calculating real-time holdings to enforce strict caps
-function countType(plan, gid, type, maxD, mapData) {
-    let c = 0;
-    for(let i=1; i<=maxD; i++) {
-        if(!plan[i]) continue;
-        for(const kdm of mapData.kingdoms) {
-            if(kdm.type === type && plan[i][kdm.id] === gid) c++;
-        }
-    }
-    return c;
-}
-
-function distanceToDarkwick(kingdom, adj, mapData){
-  if(kingdom === 'Darkwick') return 0;
-  const visited = new Set();
-  let frontier = ['Darkwick'];
-  visited.add('Darkwick');
-  let dist = 1;
-  while(frontier.length > 0){
-    const next = [];
-    for(const loc of frontier){
-      for(const n of adj[loc]||[]){
-        if(n === kingdom) return dist;
-        if(!visited.has(n)){
-          visited.add(n);
-          next.push(n);
-        }
-      }
-    }
-    frontier = next;
-    dist++;
-  }
-  return 999;
-}
-
-// Helper for enforcing Darkwick capture restrictions
-function canDeclareDarkwick(prevPlan, gid, mapData) {
-    let lv2Held = 0, lv1Held = 0;
-    for (const [kId, owner] of Object.entries(prevPlan)) {
-        if (owner === gid) {
-            const kObj = mapData.kingdoms.find(x => x.id === kId);
-            if (kObj) {
-                if (kObj.type === 'lv2') lv2Held++;
-                if (kObj.type === 'lv1') lv1Held++;
-            }
-        }
-    }
-    return (lv2Held >= 1 || lv1Held >= 2);
-}
-
-
 // ══════════════════════════════════════════════════════════════
-//  AUTO OPTIMIZE (ANTI-OSCILLATION + SMART STICKINESS + SIMULATED ANNEALING)
+//  AUTO OPTIMIZE (HiGHS WebAssembly Solver)
 // ══════════════════════════════════════════════════════════════
 
-function autoOptimize(){
-  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target.closest('button') : null;
-  const label = btn ? btn.textContent : '';
-  if (btn) { btn.textContent = '⏳ Optimizing…'; btn.disabled = true; }
-  // Two frames so the browser actually paints the new label before the main thread gets busy
-  requestAnimationFrame(() => setTimeout(() => {
-    try { _autoOptimizeSync(); }
-    finally {
-      if (btn && document.body.contains(btn)) { btn.textContent = label; btn.disabled = false; }
-    }
-  }, 0));
-}
-
-function _autoOptimizeSync(){
-  try {
-    const srv = activeSrv();
-    if(!srv) return;
-
-    // Snapshot current plan so user can undo
-    srv.undoPlan = JSON.parse(JSON.stringify(srv.plan));
-
-    const mapData   = getMapData(srv.mode, srv.mapKey);
-    const adj       = adjMap(srv.mode, srv.mapKey);
-    const days      = numDays(srv);
-    const n         = srv.guilds.length;
-    const pts       = {lv3:3, lv2:2, lv1:1};
-    const kingdoms  = [...mapData.kingdoms].sort((a,b) => pts[b.type]-pts[a.type]);
-    const maxGainGlobal = srv.mode === 'goc' ? 2 : 3;
-
-    const baseLv3s  = Object.fromEntries(srv.guilds.map(g=>[g.id, parseInt(g.baseLv3||g.baseLv3s||0,10)]));
-    const baseLv2s  = Object.fromEntries(srv.guilds.map(g=>[g.id, parseInt(g.baseLv2||g.baseLv2s||0,10)]));
-    const basePoints= Object.fromEntries(srv.guilds.map(g=>[g.id, parseInt(g.basePoints||0,10)||0]));
-    let   totalBase = srv.guilds.reduce((s,g)=>s+basePoints[g.id],0);
-
-    // Hardcoded weights — mode-dependent
-    const isRagnarok = srv.mode === 'ragnarok';
-    const wPts  = isRagnarok ? 15 : 25;  // Ragnarok: lower pts weight (4 guilds balance easier)
-    const wLv3  = 8;                      // Darkwick fairness weight
-    const wLv2  = 5;                      // Dorm fairness weight
-    const wMove = isRagnarok ? 6 : 1;    // Ragnarok: high stickiness (4 guilds stay on Lv1); GoC: low (12 guilds need churn)
-
-    const totalDayValue  = mapData.kingdoms.reduce((s,k)=>s+pts[k.type],0);
-    const smallCount = srv.guilds.filter(g => g.isSmall).length;
-    const bigCount = Math.max(1, n - smallCount);
-    const absoluteTarget = (totalDayValue * days + totalBase) / bigCount;
-
-    const numLv3 = mapData.kingdoms.filter(k=>k.type==='lv3').length;
-    const numLv2 = mapData.kingdoms.filter(k=>k.type==='lv2').length;
-    const lv3Target = (days * numLv3) / n;
-    const lv2Target = (days * numLv2) / n;
-
-    // ── TARGET ASSIGNMENTS (LIST-ORDER BASED) ──
-    const originalGuildIds = srv.guilds.map(g => g.id); 
-    
-    // 1. Dynamically calculate physically available days based on Day 1 adjacency
-    let totalLv3 = 0, totalLv2 = 0, totalLv1 = 0;
-    const day0 = srv.plan[0] || {};
-    const adjLocal = adjMap(srv.mode, srv.mapKey);
-
-    for (let d = 1; d <= days; d++) {
-        for (const k of mapData.kingdoms) {
-            let isClaimable = true;
-            if (d === 1 && !day0[k.id]) {
-                if (k.type !== 'lv1') {
-                    let canReach = false;
-                    for (const g of srv.guilds) {
-                        const held = Object.entries(day0).filter(([,g2])=>g2===g.id).map(([k2])=>k2);
-                        if (held.length > 0 && held.some(pk => adjLocal[pk] && adjLocal[pk].includes(k.id))) {
-                            if (k.id === 'Darkwick' && !canDeclareDarkwick(day0, g.id, mapData)) continue;
-                            canReach = true; break;
-                        }
-                    }
-                    if (!canReach) isClaimable = false;
-                }
-            }
-            if (isClaimable) {
-                if (k.type === 'lv3') totalLv3++;
-                else if (k.type === 'lv2') totalLv2++;
-                else if (k.type === 'lv1') totalLv1++;
-            }
-        }
-    }
-
-    // 2. Castle (Lv3) Targets -> Extra days go to the BOTTOM of the list
-    const baseLv3 = Math.floor(totalLv3 / n);
-    let remLv3 = totalLv3 % n;
-    const targetLv3 = {};
-    for (let i = n - 1; i >= 0; i--) {
-        targetLv3[originalGuildIds[i]] = baseLv3 + (remLv3 > 0 ? 1 : 0) + (baseLv3s[originalGuildIds[i]] || 0);
-        if (remLv3 > 0) remLv3--;
-    }
-
-    // 3. Dorm (Lv2) Targets -> Dynamically balances total high-tier value
-    const targetLv2 = {};
-    for (let i = 0; i < n; i++) targetLv2[originalGuildIds[i]] = (baseLv2s[originalGuildIds[i]] || 0);
-    for (let step = 0; step < totalLv2; step++) {
-        const sorted = [...originalGuildIds].sort((a,b) => {
-            const valA = (targetLv3[a] * 3) + (targetLv2[a] * 2);
-            const valB = (targetLv3[b] * 3) + (targetLv2[b] * 2);
-            if (valA !== valB) return valA - valB; // Lowest high-tier points gets the Dorm
-            return originalGuildIds.indexOf(a) - originalGuildIds.indexOf(b); // Tie-breaker: Roster order
-        });
-        targetLv2[sorted[0]]++;
-    }
-
-    // 4. Points Targets -> Extra points go to the TOP of the list
-    const targetPts = {};
-    for (let i = 0; i < n; i++) targetPts[originalGuildIds[i]] = (basePoints[originalGuildIds[i]] || 0);
-    
-    // Distribute only the Lv1 towns one-by-one to whoever has the lowest total value
-    for (let step = 0; step < totalLv1; step++) {
-         const sorted = [...originalGuildIds].sort((a,b) => {
-             const ptsA = (targetLv3[a]*3) + (targetLv2[a]*2) + targetPts[a];
-             const ptsB = (targetLv3[b]*3) + (targetLv2[b]*2) + targetPts[b];
-             if (ptsA !== ptsB) return ptsA - ptsB;
-             return originalGuildIds.indexOf(a) - originalGuildIds.indexOf(b);
-         });
-         targetPts[sorted[0]]++;
-    }
-    
-    // Add the high-tier points back into the target array so it represents the final total
-    for(const id of originalGuildIds) targetPts[id] += (targetLv3[id]*3) + (targetLv2[id]*2);
-
-    // OVERRIDE: Ensure the internal hard limits allow the targets to be fulfilled
-    const maxLv3 = Math.max(...Object.values(targetLv3), srv.optCapLv3 !== undefined ? srv.optCapLv3 : 0);
-    const maxLv2 = Math.max(...Object.values(targetLv2), srv.optCapLv2 !== undefined ? srv.optCapLv2 : 0);
-
-    let bestPlan     = null;
-    let bestScore    = Infinity;                 
-    const biases     = Object.fromEntries(srv.guilds.map(g=>[g.id, 0]));
-    const MAX_ATTEMPTS = 80;
-
-    const today = new Date(); today.setHours(0,0,0,0);
-    let startDt = null;
-    if(srv.startDate){ const [yy,mm,dd]=srv.startDate.split('-'); startDt=new Date(+yy,mm-1,+dd); }
-
-    function planScore(tempPlanLocal, gPtsMap, lv3Map, lv2Map){
-      const gIds = srv.guilds.map(g=>g.id);
-
-      // Target-based scoring: penalize deviation from fair quotas
-      let score = 0;
-      for (const id of gIds) {
-        const ptsDev = Math.abs(gPtsMap[id] - targetPts[id]);
-        const l3Dev  = Math.abs(lv3Map[id]  - targetLv3[id]);
-        const l2Dev  = Math.abs(lv2Map[id]  - targetLv2[id]);
-        
-        score += ptsDev * 500;       // Must hit Exact Points
-        score += l3Dev * 5000;       // Must hit Darkwick targets
-        score += l2Dev * 2000;       // Must hit Dorm targets
-
-        // CONSECUTIVE DARKWICK CHECK
-        let streaks = 0;
-        let heldYesterday = false;
-        for (let dL = 1; dL <= days; dL++) {
-            const planD = tempPlanLocal[dL] || {};
-            const holdsToday = (planD['Darkwick'] === id);
-            if (holdsToday && !heldYesterday) streaks++;
-            heldYesterday = holdsToday;
-        }
-        if (streaks > 1) {
-            score += (streaks - 1) * 20000; // Massive penalty for dropping and re-taking Darkwick
-        }
-      }
-
-      // Movement penalties (same as before)
-      let emptyCount = 0;
-      let movePenalty = 0;
-
-      for(let dL=1; dL<=days; dL++){
-         const planD = tempPlanLocal[dL] || {};
-         const planPrev = tempPlanLocal[dL-1] || {};
-         const planPrev2 = tempPlanLocal[dL-2] || {};
-
-         for(const kL of mapData.kingdoms) {
-            if(!planD[kL.id]) {
-                emptyCount++;
-            } else if (kL.id !== 'Darkwick' && planPrev[kL.id] && planD[kL.id] !== planPrev[kL.id]) {
-
-                // 🚨 ANTI-FLIP-FLOP PENALTY 🚨
-                if (planPrev2[kL.id] === planD[kL.id]) {
-                    movePenalty += 50; // flip-flop penalty
-                }
-
-                const loserGid = planPrev[kL.id];
-
-                if (kL.type === 'lv2') {
-                    if (!kL.adj.includes('Darkwick')) {
-                        movePenalty += 20; // Outer Base Dorm
-                    } else {
-                        let loserPrevDormsCount = 0;
-                        for (const [kId, owner] of Object.entries(planPrev)) {
-                            if (owner === loserGid) {
-                                const kObj = mapData.kingdoms.find(x => x.id === kId);
-                                if (kObj && kObj.type === 'lv2') loserPrevDormsCount++;
-                            }
-                        }
-                        if (loserPrevDormsCount <= 1) {
-                            movePenalty += 20; // Only home
-                        } else {
-                            movePenalty += 10; // Steady Bridge (increased from 5)
-                        }
-                    }
-                } else {
-                    movePenalty += 5; // Lv1 towns (increased from 1 to stop micro-swapping)
-                }
-            }
-         }
-      }
-
-      return (emptyCount * 1000000) + score + (movePenalty * wMove);
-    }
-
-    for(let attempt=0; attempt<MAX_ATTEMPTS; attempt++){
-      const tempPlan = { 0: {...(srv.plan[0]||{})} };
-      for(let d=1; d<=days; d++) tempPlan[d] = {};
-
-      const gPts = {...basePoints};
-      const lv3Days = Object.fromEntries(srv.guilds.map(g=>[g.id, baseLv3s[g.id]]));
-      const lv2Days = Object.fromEntries(srv.guilds.map(g=>[g.id, baseLv2s[g.id]]));
-
-      for(let d=1; d<=days; d++){
-        const prevPlan = tempPlan[d-1]||{};
-        const gainCount = Object.fromEntries(srv.guilds.map(g=>[g.id,0]));
-        const unplacedLv1Used = Object.fromEntries(srv.guilds.map(g=>[g.id,0]));
-
-        let dayIsLocked = false;
-        if(startDt){
-          const colDate = new Date(startDt.getTime());
-          colDate.setDate(colDate.getDate()+d-1);
-          if(colDate.getTime() < today.getTime()) dayIsLocked = true;
-        }
-        
-        if(dayIsLocked){
-          tempPlan[d] = {...(srv.plan[d]||{})};
-          for(const k of mapData.kingdoms){
-            const owner = tempPlan[d][k.id];
-            if(!owner) continue;
-            const prevOwner = prevPlan[k.id]||'';
-            if(prevOwner!==owner) gainCount[owner]++;
-            gPts[owner]   += pts[k.type];
-            if(k.type==='lv3') lv3Days[owner]++;
-            if(k.type==='lv2') lv2Days[owner]++;
-            const prevHeld = Object.entries(prevPlan).filter(([,g2])=>g2===owner).map(([k2])=>k2);
-            if(prevHeld.length===0 && k.type==='lv1') unplacedLv1Used[owner]++;
-          }
-          continue;
-        }
-
-        // Lock anything already on the grid — optimizer only fills blanks.
-        tempPlan[d] = {};
-        const manuallyLocked = new Set();
-
-        for(const k of mapData.kingdoms){
-          const owner = (srv.plan[d]||{})[k.id];
-          if(!owner) continue;  // blank — optimizer will fill this
-          tempPlan[d][k.id] = owner;
-          manuallyLocked.add(k.id);
-          const prevOwner = prevPlan[k.id]||'';
-          if(prevOwner!==owner) gainCount[owner]++;
-          gPts[owner]   += pts[k.type];
-          if(k.type==='lv3') lv3Days[owner]++;
-          if(k.type==='lv2') lv2Days[owner]++;
-          const prevHeld = Object.entries(prevPlan).filter(([,g2])=>g2===owner).map(([k2])=>k2);
-          if(prevHeld.length===0 && k.type==='lv1') unplacedLv1Used[owner]++;
-        }
-
-        const eligible = new Map();
-        for(const k of kingdoms){
-          const prevOwner = prevPlan[k.id]||'';
-          let cands = srv.guilds.filter(g=>{
-            if(prevOwner===g.id) return true; // Already owns it
-            const held = Object.entries(prevPlan).filter(([,g2])=>g2===g.id).map(([k2])=>k2);
-            
-            // Entering map: only allowed on Lv1
-            if(held.length===0) return k.type === 'lv1';
-            
-            // STRICT ADJACENCY & PREREQUISITES
-            const isAdj = held.some(pk=>adj[pk]&&adj[pk].includes(k.id));
-            if (!isAdj) return false; 
-            
-            // If Darkwick, must meet prerequisites
-            if (k.id === 'Darkwick' && !canDeclareDarkwick(prevPlan, g.id, mapData)) return false;
-            
-            return true;
-          }).map(g=>g.id);
-          eligible.set(k.id, cands);
-        }
-
-        const unassigned = [...kingdoms]
-          .filter(k => !manuallyLocked.has(k.id))
-          .sort((a,b)=>{
-            const diff = eligible.get(a.id).length - eligible.get(b.id).length;
-            return diff!==0 ? diff : pts[b.type]-pts[a.type];
-          });
-
-        for(const k of unassigned){
-          const prevOwner = prevPlan[k.id]||'';
-
-          const opts = eligible.get(k.id).filter(gid=>{
-            if(k.id==='Darkwick' && prevOwner!==gid && !canDeclareDarkwick(prevPlan,gid,mapData)) return false;
-            
-            if(prevOwner!==gid){
-              let maxGain = maxGainGlobal;
-              const gObj = srv.guilds.find(x => x.id === gid);
-              if (gObj && gObj.isSmall) maxGain = 1;
-              else if(srv.mode==='goc'){
-                const twoDec = Object.values(gainCount).filter(c=>c>=2).length;
-                if(gainCount[gid]===1 && twoDec>=8) maxGain=1;
-              }
-              if(gainCount[gid]>=maxGain) return false;
-            }
-            const prevHeld = Object.entries(prevPlan).filter(([,g2])=>g2===gid).map(([k2])=>k2);
-            if(prevHeld.length===0 && k.type==='lv1' && unplacedLv1Used[gid]>=2) return false;
-            if(prevHeld.length===0 && k.type!=='lv1') return false; 
-            if(k.type==='lv3' && lv3Days[gid]>=maxLv3) return false;
-            if(k.type==='lv2' && lv2Days[gid]>=maxLv2) return false;
-            return true;
-          });
-
-          if(!opts.length){
-            const fallback1 = eligible.get(k.id).filter(gid => {
-              const prevHeld = Object.entries(prevPlan).filter(([,g2])=>g2===gid).map(([k2])=>k2);
-              if(prevHeld.length===0 && k.type==='lv1' && unplacedLv1Used[gid]>=2) return false;
-              if(prevHeld.length===0 && k.type!=='lv1') return false;
-              if(k.id==='Darkwick' && prevOwner!==gid && !canDeclareDarkwick(prevPlan,gid,mapData)) return false;
-
-              if(prevOwner!==gid){
-                let mg = maxGainGlobal;
-                const gObj = srv.guilds.find(x => x.id === gid);
-                if (gObj && gObj.isSmall) mg = 1;
-                else if (srv.mode === 'goc') {
-                    const twoDec = Object.values(gainCount).filter(c => c >= 2).length;
-                    if (gainCount[gid] === 1 && twoDec >= 8) mg = 1;
-                }
-                if(gainCount[gid] >= mg) return false;
-              }
-              return true;
-            });
-
-            if(fallback1.length){
-              fallback1.sort((a,b) => {
-                const ca = k.type==='lv3' ? lv3Days[a] : k.type==='lv2' ? lv2Days[a] : gPts[a];
-                const cb = k.type==='lv3' ? lv3Days[b] : k.type==='lv2' ? lv2Days[b] : gPts[b];
-                return ca - cb;
-              });
-              const fWinner = fallback1[0];
-              tempPlan[d][k.id] = fWinner;
-              if(prevOwner!==fWinner) gainCount[fWinner]++;
-              gPts[fWinner] += pts[k.type];
-              if(k.type==='lv3') lv3Days[fWinner]++;
-              if(k.type==='lv2') lv2Days[fWinner]++;
-            } else {
-               const fallback2 = eligible.get(k.id).filter(gid => {
-                   const prevHeld = Object.entries(prevPlan).filter(([,g2])=>g2===gid).map(([k2])=>k2);
-                   if(prevHeld.length===0 && k.type!=='lv1') return false; 
-                   return true;
-               });
-
-               if(fallback2.length > 0) {
-                   fallback2.sort((a,b) => gPts[a] - gPts[b]); 
-                   const eWinner = fallback2[0];
-                   tempPlan[d][k.id] = eWinner;
-                   if(prevOwner!==eWinner) gainCount[eWinner]++;
-                   gPts[eWinner] += pts[k.type];
-                   if(k.type==='lv3') lv3Days[eWinner]++;
-                   if(k.type==='lv2') lv2Days[eWinner]++;
-               } else {
-                   // Last resort: only choose from adjacent, eligible guilds
-                   const validLastResort = eligible.get(k.id).sort((a,b) => gPts[a] - gPts[b]);
-                   const lastResort = prevOwner
-                     ? prevOwner
-                     : validLastResort[0];
-                   if(lastResort){
-                     tempPlan[d][k.id] = lastResort;
-                     gPts[lastResort] += pts[k.type];
-                     if(k.type==='lv3') lv3Days[lastResort]++;
-                     if(k.type==='lv2') lv2Days[lastResort]++;
-                   }
-               }
-            }
-            continue;
-          }
-
-          opts.sort((a,b)=>{
-            const scoreA = guildNeedScore(a, k, gPts, lv3Days, lv2Days, absoluteTarget, lv3Target, lv2Target, targetPts, targetLv3, targetLv2, biases, wPts, wLv3, wLv2, maxLv3, maxLv2, prevPlan, wMove);
-            const scoreB = guildNeedScore(b, k, gPts, lv3Days, lv2Days, absoluteTarget, lv3Target, lv2Target, targetPts, targetLv3, targetLv2, biases, wPts, wLv3, wLv2, maxLv3, maxLv2, prevPlan, wMove);
-            return scoreB - scoreA;
-          });
-
-          const winner = opts[0];
-          tempPlan[d][k.id] = winner;
-          if(prevOwner!==winner) gainCount[winner]++;
-          gPts[winner] += pts[k.type];
-          if(k.type==='lv3') lv3Days[winner]++;
-          if(k.type==='lv2') lv2Days[winner]++;
-          const prevHeldW = Object.entries(prevPlan).filter(([,g2])=>g2===winner).map(([k2])=>k2);
-          if(prevHeldW.length===0 && k.type==='lv1'){
-            unplacedLv1Used[winner]++;
-          }
-        }
-
-        // ── PHASE 2: Survival ─────────────────
-        let survivalIssues = true, survivalIters = 0;
-        while(survivalIssues && survivalIters<20){
-          survivalIssues = false; survivalIters++;
-          const heldCount = Object.fromEntries(srv.guilds.map(g=>[g.id,0]));
-          for(const k of kingdoms) if(tempPlan[d][k.id]) heldCount[tempPlan[d][k.id]]++;
-
-          for(const g of srv.guilds){
-            if(heldCount[g.id]>0) continue;
-            survivalIssues = true;
-            const prevHeld = Object.entries(prevPlan).filter(([,g2])=>g2===g.id).map(([k2])=>k2);
-
-            const targets = prevHeld.length>0 ? prevHeld : kingdoms.filter(k=>eligible.get(k.id).includes(g.id)).map(k=>k.id);
-            let restored = false;
-            
-            for(const pk2 of targets){
-              if (manuallyLocked.has(pk2)) continue; 
-              const kdm = mapData.kingdoms.find(x=>x.id===pk2);
-              if(!kdm) continue;
-              
-              const prevOwner = prevPlan[pk2] || '';
-              if (prevOwner !== g.id) {
-                  let mg = maxGainGlobal;
-                  const gObj = srv.guilds.find(x => x.id === g.id);
-                  if (gObj && gObj.isSmall) mg = 1;
-                  else if (srv.mode === 'goc') {
-                      const twoDec = Object.values(gainCount).filter(c => c >= 2).length;
-                      if (gainCount[g.id] === 1 && twoDec >= 8) mg = 1;
-                  }
-                  if (gainCount[g.id] >= mg) continue;
-              }
-
-              if(kdm.id==='Darkwick' && !canDeclareDarkwick(prevPlan,g.id,mapData)) continue;
-              if(kdm.type==='lv3' && lv3Days[g.id]>=maxLv3) continue;
-              if(kdm.type==='lv2' && lv2Days[g.id]>=maxLv2) continue;
-              if(prevHeld.length===0 && kdm.type==='lv1' && unplacedLv1Used[g.id]>=2) continue;
-              if(prevHeld.length===0 && kdm.type!=='lv1') continue;
-              
-              const thief = tempPlan[d][pk2];
-              if(thief && heldCount[thief]>1){
-                tempPlan[d][pk2]=g.id; heldCount[g.id]++; heldCount[thief]--;
-                gPts[thief]-=pts[kdm.type]; gPts[g.id]+=pts[kdm.type];
-                if(kdm.type==='lv3'){lv3Days[thief]--;lv3Days[g.id]++;}
-                if(kdm.type==='lv2'){lv2Days[thief]--;lv2Days[g.id]++;}
-                gainCount[thief]=Math.max(0,gainCount[thief]-1);
-                
-                if (prevOwner !== g.id) gainCount[g.id]++;
-                
-                if(prevHeld.length===0 && kdm.type==='lv1'){ unplacedLv1Used[g.id]++; }
-                restored=true; break;
-              }
-            }
-            if(!restored){
-              for(const pk2 of targets){
-                if (manuallyLocked.has(pk2)) continue; 
-                const kdm=mapData.kingdoms.find(x=>x.id===pk2); if(!kdm) continue;
-                
-                const prevOwner = prevPlan[pk2] || '';
-                if (prevOwner !== g.id) {
-                    let mg = maxGainGlobal;
-                    const gObj = srv.guilds.find(x => x.id === g.id);
-                    if (gObj && gObj.isSmall) mg = 1;
-                    else if (srv.mode === 'goc') {
-                        const twoDec = Object.values(gainCount).filter(c => c >= 2).length;
-                        if (gainCount[g.id] === 1 && twoDec >= 8) mg = 1;
-                    }
-                    if (gainCount[g.id] >= mg) continue;
-                }
-
-                if(prevHeld.length===0 && kdm.type==='lv1' && unplacedLv1Used[g.id]>=2) continue;
-                if(prevHeld.length===0 && kdm.type!=='lv1') continue;
-                const thief=tempPlan[d][pk2];
-                if(thief){
-                  tempPlan[d][pk2]=g.id; heldCount[g.id]++; heldCount[thief]--;
-                  gPts[thief]-=pts[kdm.type]; gPts[g.id]+=pts[kdm.type];
-                  if(kdm.type==='lv3'){lv3Days[thief]=Math.max(0,lv3Days[thief]-1);lv3Days[g.id]++;}
-                  if(kdm.type==='lv2'){lv2Days[thief]=Math.max(0,lv2Days[thief]-1);lv2Days[g.id]++;}
-                  gainCount[thief]=Math.max(0,gainCount[thief]-1);
-                  
-                  if (prevOwner !== g.id) gainCount[g.id]++; 
-                  
-                  if(prevHeld.length===0 && kdm.type==='lv1'){ unplacedLv1Used[g.id]++; }
-                  restored=true; break;
-                }
-              }
-            }
-            if(!restored) {
-                const affordable = kingdoms.filter(k=> {
-                    if (manuallyLocked.has(k.id)) return false; 
-                    if(!eligible.get(k.id).includes(g.id)) return false;
-                    
-                    let mg = maxGainGlobal;
-                    const gObj = srv.guilds.find(x => x.id === g.id);
-                    if (gObj && gObj.isSmall) mg = 1;
-                    else if (srv.mode === 'goc') {
-                        const twoDec = Object.values(gainCount).filter(c => c >= 2).length;
-                        if (gainCount[g.id] === 1 && twoDec >= 8) mg = 1;
-                    }
-                    if(gainCount[g.id] >= mg) return false;
-                    
-                    if(prevHeld.length === 0 && k.type === 'lv1' && unplacedLv1Used[g.id] >= 2) return false;
-                    
-                    const cLv3 = baseLv3s[g.id] + countType(tempPlan, g.id, 'lv3', d, mapData);
-                    const cLv2 = baseLv2s[g.id] + countType(tempPlan, g.id, 'lv2', d, mapData);
-                    if(k.type === 'lv3' && cLv3 >= maxLv3) return false;
-                    if(k.type === 'lv2' && cLv2 >= maxLv2) return false;
-                    
-                    return true;
-                }).sort((a,b)=>{
-                    return eligible.get(a.id).length - eligible.get(b.id).length || pts[a.type] - pts[b.type];
-                });
-                
-                for (const chosen of affordable) {
-                    const currentOwner = tempPlan[d][chosen.id];
-                    if(currentOwner && heldCount[currentOwner] <= 1) continue; 
-                    
-                    survivalIssues = true; 
-                    const prevOwner = prevPlan[chosen.id]||'';
-                    if(prevOwner!==g.id) gainCount[g.id]++;
-                    if(prevOwner!==currentOwner && currentOwner && gainCount[currentOwner] > 0) {
-                        gainCount[currentOwner] = Math.max(0, gainCount[currentOwner]-1);
-                    }
-                    
-                    tempPlan[d][chosen.id] = g.id;
-                    heldCount[g.id]++;
-                    if (currentOwner) heldCount[currentOwner]--;
-                    gPts[g.id] += pts[chosen.type];
-                    if (currentOwner) gPts[currentOwner] -= pts[chosen.type];
-                    
-                    if(prevHeld.length === 0 && chosen.type === 'lv1') unplacedLv1Used[g.id]++;
-                    break; 
-                }
-            }
-          }
-        }
-
-        // ── PHASE 3: Simulated Annealing (replaces hill-climbing) ──────────
-        // QUICK WIN 5: SA escapes local optima, accepts worse moves early
-        const saIterations = 200;
-        const saStartTemp  = 50;
-        const saEndTemp    = 0.5;
-        let currentScore = planScore(tempPlan, gPts, lv3Days, lv2Days);
-
-        for(let saIter=0; saIter<saIterations; saIter++){
-          const temp = saStartTemp * Math.pow(saEndTemp / saStartTemp, saIter / saIterations);
-
-          // Pick a random movable kingdom
-          const movable = kingdoms.filter(k =>
-            !manuallyLocked.has(k.id) && tempPlan[d][k.id] &&
-            kingdoms.filter(k2 => tempPlan[d][k2.id] === tempPlan[d][k.id]).length > 1
-          );
-          if (movable.length === 0) break;
-
-          const k = movable[Math.floor(Math.random() * movable.length)];
-          const curOwner = tempPlan[d][k.id];
-          const prevOwner = prevPlan[k.id] || '';
-
-          // Find valid alternative guilds
-          const altCandidates = (eligible.get(k.id) || []).filter(altGid => {
-            if (altGid === curOwner) return false;
-            if (k.id === 'Darkwick' && prevOwner !== altGid && !canDeclareDarkwick(prevPlan, altGid, mapData)) return false;
-            if (k.type === 'lv3' && lv3Days[altGid] >= maxLv3) return false;
-            if (k.type === 'lv2' && lv2Days[altGid] >= maxLv2) return false;
-            const altPrevHeld = Object.entries(prevPlan).filter(([,g2])=>g2===altGid).map(([k2])=>k2);
-            if (altPrevHeld.length === 0 && k.type === 'lv1' && unplacedLv1Used[altGid] >= 2) return false;
-            if (altPrevHeld.length === 0 && k.type !== 'lv1') return false;
-            if (prevOwner !== altGid) {
-              let maxGain = maxGainGlobal;
-              const gObj = srv.guilds.find(x => x.id === altGid);
-              if (gObj && gObj.isSmall) maxGain = 1;
-              else if (srv.mode === 'goc') {
-                const twoDec = Object.values(gainCount).filter(c => c >= 2).length;
-                if (gainCount[altGid] === 1 && twoDec >= 8) maxGain = 1;
-              }
-              if (gainCount[altGid] >= maxGain) return false;
-            }
-            return true;
-          });
-
-          if (altCandidates.length === 0) continue;
-          const altGid = altCandidates[Math.floor(Math.random() * altCandidates.length)];
-          const altPrevHeld = Object.entries(prevPlan).filter(([,g2])=>g2===altGid).map(([k2])=>k2);
-
-          // Apply move
-          gPts[curOwner] -= pts[k.type]; gPts[altGid] += pts[k.type];
-          if (k.type === 'lv3') { lv3Days[curOwner]--; lv3Days[altGid]++; }
-          if (k.type === 'lv2') { lv2Days[curOwner]--; lv2Days[altGid]++; }
-          tempPlan[d][k.id] = altGid;
-
-          const newScore = planScore(tempPlan, gPts, lv3Days, lv2Days);
-          const delta = newScore - currentScore;
-
-          // Accept if better, or with probability if worse
-          if (delta < 0 || Math.random() < Math.exp(-delta / temp)) {
-            // Accept move
-            currentScore = newScore;
-            if (prevOwner !== curOwner) gainCount[curOwner] = Math.max(0, gainCount[curOwner] - 1);
-            if (prevOwner !== altGid) gainCount[altGid]++;
-            if (altPrevHeld.length === 0 && k.type === 'lv1') unplacedLv1Used[altGid]++;
-            const curPrevHeld = Object.entries(prevPlan).filter(([,g2])=>g2===curOwner).map(([k2])=>k2);
-            if (curPrevHeld.length === 0 && k.type === 'lv1') unplacedLv1Used[curOwner] = Math.max(0, unplacedLv1Used[curOwner] - 1);
-          } else {
-            // Revert move
-            tempPlan[d][k.id] = curOwner;
-            gPts[curOwner] += pts[k.type]; gPts[altGid] -= pts[k.type];
-            if (k.type === 'lv3') { lv3Days[curOwner]++; lv3Days[altGid]--; }
-            if (k.type === 'lv2') { lv2Days[curOwner]++; lv2Days[altGid]--; }
-          }
-        }
-
-        // ── PHASE 4: Fill remaining blanks — respects adjacency, caps & Darkwick rules ──
-        // Only assigns to eligible (adjacent) guilds with cap room.
-        // If no valid guild exists, leaves town blank (valid in Ragnarok/GoC rules).
-        for(const k of kingdoms){
-          if(tempPlan[d][k.id]) continue;
-          if(manuallyLocked && manuallyLocked.has(k.id)) continue;
-
-          // Score by weighted deficit
-          const scoreGuild = (gid) => {
-            const l3Def = (k.type==='lv3' ? Math.max(0, targetLv3[gid] - lv3Days[gid]) : 0) * wLv3 * 10;
-            const l2Def = (k.type==='lv2' ? Math.max(0, targetLv2[gid] - lv2Days[gid]) : 0) * wLv2 * 5;
-            const ptsDef = Math.max(0, targetPts[gid] - gPts[gid]) * wPts * 0.01;
-            return l3Def + l2Def + ptsDef;
-          };
-
-          // Eligible guilds with cap room AND Darkwick requirement check
-          const validCands = (eligible.get(k.id)||[]).filter(gid => {
-            if(k.type === 'lv3' && lv3Days[gid] >= maxLv3) return false;
-            if(k.type === 'lv2' && lv2Days[gid] >= maxLv2) return false;
-            // Darkwick can only be captured if guild holds 1+ Lv2 or 2+ Lv1 from prev day
-            if(k.id === 'Darkwick' && prevPlan[k.id] !== gid && !canDeclareDarkwick(prevPlan, gid, mapData)) return false;
-            return true;
-          }).sort((a,b) => scoreGuild(b) - scoreGuild(a));
-
-          const winner = validCands[0];
-          if(!winner) continue; // leave blank — no eligible guild with cap room
-
-          const prevOwner = prevPlan[k.id]||'';
-          tempPlan[d][k.id] = winner;
-          if(prevOwner !== winner) gainCount[winner] = (gainCount[winner]||0) + 1;
-          gPts[winner] += pts[k.type];
-          if(k.type==='lv3') lv3Days[winner]++;
-          if(k.type==='lv2') lv2Days[winner]++;
-        }
-      } 
-
-      const attemptScore = planScore(tempPlan, gPts, lv3Days, lv2Days);
-      if(attemptScore < bestScore){
-        bestScore = attemptScore;
-        bestPlan  = JSON.parse(JSON.stringify(tempPlan));
-      }
-      if(attemptScore < 0.3) break;
-
-      // ── QUICK WIN 2: Target-based bias learning (replaces magic number weights) ──
-      for(const g of srv.guilds){
-        const ptErr = (targetPts[g.id] - gPts[g.id])   * wPts * 0.1;
-        const l3Err = (targetLv3[g.id] - lv3Days[g.id]) * wLv3 * 0.5;
-        const l2Err = (targetLv2[g.id] - lv2Days[g.id]) * wLv2 * 0.3;
-        biases[g.id] += ptErr + l3Err + l2Err;
-      }
-    } 
-
-    if(!bestPlan){
-      alert("No valid plan could be found.");
-      return;
-    }
-
-    // ── FINAL GUARANTEE: fill blanks in bestPlan — respects adjacency & caps ──
-    // Only assigns to eligible (adjacent) guilds with cap room.
-    // If no valid guild exists, leaves town blank.
-    {
-      const mapData2 = getMapData(srv.mode, srv.mapKey);
-      const adj2 = adjMap(srv.mode, srv.mapKey);
-      const pts2 = {lv3:3, lv2:2, lv1:1};
-      // Rebuild running totals from bestPlan
-      const runPts  = Object.fromEntries(srv.guilds.map(g=>[g.id, parseInt(g.basePoints||0,10)||0]));
-      const runLv3  = Object.fromEntries(srv.guilds.map(g=>[g.id, baseLv3s[g.id]]));
-      const runLv2  = Object.fromEntries(srv.guilds.map(g=>[g.id, baseLv2s[g.id]]));
-      for(let d=1; d<=days; d++){
-        for(const k of mapData2.kingdoms){
-          const owner = (bestPlan[d]||{})[k.id];
-          if(owner) {
-            runPts[owner]  += pts2[k.type];
-            if(k.type==='lv3') runLv3[owner]++;
-            if(k.type==='lv2') runLv2[owner]++;
-          }
-        }
-      }
-      // Eligibility check per day (same logic as getEligibleGuilds)
-      for(let d=1; d<=days; d++){
-        if(!bestPlan[d]) bestPlan[d] = {};
-        const prevPlan = bestPlan[d-1] || {};
-        for(const k of mapData2.kingdoms){
-          if(bestPlan[d][k.id]) continue;
-          // Build eligible guilds for this kingdom on this day
-          const prevOwner = prevPlan[k.id] || '';
-          const eligibleIds = new Set();
-          for(const g of srv.guilds){
-            const gid = g.id;
-            if(prevOwner === gid) { eligibleIds.add(gid); continue; }
-            const held = Object.entries(prevPlan).filter(([,g2])=>g2===gid).map(([k2])=>k2);
-            if(held.length === 0 && k.type === 'lv1') { eligibleIds.add(gid); continue; }
-            if(held.some(pk => adj2[pk] && adj2[pk].includes(k.id))) { eligibleIds.add(gid); }
-          }
-          // Filter by cap room + eligibility + Darkwick requirement, sort by deficit
-          const validCands = [...eligibleIds].filter(gid => {
-            if(k.type === 'lv3' && runLv3[gid] >= maxLv3) return false;
-            if(k.type === 'lv2' && runLv2[gid] >= maxLv2) return false;
-            // Darkwick can only be captured if guild holds 1+ Lv2 or 2+ Lv1 from prev day
-            if(k.id === 'Darkwick' && prevOwner !== gid && !canDeclareDarkwick(prevPlan, gid, mapData2)) return false;
-            return true;
-          }).sort((a,b) => {
-            const deficitA = (k.type==='lv3' ? (targetLv3[a] - runLv3[a]) : 0) * wLv3 * 10
-                           + (k.type==='lv2' ? (targetLv2[a] - runLv2[a]) : 0) * wLv2 * 5
-                           + (targetPts[a] - runPts[a]) * wPts * 0.01;
-            const deficitB = (k.type==='lv3' ? (targetLv3[b] - runLv3[b]) : 0) * wLv3 * 10
-                           + (k.type==='lv2' ? (targetLv2[b] - runLv2[b]) : 0) * wLv2 * 5
-                           + (targetPts[b] - runPts[b]) * wPts * 0.01;
-            return deficitB - deficitA;
-          });
-          const winner = validCands[0];
-          if(!winner) continue; // leave blank — no eligible guild with cap room
-          bestPlan[d][k.id] = winner;
-          runPts[winner]  += pts2[k.type];
-          if(k.type==='lv3') runLv3[winner]++;
-          if(k.type==='lv2') runLv2[winner]++;
-        }
-      }
-    }
-
-    srv.plan = bestPlan;
-    save(); renderAll();
-
-  } catch(err){
-    console.error("Optimizer crashed:", err);
-    alert("Optimizer encountered an error. Check the console for details.");
-    renderAll();
-  }
-}
-
-// ── Need-score: how much does guild gid "deserve" kingdom k right now? ──────
-// QUICK WIN 4: Replaced 15+ magic numbers with target-based scoring using fair quotas
-function guildNeedScore(gid, k, gPts, lv3Days, lv2Days, absTgt, l3Tgt, l2Tgt, targetPts, targetLv3, targetLv2, biases, wPts, wLv3, wLv2, pacingMaxLv3, pacingMaxLv2, prevPlan, wMove){
+async function autoOptimize() {
+  let sec = 0;
+  let optTimer;
   const srv = activeSrv();
-  const gObj = srv.guilds.find(x => x.id === gid);
-  const isSmall = gObj && gObj.isSmall;
+  if (!srv) return;
 
-  // ── DEFICITS vs TARGETS ──
-  const ptsDeficit  = Math.max(0, targetPts[gid]  - gPts[gid]);
-  const l3Deficit   = Math.max(0, targetLv3[gid]  - lv3Days[gid]);
-  const l2Deficit   = Math.max(0, targetLv2[gid]  - lv2Days[gid]);
-  const bias        = biases[gid] || 0;
-
-  let score = 0;
-
-  // ── INERTIA / STICKINESS ──
-  if (k.id !== 'Darkwick' && prevPlan[k.id] === gid) {
-      if (k.type === 'lv2') {
-          if (!k.adj.includes('Darkwick')) {
-              score += wMove * 30; // Outer base
-          } else {
-              let prevDormsCount = 0;
-              for (const [kId, owner] of Object.entries(prevPlan)) {
-                  if (owner === gid) {
-                      const kObj = getMapData(srv.mode, srv.mapKey).kingdoms.find(x => x.id === kId);
-                      if (kObj && kObj.type === 'lv2') prevDormsCount++;
-                  }
-              }
-              score += wMove * (prevDormsCount <= 1 ? 30 : 10);
-          }
-      } else if (k.type === 'lv1') {
-          score += wMove * 40; // MASSIVE stickiness to prevent Lv1 churn
-      }
-  } else if (k.id === 'Darkwick' && prevPlan[k.id] === gid) {
-      // Consecutive Darkwick bonus
-      const remainingTarget = Math.max(0, targetLv3[gid] - lv3Days[gid]);
-      if (remainingTarget > 0) {
-          score += 10000; // Huge gravity to keep Darkwick if they still need it
-      }
+  const btn = document.getElementById('opt-btn'); // Use your actual button ID here
+  let originalText = 'Auto Optimize'; // Fallback text
+  
+  if (btn) {
+    originalText = btn.textContent; // Capture the original text before changing it
+    btn.style.pointerEvents = 'none';
+    btn.innerHTML = `Crunching Matrix... (0s)`;
+    optTimer = setInterval(() => {
+      sec++;
+      btn.innerHTML = `Crunching Matrix... (${sec}s)`;
+    }, 1000);
   }
 
-  const prevHeld = Object.entries(prevPlan).filter(([,g2])=>g2===gid);
-  const isEnteringMap = prevHeld.length === 0;
+  try {
+    // 1. Snapshot for the undo button
+    srv.undoPlan = JSON.parse(JSON.stringify(srv.plan));
+    const mapData = getMapData(srv.mode, srv.mapKey);
 
-  // ── PATHFINDING GRAVITY: reward progress toward Darkwick ──
-  if (k.id !== 'Darkwick' && l3Deficit > 0) {
-      const mapDataLocal = getMapData(srv.mode, srv.mapKey);
-      const adjMapLocal = adjMap(srv.mode, srv.mapKey);
+    // 2. Generate the algebraic matrix and decoder
+    console.time('Matrix Generation');
+    const { milp, decode } = buildModel(srv, mapData);
+    const matrixArrays = milp.toArrays();
+    console.timeEnd('Matrix Generation');
 
-      let currentMinDist = 999;
-      for (const [kId, owner] of Object.entries(prevPlan)) {
-          if (owner === gid) {
-              const dist = distanceToDarkwick(kId, adjMapLocal, mapDataLocal);
-              if (dist < currentMinDist) currentMinDist = dist;
-          }
-      }
+    console.log(`Generated ${matrixArrays.numRows} constraints and ${matrixArrays.numCols} binary variables.`);
 
-      const kDist = distanceToDarkwick(k.id, adjMapLocal, mapDataLocal);
+    // 3. Send to Web Worker to run the Wasm Branch-and-Bound algorithm
+    console.time('Wasm Solve Time');
+    const result = await runHighsSolver(matrixArrays);
+    console.timeEnd('Wasm Solve Time');
 
-      // Reward towns closer to Darkwick (scaled by deficit and wLv3)
-      if (kDist <= 5) score += wLv3 * (6 - kDist) * 20 * l3Deficit;
+    // 4. Decode the binary output array back into town assignments
+    const binaryValues = result; // Worker now returns the Float64Array directly
+    srv.plan = decode(binaryValues);
+    
+    save();
+    renderAll();
+    
+    if (btn) { btn.textContent = '✓ Perfect Plan Found'; btn.style.color = 'var(--green)'; }
 
-      // MASSIVE reward for stepping closer
-      if (kDist < currentMinDist) {
-          score += wLv3 * 600 * l3Deficit;
-      }
-
-      // Bridge squatting (distance 1)
-      if (kDist === 1) {
-          score += wLv3 * 400 * l3Deficit;
-      }
-  }
-
-  // ── TIER ALLOCATIONS: quadratic deficit scoring ──
-  if(k.type === 'lv3'){
-    score += wLv3 * l3Deficit * l3Deficit * 20;  // quadratic: more deficit = much higher score
-    const capRoom = Math.max(0, pacingMaxLv3 - lv3Days[gid]);
-    score += capRoom * 2; // small bonus for having cap room
-    score -= bias * 0.5;  // bias penalizes over-represented guilds
-    score += Math.random() * wPts * 0.5; // small jitter
-  } else if(k.type === 'lv2'){
-    score += wLv2 * l2Deficit * l2Deficit * 5;
-    const capRoom = Math.max(0, pacingMaxLv2 - lv2Days[gid]);
-    score += capRoom * 1;
-    const dwRoom = Math.max(0, pacingMaxLv3 - lv3Days[gid]);
-    if(dwRoom > 0) score += wLv3 * 1; // slight preference if still needs Darkwick
-    score -= bias * 0.3;
-    score += Math.random() * wPts * 0.5;
-  }
-  // ── LEVEL 1 POINT BALANCING ──
-  else {
-    if(isSmall){
-      score += isEnteringMap ? 20 : 1;
-    } else {
-      // Drive aggressively toward the exact point target
-      score += ptsDeficit * 100;
+  } catch (err) {
+    console.error("Optimizer crashed:", err);
+    // Replace alert() with our new in-app toast
+    showToast(err.message || "Solver encountered an error.", true);
+    if (btn) { btn.textContent = '❌ Failed'; btn.style.color = 'var(--red)'; }
+  } finally {
+    // 🚨 GUARANTEE TIMER STOPS
+    clearInterval(optTimer);
+    
+    if (btn) {
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.pointerEvents = 'auto'; // Restore clickability 
+        btn.style.color = '';
+      }, 3000);
     }
   }
-
-  return score;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2398,13 +1360,19 @@ function openAdd(){
   const t=new Date(),fmt=d=>d.toISOString().slice(0,10);
   document.getElementById('ns-name').value='';
   document.getElementById('ns-start').value=fmt(t);
-  onAddModalModeChange(); // populates map list AND sets end date from today
+  
+  // Reset mode to Ragnarok default
+  document.getElementById('ns-mode').value = 'ragnarok';
+  onAddModalModeChange(); 
+  
   document.getElementById('modal-add').classList.add('open');
 }
 
 function onAddModalModeChange(){
   const mode = document.getElementById('ns-mode').value;
+  // Use the imported getMapList function
   const maps = getMapList(mode);
+  
   document.getElementById('ns-map').innerHTML = maps.map(m=>`<option value="${m.key}">${m.name}</option>`).join('');
   onAddModalStartChange();
 }
@@ -2413,10 +1381,10 @@ function onAddModalStartChange(){
   const mode  = document.getElementById('ns-mode').value;
   const start = document.getElementById('ns-start').value;
   if(!start) return;
-  const eventDays = mode === 'goc' ? 13 : 6;  // GoC = 13 days, Rag = 6 days
+  const eventDays = mode === 'goc' ? 13 : 6;
   const [yy, mm, dd] = start.split('-');
   const endDt = new Date(+yy, mm - 1, +dd);
-  endDt.setDate(endDt.getDate() + eventDays - 1); // end = start + (days-1)
+  endDt.setDate(endDt.getDate() + eventDays - 1);
   document.getElementById('ns-end').value = endDt.toISOString().slice(0, 10);
 }
 
@@ -2427,16 +1395,19 @@ function confirmAdd(){
   const start=document.getElementById('ns-start').value;
   const end=document.getElementById('ns-end').value;
   const s=mkSrv(name,mode,mapKey,start,end);
-  servers.push(s);activeId=s.id;
+  servers.push(s);
+  activeId=s.id;
   closeModal('modal-add');
-  save();renderTabs();renderAll();
+  save();
+  renderTabs();
+  renderAll();
 }
 
 function switchSrv(id){
   activeId=id;
+  // Clear the URL parameter so users don't confuse local tabs with share links
+  window.history.replaceState({}, document.title, window.location.pathname);
   save();
-  // Automatically update the URL so refreshing the page syncs the correct tab
-  window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + id);
   renderTabs();
   renderAll();
 }
@@ -2469,25 +1440,19 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 function save(){
   try{
     localStorage.setItem('goc_v3',JSON.stringify({servers,activeId}));
-    // Flash the saved text to ease paranoia
     const ss = document.getElementById('save-status');
     if(ss){
       ss.textContent = 'Saving...';
       ss.style.color = 'var(--accent)';
       clearTimeout(window.saveTimer);
       window.saveTimer = setTimeout(()=>{
-        
-        // 🚨 NEW: Check if the URL's plan ID matches the currently active tab
-        const urlParams = new URLSearchParams(window.location.search);
-        const isCloudLinked = urlParams.get('plan') === activeId && activeId !== null;
-        
-        // Inject the cloud icon and bold text if it's a shared plan
-        if (isCloudLinked) {
+        const s = activeSrv();
+        // 🚨 NEW: Only show Cloud Linked if it was explicitly published/synced
+        if (s && s.cloudSynced) {
           ss.innerHTML = '☁️ <b style="color:#6baff5">Cloud Linked</b> &nbsp;·&nbsp; ✓ Saved locally';
         } else {
           ss.innerHTML = '✓ Saved to browser';
         }
-        
         ss.style.color = 'var(--text3)';
       }, 800);
     }
@@ -2725,6 +1690,9 @@ async function publishToCloud() {
     });
     
     if(response.ok) {
+      srv.cloudSynced = true; // 🚨 NEW
+      save();                 // 🚨 NEW
+
       // 🚨 Fix 1: Force the creator's URL bar to update immediately
       window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + srv.id);
       
@@ -2762,6 +1730,7 @@ async function syncFromCloud() {
     if(!res.ok) throw new Error('Plan not found in cloud');
     
     const sharedSrv = await res.json();
+    sharedSrv.cloudSynced = true; // 🚨 NEW
     const existingIdx = servers.findIndex(s => s.id === sharedSrv.id);
     if(existingIdx >= 0) {
       servers[existingIdx] = sharedSrv; 
@@ -2792,6 +1761,7 @@ async function checkUrlForSharedPlan() {
     const res = await fetch(`${WORKER_URL}?plan=${planId}`);
     if(!res.ok) throw new Error('Plan not found');
     const sharedSrv = await res.json();
+    sharedSrv.cloudSynced = true; // 🚨 NEW
     
     const existingIdx = servers.findIndex(s => s.id === sharedSrv.id);
     if(existingIdx >= 0) {
@@ -2817,20 +1787,61 @@ checkUrlForSharedPlan().then(() => {
   renderAll();
 });
 
-// 🚨 TEMPORARY HIGHS TEST BLOCK 
-const solverWorker = new Worker('worker.js', { type: 'module' });
+function updGuildExcluded(gid, isExcluded){
+  const s = activeSrv(); if(!s) return;
+  const g = s.guilds.find(x => x.id === gid); if(!g) return;
+  g.isExcluded = isExcluded; 
+  save(); 
+}
 
-solverWorker.onmessage = (e) => {
-  if (e.data.status === 'success') {
-    console.log('🟢', e.data.message);
-  } else {
-    console.error('🔴 Worker Error:', e.data.error);
-  }
-};
+// ══════════════════════════════════════════════════════════════
+//  GLOBAL EXPORTS (Because ES Modules hide functions from HTML)
+// ══════════════════════════════════════════════════════════════
+window.openAdd = openAdd;
+window.confirmAdd = confirmAdd;
+window.closeModal = closeModal;
+window.onAddModalModeChange = onAddModalModeChange;
+window.onAddModalStartChange = onAddModalStartChange;
+window.switchSrv = switchSrv;
+window.removeSrv = removeSrv;
+window.confirmDeleteSrv = confirmDeleteSrv;
 
-// 🚨 NEW: Catch fatal crashes that happen before the worker even boots
-solverWorker.onerror = (err) => {
-  console.error('💥 Fatal Worker Crash. Message:', err.message);
-};
+// 🚨 Tab Context Menu
+window.ctxRename = ctxRename;
+window.ctxDuplicate = ctxDuplicate;
+window.ctxDelete = ctxDelete;
 
-solverWorker.postMessage({ type: 'INIT_TEST' });
+window.updName = updName;
+window.updMode = updMode;
+window.updMap = updMap;
+window.updStart = updStart;
+window.updEnd = updEnd;
+window.clearPlan = clearPlan;
+
+window.openImport = openImport;
+window.handleDragOver = handleDragOver;
+window.handleDragLeave = handleDragLeave;
+window.handleDrop = handleDrop;
+window.handleFileSelect = handleFileSelect;
+window.processImport = processImport;
+window.exportServer = exportServer;
+
+window.takeScreenshots = takeScreenshots;
+window.autoOptimize = autoOptimize;
+window.undoOptimize = undoOptimize;
+window.publishToCloud = publishToCloud;
+window.syncFromCloud = syncFromCloud;
+
+window.updGuildName = updGuildName;
+window.updGuildSmall = updGuildSmall;
+window.updGuildExcluded = updGuildExcluded;
+window.updGuildPoints = updGuildPoints;
+window.updGuildLv3 = updGuildLv3;
+window.updGuildLv2 = updGuildLv2;
+window.updGuildLv1 = updGuildLv1;
+window.addGuild = addGuild;
+window.removeGuild = removeGuild;
+
+window.clearDay = clearDay;
+window.onCell = onCell;
+window.cpyMsg = cpyMsg;

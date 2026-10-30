@@ -11,6 +11,9 @@ export class MilpBuilder {
   }
 
   variable(name, { lower, upper, isInteger, cost }) {
+  if (!Number.isFinite(cost) || Number.isNaN(lower) || Number.isNaN(upper) || lower > upper) {
+    throw new Error(`Bad variable ${name}: [${lower}, ${upper}] cost=${cost}`);
+  }
     const col = this.names.length;
     this.names.push(name);
     this.cost.push(cost);
@@ -35,6 +38,10 @@ export class MilpBuilder {
   }
 
   constrain(terms, lower, upper) {
+  if (Number.isNaN(lower) || Number.isNaN(upper)) throw new Error('NaN bound in constraint');
+  for (const [k] of terms) {
+    if (!Number.isFinite(k)) throw new Error(`Non-finite coefficient: ${k}`);
+  }
     const merged = new Map();
     let constant = 0;
     
@@ -85,32 +92,61 @@ export class MilpBuilder {
   }
 
   toArrays() {
-    const starts = [0];
-    const indices = [];
-    const values = [];
+    const numCols = this.columnCount;
+    const numRows = this.rows.length;
     
+    // 1. Calculate how many items are in each column
+    const colCounts = new Int32Array(numCols);
+    let nnz = 0;
     for (const row of this.rows) {
-      indices.push(...row.cols);
-      values.push(...row.coefs);
-      starts.push(indices.length);
+      for (const col of row.cols) {
+        colCounts[col]++;
+        nnz++;
+      }
     }
 
+    // 2. Create the CSC (Compressed Sparse Column) pointers
+    const start = new Int32Array(numCols + 1);
+    for (let i = 0; i < numCols; i++) {
+      start[i + 1] = start[i] + colCounts[i];
+    }
+
+    // 3. Populate the column-major indices and values
+    const index = new Int32Array(nnz);
+    const value = new Float64Array(nnz);
+    
+    // Keep a running tracker of where we are in each column
+    const currentPos = new Int32Array(start);
+
+    for (let r = 0; r < numRows; r++) {
+      const row = this.rows[r];
+      for (let j = 0; j < row.cols.length; j++) {
+        const c = row.cols[j];
+        const val = row.coefs[j];
+        
+        const pos = currentPos[c]++;
+        index[pos] = r;
+        value[pos] = val;
+      }
+    }
+
+    // 4. Return the exact schema, using Array.from() to ensure standard arrays
     return {
-      numCols: this.columnCount,
-      numRows: this.rows.length,
-      colCost: Float64Array.from(this.cost),
-      colLower: Float64Array.from(this.lower),
-      colUpper: Float64Array.from(this.upper),
-      rowLower: Float64Array.from(this.rows, r => r.lower),
-      rowUpper: Float64Array.from(this.rows, r => r.upper),
-      integrality: Int32Array.from(this.integer, i => (i ? 1 : 0)),
+      numCols,
+      numRows,
+      colCost: Array.from(this.cost),
+      colLower: Array.from(this.lower),
+      colUpper: Array.from(this.upper),
+      rowLower: this.rows.map(r => r.lower),
+      rowUpper: this.rows.map(r => r.upper),
+      integrality: this.integer.map(i => (i ? 1 : 0)),
       matrix: {
-        format: 'csr',
-        numRows: this.rows.length,
-        numCols: this.columnCount,
-        starts: Int32Array.from(starts),
-        indices: Int32Array.from(indices),
-        values: Float64Array.from(values),
+        format: 'csc',
+        numRows,
+        numCols,
+        starts: Array.from(start),
+        indices: Array.from(index),
+        values: Array.from(value),
       },
     };
   }
