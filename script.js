@@ -31,7 +31,7 @@ function runHighsSolver(matrixData, options) {
   });
 }
 
-function showToast(msg, isError = true) {
+function showToast(msg, isError = true, duration = 5000) {
   const toast = document.createElement('div');
   toast.textContent = msg;
   toast.style.cssText = `
@@ -39,6 +39,7 @@ function showToast(msg, isError = true) {
     background: ${isError ? 'var(--red)' : 'var(--green)'}; 
     color: ${isError ? '#fff' : '#000'}; 
     padding: 14px 24px; border-radius: 8px; 
+    max-width: min(420px, calc(100vw - 48px)); 
     box-shadow: 0 8px 24px rgba(0,0,0,0.5); 
     z-index: 9999; font-weight: 600; 
     transform: translateY(100px); opacity: 0; 
@@ -52,12 +53,12 @@ function showToast(msg, isError = true) {
     toast.style.opacity = '1';
   });
 
-  // Animate out and remove after 5 seconds
+  // Animate out and remove after `duration` ms
   setTimeout(() => {
     toast.style.transform = 'translateY(100px)';
     toast.style.opacity = '0';
     setTimeout(() => toast.remove(), 300);
-  }, 5000);
+  }, duration);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1306,6 +1307,11 @@ async function autoOptimize() {
   let currentLabel = 'Finding Optimal Plan';
   const srv = activeSrv();
   if (!srv) return;
+
+  // Game of Claws plans are solved in several steps and take a while: let the user know up front.
+  if (srv.mode === 'goc') {
+    showToast('Game of Claws plans can take around 10 minutes to optimize. Please keep this browser open until it finishes.', false, 10000);
+  }
 
   const btn = document.getElementById('opt-btn'); // Use your actual button ID here
   let originalText = 'Auto Optimize'; // Fallback text
