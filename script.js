@@ -4,8 +4,18 @@ import { buildModel, getPerfectTargets } from './model.js';
 
 const solverWorker = new Worker('worker.js', { type: 'module' });
 
+// HiGHS log forwarding: lines are printed to the console and kept in window.highsLog.
+// In DevTools, run  copy(window.highsLog.join('\n'))  to copy the whole log.
+window.highsLog = [];
+solverWorker.addEventListener('message', (e) => {
+  if (e.data && e.data.status === 'log') {
+    window.highsLog.push(e.data.text);
+    console.log('[HiGHS]', e.data.text);
+  }
+});
+
 // A helper function to turn the Worker's message events into a clean async Promise
-function runHighsSolver(matrixData) {
+function runHighsSolver(matrixData, options) {
   return new Promise((resolve, reject) => {
     const handler = (e) => {
       if (e.data.status === 'success') {
@@ -17,7 +27,7 @@ function runHighsSolver(matrixData) {
       }
     };
     solverWorker.addEventListener('message', handler);
-    solverWorker.postMessage({ type: 'SOLVE', payload: matrixData });
+    solverWorker.postMessage({ type: 'SOLVE', payload: matrixData, options });
   });
 }
 
@@ -494,12 +504,15 @@ function renderSettings(srv){
       <div class="fg"><label>End Date</label>
         <input type="date" value="${srv.endDate||''}" onchange="updEnd(this.value)" style="width:130px"></div>
       <div class="fg"><label>&nbsp;</label>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
           <button class="btn" onclick="clearPlan()">Clear Plan</button>
           <button class="btn-accent" style="background:#6bffb4;color:#0a1a14;box-shadow:0 4px 12px rgba(107,255,180,0.2)" onclick="openImport()">📥 Import</button>
           <button class="btn-accent" style="background:#ffb86b;color:#1a1105;box-shadow:0 4px 12px rgba(255,184,107,0.2)" onclick="exportServer()">📤 Export Server</button>
           <button class="btn-accent" style="background:#ff6b9d;color:#1a050d;box-shadow:0 4px 12px rgba(255,107,157,0.2)" onclick="takeScreenshots()">📸 Screenshots</button>
           <button id="opt-btn" class="btn-gold" onclick="autoOptimize()">⚡ Auto-Optimize</button>
+          
+          ${srv.lastSolveTime ? `<span style="font-size:11px;color:var(--green);font-weight:600;background:var(--bg3);padding:4px 8px;border-radius:4px;border:1px solid var(--border);">Last solve: ${srv.lastSolveTime}s</span>` : ''}
+          
           ${srv.undoPlan ? `<button class="btn-accent" onclick="undoOptimize()" style="border-color:var(--gold);color:var(--gold2)">↩ Undo Optimize</button>` : ''}
           <button class="btn-accent" id="btn-share-cloud" style="background:#6baff5;color:#0a1a14;box-shadow:0 4px 12px rgba(107,175,245,0.2)" onclick="publishToCloud()">🔗 Save to Cloud</button>
           <button class="btn-accent" id="btn-sync-cloud" style="background:#b886ee;color:#0a1a14;box-shadow:0 4px 12px rgba(184,134,238,0.2)" onclick="syncFromCloud()">🔄 Sync from Cloud</button>
@@ -1290,6 +1303,7 @@ function getEligibleGuilds(srv, kId, d) {
 async function autoOptimize() {
   let sec = 0;
   let optTimer;
+  let currentLabel = 'Finding Optimal Plan';
   const srv = activeSrv();
   if (!srv) return;
 
@@ -1299,10 +1313,10 @@ async function autoOptimize() {
   if (btn) {
     originalText = btn.textContent; // Capture the original text before changing it
     btn.style.pointerEvents = 'none';
-    btn.innerHTML = `Crunching Matrix... (0s)`;
+    btn.innerHTML = `Finding Optimal Plan... (0s)`;
     optTimer = setInterval(() => {
       sec++;
-      btn.innerHTML = `Crunching Matrix... (${sec}s)`;
+      btn.innerHTML = `${currentLabel}... (${sec}s)`;
     }, 1000);
   }
 
@@ -1311,22 +1325,34 @@ async function autoOptimize() {
     srv.undoPlan = JSON.parse(JSON.stringify(srv.plan));
     const mapData = getMapData(srv.mode, srv.mapKey);
 
-    // 2. Generate the algebraic matrix and decoder
-    console.time('Matrix Generation');
-    const { milp, decode } = buildModel(srv, mapData);
-    const matrixArrays = milp.toArrays();
-    console.timeEnd('Matrix Generation');
+    if (srv.mode !== 'goc') {
+      // RAGNAROK: the original single-solve model (model.js), unchanged.
+      // 2. Generate the algebraic matrix and decoder
+      console.time('Matrix Generation');
+      const { milp, decode } = buildModel(srv, mapData);
+      const matrixArrays = milp.toArrays();
+      console.timeEnd('Matrix Generation');
 
-    console.log(`Generated ${matrixArrays.numRows} constraints and ${matrixArrays.numCols} binary variables.`);
+      console.log(`Generated ${matrixArrays.numRows} constraints and ${matrixArrays.numCols} binary variables.`);
 
-    // 3. Send to Web Worker to run the Wasm Branch-and-Bound algorithm
-    console.time('Wasm Solve Time');
-    const result = await runHighsSolver(matrixArrays);
-    console.timeEnd('Wasm Solve Time');
+      // 3. Send to Web Worker to run the Wasm Branch-and-Bound algorithm
+      console.time('Wasm Solve Time');
+      const result = await runHighsSolver(matrixArrays);
+      console.timeEnd('Wasm Solve Time');
 
-    // 4. Decode the binary output array back into town assignments
-    const binaryValues = result; // Worker now returns the Float64Array directly
-    srv.plan = decode(binaryValues);
+      // 4. Decode the binary output array back into town assignments
+      srv.plan = decode(result);
+    } else {
+      // GAME OF CLAWS: its own two-phase method (model_goc.js + twophase.js).
+      // Phase 1 = Darkwick + dorms (+ the lv1 paths to reach them), phase 2 = lv1 towns for points.
+      // Progress goes to the console only; the button keeps showing "Finding Optimal Plan... (Ns)".
+      const onProgress = (label) => console.log(`[TwoPhase] ${label}`);
+      // Loaded on demand: if twophase.js / paths.js are missing from the site, only Auto-Optimize fails, not the whole page.
+      const { solveGoc } = await import('./twophase.js');
+      srv.plan = await solveGoc(srv, mapData, runHighsSolver, { onProgress });
+    }
+
+    srv.lastSolveTime = sec;
     
     save();
     renderAll();

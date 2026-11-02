@@ -5,12 +5,9 @@ export const snowfieldMap = {
   kingdoms: [
     { id: 'Darkwick',    type: 'lv3', adj: ['Vagastrom', 'J', 'Obscuary', 'M'] },
     { id: 'Vagastrom',   type: 'lv2', adj: ['H', 'J', 'Mortkranken', 'Darkwick'] },
-    { id: 'Jabberwock',  type: 'lv2', adj: [] },
     { id: 'Obscuary',    type: 'lv2', adj: ['K', 'N', 'P', 'Darkwick'] },
     { id: 'Frostheim',   type: 'lv2', adj: ['A', 'G', 'H'] },
-    { id: 'Sinostra',    type: 'lv2', adj: [] },
     { id: 'Mortkranken', type: 'lv2', adj: ['E', 'G', 'F', 'Vagastrom'] },
-    { id: 'Hotarubi',    type: 'lv2', adj: [] },
     { id: 'A', type: 'lv1', adj: ['B', 'Frostheim'] },
     { id: 'B', type: 'lv1', adj: ['A', 'C'] },
     { id: 'C', type: 'lv1', adj: ['B', 'D', 'E'] },

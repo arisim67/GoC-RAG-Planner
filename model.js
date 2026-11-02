@@ -136,7 +136,16 @@ export function buildModel(srv, mapData) {
   const pointValues = { 'lv3': 3, 'lv2': 2, 'lv1': 1 };
 
   const target = getPerfectTargets(srv, mapData);
-  const reach = getReachableMatrix(GUILDS, KINGDOMS, DAYS, srv);
+  const reachFull = getReachableMatrix(GUILDS, KINGDOMS, DAYS, srv);
+
+  const VALID_KINGDOMS = KINGDOMS.filter(t => {
+    for (let d = 1; d <= DAYS; d++) {
+      for (let g = 0; g < GUILDS.length; g++) {
+        if (reachFull[g][d][t.id]) return true;
+      }
+    }
+    return false;
+  });
 
   const activeGuilds = GUILDS.filter(g => !( !isGoC && g.isExcluded ));
   const N = activeGuilds.length;
@@ -145,7 +154,7 @@ export function buildModel(srv, mapData) {
     (parseInt(b.basePoints || 0, 10)) - (parseInt(a.basePoints || 0, 10))
   );
 
-  // 2. VARIABLE CREATION
+  // 2. VARIABLE CREATION (With UI Locking)
   const own = [];
   for (let g = 0; g < GUILDS.length; g++) {
     own[g] = [];
@@ -153,14 +162,21 @@ export function buildModel(srv, mapData) {
 
     for (let d = 0; d <= DAYS; d++) {
       own[g][d] = {};
-      for (const t of KINGDOMS) {
+      for (const t of VALID_KINGDOMS) {
         if (d === 0) {
           own[g][0][t.id] = ((srv.plan[0] || {})[t.id] === GUILDS[g].id) ? 1 : 0;
         } else {
-          if (isExcludedRag) {
+          // 🚨 THE UI LOCK: If you manually place a guild on a day in the UI, 
+          // the math engine freezes it permanently to help the solver.
+          const manualLockGid = (srv.plan[d] || {})[t.id];
+          
+          if (manualLockGid) {
+            own[g][d][t.id] = (manualLockGid === GUILDS[g].id) ? 1 : 0;
+          } 
+          else if (isExcludedRag) {
             own[g][d][t.id] = own[g][0][t.id];
           } 
-          else if (!reach[g][d][t.id]) {
+          else if (!reachFull[g][d][t.id]) {
             own[g][d][t.id] = 0;
           } 
           else {
@@ -174,7 +190,7 @@ export function buildModel(srv, mapData) {
 
   // 3. CORE CONSTRAINTS
   for (let d = 1; d <= DAYS; d++) {
-    for (const t of KINGDOMS) {
+    for (const t of VALID_KINGDOMS) {
       const holders = GUILDS.map((guild, g) => [1, ownAt(g, d, t.id)]);
       milp.atMost(holders, 1); 
       const before = GUILDS.map((guild, g) => [-1, ownAt(g, d - 1, t.id)]);
@@ -187,11 +203,11 @@ export function buildModel(srv, mapData) {
       const declaredTerms = [];
       const maxDecl = (isGoC && GUILDS[g].isSmall) ? 1 : baseMaxDecl;
       const entering = milp.binary(`enter_g${g}_d${d}`);
-      const townsYesterday = KINGDOMS.map(k => [1, ownAt(g, d - 1, k.id)]);
+      const townsYesterday = VALID_KINGDOMS.map(k => [1, ownAt(g, d - 1, k.id)]);
       
       milp.atMost([ ...townsYesterday, [999, entering] ], 999);
 
-      for (const t of KINGDOMS) {
+      for (const t of VALID_KINGDOMS) {
         const now = ownAt(g, d, t.id);
         const before = ownAt(g, d - 1, t.id);
 
@@ -217,8 +233,8 @@ export function buildModel(srv, mapData) {
         milp.atMost(adjConstraint, 0);
 
         if (isGoC && t.id === 'Darkwick') {
-          const lv2Terms = KINGDOMS.filter(k => k.type === 'lv2').map(k => [-1, ownAt(g, d - 1, k.id)]);
-          const lv1Terms = KINGDOMS.filter(k => k.type === 'lv1').map(k => [-0.5, ownAt(g, d - 1, k.id)]);
+          const lv2Terms = VALID_KINGDOMS.filter(k => k.type === 'lv2').map(k => [-1, ownAt(g, d - 1, k.id)]);
+          const lv1Terms = VALID_KINGDOMS.filter(k => k.type === 'lv1').map(k => [-0.5, ownAt(g, d - 1, k.id)]);
           milp.atMost([ [1, gain], ...lv2Terms, ...lv1Terms ], 0);
         }
       }
@@ -226,15 +242,12 @@ export function buildModel(srv, mapData) {
       if (declaredTerms.length > 0) {
         milp.atMost(declaredTerms, maxDecl);
 
-        // 🚨 NEW: THE BEACHHEAD RULE 🚨
-        // If a guild owns zero towns, they can only land on EXACTLY ONE Lv1 town to enter the map.
-        // This cuts Day 1 off-map permutations from 8.1 Billion down to 390,000.
         const beachheadTerms = [ ...declaredTerms ];
         let rhs = 1;
-        for (const k of KINGDOMS) {
+        for (const k of VALID_KINGDOMS) {
           const prevVar = ownAt(g, d - 1, k.id);
           if (typeof prevVar === 'number') {
-            rhs -= (-maxDecl * prevVar); // Shift constants safely to the RHS
+            rhs -= (-maxDecl * prevVar); 
           } else if (prevVar !== undefined) {
             beachheadTerms.push([-maxDecl, prevVar]);
           }
@@ -244,7 +257,7 @@ export function buildModel(srv, mapData) {
     }
   }
 
-  // 4. OBJECTIVE & SCALED ELASTIC WEIGHTS
+  // 4. OBJECTIVE & ELASTIC WEIGHTS
   for (let i = 0; i < N; i++) {
     const guild = sortedGuilds[i];
     const g = GUILDS.findIndex(x => x.id === guild.id);
@@ -252,37 +265,32 @@ export function buildModel(srv, mapData) {
 
     const tgt = target[guild.id];
     const isBot = i >= Math.floor(N / 2);
+    const offset = i * 10;
     
-    const offsetMult = isGoC ? 2 : 10;
-    const offset = i * offsetMult;
+    // 🚨 THE GREEDY BALANCE PARADIGM 🚨
+    // The Town Reward is mathematically HIGHER than the Quota Penalty.
+    // This forces the solver to aggressively capture every reachable town on the map,
+    // while perfectly feeding those towns to the guilds furthest below their targets.
+    const ptReward = 10000;
     
-    const baseLv = isGoC ? 200 : 9000;
-    const basePt = isGoC ? 50  : 9000;
-
-    const penLv3 = baseLv + (isBot ? offset : -offset); 
-    const penLv2 = baseLv + (isBot ? offset : -offset);
-    const penPts = basePt + (isBot ? offset : -offset);
+    const basePen = 6000;
+    const penLv3 = basePen + (isBot ? offset : -offset); 
+    const penLv2 = basePen + (isBot ? offset : -offset);
+    const penPts = basePen + (isBot ? offset : -offset);
 
     const lv3Terms = [];
     const lv2Terms = [];
     const pointTerms = [];
 
-    let tIdx = 0;
     for (let d = 1; d <= DAYS; d++) {
-      for (const t of KINGDOMS) {
-        tIdx++;
+      for (const t of VALID_KINGDOMS) {
         if (t.type === 'lv3') lv3Terms.push([1, ownAt(g, d, t.id)]);
         if (t.type === 'lv2') lv2Terms.push([1, ownAt(g, d, t.id)]);
         
         const pts = pointValues[t.type] || 0;
         pointTerms.push([pts, ownAt(g, d, t.id)]);
         
-        // 🚨 REDUCED GOC TOWN REWARD
-        // Stops the solver from spending 120s trying to squeeze one extra unreachable Lv1 town
-        const townReward = isGoC ? 500 : 10000; 
-        const tieBreaker = (i + 1) * tIdx * 0.001; 
-        
-        milp.addCost(ownAt(g, d, t.id), (-pts * townReward) - tieBreaker); 
+        milp.addCost(ownAt(g, d, t.id), -pts * ptReward); 
       }
     }
 
@@ -314,6 +322,12 @@ export function buildModel(srv, mapData) {
     for (let d = 1; d <= DAYS; d++) {
       plan[d] = {};
       for (const t of KINGDOMS) {
+        const isReq = VALID_KINGDOMS.some(vk => vk.id === t.id);
+        if (!isReq) {
+          plan[d][t.id] = '';
+          continue;
+        }
+        
         const holder = GUILDS.find((guild, g) => {
           const v = ownAt(g, d, t.id);
           const val = typeof v === 'number' ? v : values[v.col];
