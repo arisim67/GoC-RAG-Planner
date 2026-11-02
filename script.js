@@ -1045,7 +1045,7 @@ function exportServer(){
       startDate: srv.startDate,
       endDate: srv.endDate,
       guilds: srv.guilds.map(g => ({
-        id: g.id, // <-- ADD THIS LINE
+        id: g.id,
         name: g.name,
         color: g.color,
         basePoints: g.basePoints || 0,
@@ -1061,15 +1061,20 @@ function exportServer(){
 
   const json = JSON.stringify(exportData, null, 2);
 
-  // `event` only exists during the click, so grab the button now (not inside .then)
-  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target.closest('button') : null;
+  // Trigger file download directly
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${srv.name.replace(/[^a-z0-9]/gi, '_')}_export.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 
-  // Copy to clipboard
-  Promise.resolve().then(() => navigator.clipboard.writeText(json)).then(() => {
-    // Visual feedback
-    if (!btn) return;
+  // Visual feedback
+  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target.closest('button') : null;
+  if (btn) {
     const originalText = btn.textContent;
-    btn.textContent = '✓ Copied!';
+    btn.textContent = '✓ Downloaded!';
     btn.style.background = 'var(--green-glow)';
     btn.style.color = 'var(--green)';
     setTimeout(() => {
@@ -1077,16 +1082,7 @@ function exportServer(){
       btn.style.background = '';
       btn.style.color = '';
     }, 2000);
-  }).catch(() => {
-    // Fallback: download as file
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${srv.name.replace(/[^a-z0-9]/gi, '_')}_export.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  });
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
