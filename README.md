@@ -4,7 +4,7 @@ A browser-based planning tool for **Tokyo Debunker** guild events: **Game of Cla
 Server leads use it to lay out who takes which town on which day, check that the plan is legal,
 and auto-balance points, Darkwick and dorm time across guilds with a built-in MILP optimizer.
 
-**[Open the app](LINK-TO-LIVE-APP)** · **[User guide](docs/user-guide.md)**
+**[Open the app](https://arisim67.github.io/GoC-RAG-Planner/)** · **[User guide](docs/user-guide.md)**
 
 ![Planner screenshot](docs/screenshot.png)
 
@@ -71,7 +71,7 @@ adjust by hand where needed.
 
 ## Credits
 
-Made by **ari** (EA-4, 43, 45) and **gharial** (EA-44), with help from Claude and Gemini.
+Made by **ari** (EA-4, 43, 45)/**gharial** (EA-44), with help from Claude and Gemini.
 Questions or suggestions: `arianes.` on Discord.
 
 Solver: [HiGHS](https://highs.dev) via [highs-js](https://github.com/lovasoa/highs-js) (MIT).
