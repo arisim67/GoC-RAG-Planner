@@ -19,7 +19,7 @@ Before mapping out the territory, you need to define who is playing. Navigate to
 ## 3. Planning the Map Strategy
 The core of the app is the Planning Grid. This table lists every town, its point value, and its adjacent towns.
 
-*   **Manual Planning:** To manually assign a town, simply click the dropdown under the corresponding Day and select the guild. Use Day 0 to establish their initial footholds. The "Adjacent Towns" column on the far left lets you quickly see which towns connect without needing an external map.
+*   **Manual Planning:** To manually assign a town, click the dropdown under the corresponding Day and select the guild. Use Day 0 to establish their initial footholds. The "Adjacent Towns" column on the far left lets you quickly see which towns connect without needing an external map. To copy a guild or guilds across multiple days, select the guild(s) by long pressing on the cell and drag the handle in the bottom right corner of the cell across the days you want to copy to.
 *   **Importing by Day:** You can import town placement by day using the **📥 Import** button. Paste or type the list of guilds in the exact order of the towns shown in the planning grid, select ‘Import Daily Map Data’, and select the Target Day.
 *   **Full Server Export/Import:** Use the **📤 Export Server** button to download a complete backup of your current setup (including all internal guild IDs and settings) as a `.json` file. Drop this file into the Import tool to instantly restore your entire workspace.
 *   **⚡ Auto-Optimize:** The app can run a massive simulation to find the best route that respects all adjacency rules, prevents map wiping, and balances final scores, Darkwick count, and Dorm count. Ragnarok and Game of Claws use different methods:
