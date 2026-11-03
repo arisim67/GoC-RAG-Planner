@@ -1,0 +1,321 @@
+// js/tour.js
+// Interactive walkthrough of the planner. It highlights the real UI one part at a time.
+//
+// - Starts by itself the first time someone opens the site after this version is deployed.
+//   It is marked as seen as soon as it starts, so it never shows on its own again.
+//   To show it to everyone once more after a big update, bump TOUR_VERSION.
+// - Can be skipped at any step (Skip button or Esc) and replayed from the 🎓 Tutorial button.
+// - If there is no server to point at, a temporary "Tutorial Server" is created for the tour
+//   and removed afterwards. An existing server is only looked at, never changed.
+
+const TOUR_VERSION = 1;
+const SEEN_KEY = 'goc_tour_seen';
+
+let hooks = null;   // functions from app.js (see initTour)
+let steps = [];
+let index = 0;
+let els = null;     // overlay DOM nodes while a tour is running
+let demoState = null;
+let lastFocus = null;
+
+// ── Steps ────────────────────────────────────────────────────────
+// target: a [data-tour="..."] name, or null for a centred card.
+// Steps whose target is not on the page are skipped automatically.
+function buildSteps(srv) {
+  const goc = srv && srv.mode === 'goc';
+  return [
+    {
+      target: null,
+      title: 'Welcome to the GoC / Ragnarok Planner',
+      body: `This quick tour shows how to plan an event from start to finish. It takes about a minute.
+             <br><br>You can skip it now and replay it any time from the <b>🎓 Tutorial</b> button at the top.`,
+      next: 'Start tour',
+    },
+    {
+      target: 'tabs',
+      title: 'Servers',
+      body: `Each event server gets its own tab. Click <b>+ Add Server</b> to create one and pick its
+             <b>mode</b>, <b>map</b> and <b>dates</b>.<br><br>Right-click a tab (or long-press on a phone)
+             to rename, duplicate or delete it.`,
+    },
+    {
+      target: 'settings',
+      title: 'Server settings',
+      body: `Change the name, mode, map and dates here. The <b>mode</b> matters: it sets the maps and the
+             declare limits (2 a day for Game of Claws, 3 for Ragnarok).`,
+    },
+    {
+      target: 'guilds',
+      title: 'Guilds',
+      body: `Type each guild's real name. Drag the <b>☰</b> handle to reorder them; the order decides who gets
+             extra points, dorm time or castle time when things can't be split evenly.
+             <br><br>${goc
+               ? '<b>Small Guild</b> limits a guild to 1 declare a day.'
+               : '<b>Exclude Guild</b> keeps a guild\'s Day 0 towns but leaves it out of declares and point balancing.'}
+             Planning mid-event? Enter current points and town counts in the boxes on the right.`,
+    },
+    {
+      target: 'import',
+      title: 'Import',
+      body: `Paste a list of guild names to set up the roster in one go, paste a day's town owners in grid
+             order, or drop in a server backup (<code>.json</code>) made with <b>Export Server</b>.`,
+    },
+    {
+      target: 'grid',
+      title: 'Planning grid',
+      body: `One row per town, one column per day. Pick the guild that holds each town on each day, starting
+             with their footholds on <b>Day 0</b>. The left column lists each town's neighbours.
+             <br><br>To copy across days, long-press a cell and drag the handle in its bottom-right corner.`,
+      place: 'top',
+    },
+    {
+      target: 'status',
+      title: 'Validation',
+      body: `The app checks your plan as you go. <b>Green</b> pills mean that day is legal; <b>red</b> ones point
+             to the problem: a town taken without a neighbouring town, too many declares, or a guild losing
+             every town.`,
+    },
+    {
+      target: 'optimize',
+      title: '⚡ Auto-Optimize',
+      body: `Let the solver propose a full plan that follows the rules and evens out points${goc ? ', Darkwick and dorms' : ' and dorms'}.
+             ${goc
+               ? 'Game of Claws takes around <b>10–15 minutes</b>: keep the tab open and visible until it finishes.'
+               : 'Ragnarok takes up to about a minute.'}
+             <br><br>Not happy with the result? <b>↩ Undo Optimize</b> brings back your previous plan.`,
+    },
+    {
+      target: 'stats',
+      title: 'Check the balance',
+      body: `Final scores, total occupation and the daily declares (▲) and giveaways (↓) for every guild.
+             Use these to fine-tune the plan by hand.`,
+      place: 'top',
+    },
+    {
+      target: 'share',
+      title: 'Share with leadership',
+      body: `<b>🔗 Save to Cloud</b> uploads the plan and copies a link. People who open it see a view-only copy,
+             and after you save again they just refresh to get your changes.
+             <br><br><b>📸 Screenshots</b> saves the grid and tables as images for Discord.`,
+    },
+    {
+      target: 'messages',
+      title: 'Daily messages',
+      body: `Ready-made instructions for each day. Click a card to copy it, then paste it into Discord.`,
+      place: 'top',
+    },
+    {
+      target: null,
+      title: "You're all set!",
+      body: () => `${demoState && demoState.created
+               ? 'The Tutorial Server will be removed when you close this. Click <b>+ Add Server</b> to start your own plan.<br><br>'
+               : ''}Your work saves to this browser automatically. Replay this tour with <b>🎓 Tutorial</b>, or open
+             <b>📖 User Guide</b> for the full details.`,
+      next: 'Done',
+    },
+  ];
+}
+
+// ── Public API ───────────────────────────────────────────────────
+
+// Called once from app.js after the page has rendered.
+//   hooks.getActiveServer()     → current server or null
+//   hooks.createDemoServer()    → creates + shows a temporary server, returns the previously active id
+//   hooks.removeDemoServer(id)  → removes the temporary server and re-selects `id`
+//   hooks.isSharedLink()        → true when the page was opened from a shared plan link
+export function initTour(appHooks) {
+  hooks = appHooks;
+  window.startTour = () => startTour();
+  if (!hasSeenTour() && !hooks.isSharedLink()) {
+    // Small delay so the page (and fonts) settle before measuring positions.
+    setTimeout(() => startTour(), 600);
+  }
+}
+
+export function startTour() {
+  if (els) return; // already running
+  markSeen();
+  lastFocus = document.activeElement;
+
+  const srv = hooks.getActiveServer();
+  demoState = null;
+  if (!srv || srv.isViewOnly) {
+    demoState = { created: true, prevId: hooks.createDemoServer() };
+  }
+  steps = buildSteps(hooks.getActiveServer());
+  buildOverlay();
+  index = 0;
+  show(0, 1);
+}
+
+// ── Seen flag ────────────────────────────────────────────────────
+function hasSeenTour() {
+  try { return Number(localStorage.getItem(SEEN_KEY)) >= TOUR_VERSION; } catch (_) { return true; }
+}
+function markSeen() {
+  try { localStorage.setItem(SEEN_KEY, String(TOUR_VERSION)); } catch (_) { /* storage blocked: tour just won't remember */ }
+}
+
+// ── Overlay ──────────────────────────────────────────────────────
+function buildOverlay() {
+  const root = document.createElement('div');
+  root.className = 'tour-root';
+  root.innerHTML = `
+    <div class="tour-blocker"></div>
+    <div class="tour-spot" aria-hidden="true"></div>
+    <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" tabindex="-1">
+      <div class="tour-progress"><div class="tour-progress-fill"></div></div>
+      <div class="tour-count"></div>
+      <h3 class="tour-title" id="tour-title"></h3>
+      <div class="tour-body"></div>
+      <div class="tour-actions">
+        <button type="button" class="tour-skip">Skip tour</button>
+        <div class="tour-nav">
+          <button type="button" class="tour-back">Back</button>
+          <button type="button" class="tour-next">Next</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(root);
+  els = {
+    root,
+    spot: root.querySelector('.tour-spot'),
+    card: root.querySelector('.tour-card'),
+    count: root.querySelector('.tour-count'),
+    fill: root.querySelector('.tour-progress-fill'),
+    title: root.querySelector('.tour-title'),
+    body: root.querySelector('.tour-body'),
+    back: root.querySelector('.tour-back'),
+    next: root.querySelector('.tour-next'),
+    skip: root.querySelector('.tour-skip'),
+  };
+  els.back.onclick = () => show(index - 1, -1);
+  els.next.onclick = () => (index >= steps.length - 1 ? endTour() : show(index + 1, 1));
+  els.skip.onclick = () => endTour();
+  document.addEventListener('keydown', onKey, true);
+  window.addEventListener('resize', reposition);
+  window.addEventListener('scroll', reposition, true);
+  document.body.classList.add('tour-active');
+}
+
+function onKey(e) {
+  if (!els) return;
+  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); endTour(); }
+  else if (e.key === 'ArrowRight' || e.key === 'Enter') {
+    if (e.key === 'Enter' && e.target && e.target.tagName === 'BUTTON') return; // let the focused button act
+    e.preventDefault(); els.next.click();
+  }
+  else if (e.key === 'ArrowLeft' && index > 0) { e.preventDefault(); show(index - 1, -1); }
+  else if (e.key === 'Tab') {
+    // Keep keyboard focus inside the tour card.
+    const f = [...els.card.querySelectorAll('button')].filter(b => b.offsetParent !== null);
+    if (!f.length) return;
+    const i = f.indexOf(document.activeElement);
+    if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+  }
+}
+
+function targetEl(step) {
+  if (!step.target) return null;
+  const el = document.querySelector(`[data-tour="${step.target}"]`);
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return r.width || r.height ? el : null;
+}
+
+// dir: +1 forward, -1 back. Steps whose target is missing are skipped in that direction.
+function show(i, dir) {
+  while (i > 0 && i < steps.length - 1 && steps[i].target && !targetEl(steps[i])) i += dir;
+  i = Math.max(0, Math.min(steps.length - 1, i));
+  index = i;
+  const step = steps[i];
+
+  const visible = steps.filter(s => !s.target || targetEl(s));
+  const pos = visible.indexOf(step) + 1;
+  els.count.textContent = `${pos} of ${visible.length}`;
+  els.fill.style.width = `${(pos / visible.length) * 100}%`;
+  els.title.innerHTML = step.title;
+  els.body.innerHTML = typeof step.body === 'function' ? step.body() : step.body;
+  els.back.style.visibility = i === 0 ? 'hidden' : 'visible';
+  els.next.textContent = step.next || (i === steps.length - 1 ? 'Done' : 'Next');
+  els.skip.style.visibility = i === steps.length - 1 ? 'hidden' : 'visible';
+
+  const el = targetEl(step);
+  if (el) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Tall sections (grid, stats) are scrolled to their top; short ones are centred.
+    const tall = el.getBoundingClientRect().height > window.innerHeight * 0.6;
+    el.scrollIntoView({ block: tall ? 'start' : 'center', inline: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+  }
+  // Brief slide of the highlight to the new target, then instant tracking while the page scrolls.
+  els.root.classList.add('tour-anim');
+  clearTimeout(show._t);
+  show._t = setTimeout(() => els && els.root.classList.remove('tour-anim'), 260);
+  reposition();
+  // Smooth scrolling moves the target after this call; follow it until it settles.
+  let frames = 0;
+  const follow = () => { if (!els || frames++ > 90) return; reposition(); requestAnimationFrame(follow); };
+  requestAnimationFrame(follow);
+  els.next.focus({ preventScroll: true });
+}
+
+function reposition() {
+  if (!els) return;
+  const step = steps[index];
+  const el = targetEl(step);
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const card = els.card;
+  const mobile = vw < 640;
+  card.classList.toggle('tour-card-sheet', mobile && !!el);
+  card.classList.toggle('tour-card-center', !el);
+
+  if (!el) {
+    els.spot.style.display = 'none';
+    els.root.classList.add('tour-dim');
+    card.style.left = card.style.top = '';
+    return;
+  }
+  els.root.classList.remove('tour-dim');
+
+  // Spotlight: the target's box, padded, clipped to the screen.
+  const pad = 8, r = el.getBoundingClientRect();
+  const top = Math.max(r.top - pad, 4), left = Math.max(r.left - pad, 4);
+  const bottom = Math.min(r.bottom + pad, vh - 4), right = Math.min(r.right + pad, vw - 4);
+  Object.assign(els.spot.style, {
+    display: 'block', top: top + 'px', left: left + 'px',
+    width: Math.max(right - left, 0) + 'px', height: Math.max(bottom - top, 0) + 'px',
+  });
+
+  if (mobile) { card.style.left = card.style.top = ''; return; } // bottom sheet (CSS)
+
+  // Desktop: put the card below the target, else above, else pinned to the bottom of the screen.
+  const cw = card.offsetWidth, ch = card.offsetHeight, gap = 14;
+  let y;
+  const below = bottom + gap, above = top - gap - ch;
+  if (step.place !== 'top' && below + ch <= vh - 8) y = below;
+  else if (above >= 8) y = above;
+  else if (below + ch <= vh - 8) y = below;
+  else y = vh - ch - 16;
+  let x = Math.min(Math.max(left, 16), vw - cw - 16);
+  // Target too tall to avoid (grid, stats…): park the card in the bottom-right corner,
+  // which hides less than covering the town names on the left.
+  const overlaps = y < bottom && y + ch > top;
+  if (overlaps) { x = vw - cw - 24; y = vh - ch - 16; }
+  card.style.left = x + 'px';
+  card.style.top = y + 'px';
+}
+
+function endTour() {
+  if (!els) return;
+  document.removeEventListener('keydown', onKey, true);
+  window.removeEventListener('resize', reposition);
+  window.removeEventListener('scroll', reposition, true);
+  els.root.remove();
+  els = null;
+  document.body.classList.remove('tour-active');
+  if (demoState && demoState.created) hooks.removeDemoServer(demoState.prevId);
+  demoState = null;
+  window.scrollTo({ top: 0 });
+  if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
+}

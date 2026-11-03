@@ -2,6 +2,8 @@
 
 Welcome to the GoC/Ragnarok Planner made by ari(EA-4,43,45)/gharial(EA-44)! This web application is designed to help Tokyo Debunker guilds collaborate, strategize, and evenly distribute points during Game of Claws (GoC) and Ragnarok.
 
+**New here?** The first time you open the app, a short interactive tutorial walks you through it. You can skip it, and replay it any time with the **🎓 Tutorial** button at the top of the page.
+
 ## 1. Getting Started: Server Management
 When you first open the app, you will see a blank workspace. Your first step is to create a Server instance.
 *   Click the **+ Add Server** button in the center of the screen (or in the top tab bar).

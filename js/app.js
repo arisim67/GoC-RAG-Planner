@@ -1,4 +1,5 @@
 import { CLOUD_SYNC_URL } from './config.js';
+import { initTour } from './tour.js';
 import { getMaps, getMapList, getMapData } from './maps/index.js';
 import { MilpBuilder } from './solver/milp.js';
 import { buildModel, getPerfectTargets } from './solver/model_ragnarok.js';
@@ -473,7 +474,7 @@ function renderAll(){
     </div>
 
     <!-- WRAPPER 2: The Stats -->
-    <div id="capture-stats" style="background:var(--bg); padding:2px; border-radius:16px; margin-top:20px;">
+    <div id="capture-stats" data-tour="stats" style="background:var(--bg); padding:2px; border-radius:16px; margin-top:20px;">
       ${renderScores(srv,scores,targets)}
       ${renderOcc(srv,occ)}
       ${renderDecTable(srv,days,dec,give)}
@@ -538,7 +539,7 @@ function renderSettings(srv){
   }
 
   // STANDARD EDIT DASHBOARD
-  return `<div class="section">
+  return `<div class="section" data-tour="settings">
     <div class="sec-title">Server Settings</div>
     <div class="row">
       <div class="fg"><label>Server Name</label>
@@ -559,15 +560,15 @@ function renderSettings(srv){
       <div class="fg"><label>&nbsp;</label>
         <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
           <button class="btn" onclick="clearPlan()">Clear Plan</button>
-          <button class="btn-accent" style="background:#6bffb4;color:#0a1a14;box-shadow:0 4px 12px rgba(107,255,180,0.2)" onclick="openImport()">📥 Import</button>
+          <button class="btn-accent" style="background:#6bffb4;color:#0a1a14;box-shadow:0 4px 12px rgba(107,255,180,0.2)" onclick="openImport()" data-tour="import">📥 Import</button>
           <button class="btn-accent" style="background:#ffb86b;color:#1a1105;box-shadow:0 4px 12px rgba(255,184,107,0.2)" onclick="exportServer()">📤 Export Server</button>
           <button class="btn-accent" style="background:#ff6b9d;color:#1a050d;box-shadow:0 4px 12px rgba(255,107,157,0.2)" onclick="takeScreenshots()">📸 Screenshots</button>
-          <button id="opt-btn" class="btn-gold" onclick="autoOptimize()">⚡ Auto-Optimize</button>
+          <button id="opt-btn" class="btn-gold" data-tour="optimize" onclick="autoOptimize()">⚡ Auto-Optimize</button>
           
           ${srv.lastSolveTime ? `<span style="font-size:11px;color:var(--green);font-weight:600;background:var(--bg3);padding:4px 8px;border-radius:4px;border:1px solid var(--border);">Last solve: ${srv.lastSolveTime}s</span>` : ''}
           
           ${srv.undoPlan ? `<button class="btn-accent" onclick="undoOptimize()" style="border-color:var(--gold);color:var(--gold2)">↩ Undo Optimize</button>` : ''}
-          <button class="btn-accent" id="btn-share-cloud" style="background:#6baff5;color:#0a1a14;box-shadow:0 4px 12px rgba(107,175,245,0.2)" onclick="publishToCloud()">🔗 Save to Cloud</button>
+          <button class="btn-accent" id="btn-share-cloud" data-tour="share" style="background:#6baff5;color:#0a1a14;box-shadow:0 4px 12px rgba(107,175,245,0.2)" onclick="publishToCloud()">🔗 Save to Cloud</button>
           <button class="btn-accent" id="btn-sync-cloud" style="background:#b886ee;color:#0a1a14;box-shadow:0 4px 12px rgba(184,134,238,0.2)" onclick="syncFromCloud()">🔄 Sync from Cloud</button>
         </div></div>
     </div>
@@ -581,7 +582,7 @@ function renderGuilds(srv){
   // 🚨 Removed the .sort() function so the array stays in your manual dragged order
   const dAttr = srv.isViewOnly ? 'disabled' : '';
 
-  return `<div class="section">
+  return `<div class="section" data-tour="guilds">
     <div class="sec-title">Guilds</div>
     <div class="guild-list" id="guild-list">
       ${srv.guilds.map((g,i)=>`
@@ -698,7 +699,7 @@ function renderStatus(srv, issues, wipes){
     })
   ].join(' · ');
 
-  return `<div class="section">
+  return `<div class="section" data-tour="status">
     <div class="sec-title">Status</div>
     <div class="pills">
       ${byDay.map((_,i)=>{
@@ -732,7 +733,7 @@ function renderGrid(srv, days, mapData, issues, wipes) {
   
   const dAttr = srv.isViewOnly ? 'disabled' : '';
 
-  return `<div class="section">
+  return `<div class="section" data-tour="grid">
     <div class="sec-title">Planning Grid</div>
     <div class="tbl-wrap">
     <table class="ptbl">
@@ -915,7 +916,7 @@ function renderMsgs(srv,days,dec,give){
     return s.trim();
   });
   
-  return `<div class="section">
+  return `<div class="section" data-tour="messages">
     <div class="sec-title" style="display:flex; justify-content:space-between; align-items:center;">
       <div>Daily Messages <span style="font-size:9px;color:var(--text3);font-family:var(--font-body);letter-spacing:0;font-weight:400"> — click to copy</span></div>
     </div>
@@ -1554,7 +1555,7 @@ function save(){
 function load(){
   try{
     const r=localStorage.getItem('goc_v3');
-    if(r){const d=JSON.parse(r);servers=d.servers||[];activeId=d.activeId||null;
+    if(r){const d=JSON.parse(r);servers=(d.servers||[]).filter(x=>!x.isTutorial);activeId=d.activeId||null;
       if(!servers.find(x=>x.id===activeId))activeId=servers[0]?.id||null;}
   }catch(e){}
 }
@@ -1896,7 +1897,39 @@ load();
 checkUrlForSharedPlan().then(() => {
   renderTabs();
   renderAll();
+  initTour({
+    getActiveServer: () => activeSrv(),
+    isSharedLink: () => new URLSearchParams(window.location.search).has('plan'),
+    createDemoServer: createTutorialServer,
+    removeDemoServer: removeTutorialServer,
+  });
 });
+
+// Temporary server the tutorial points at when there is nothing else to show.
+// It is flagged isTutorial so load() discards it if the page is closed mid-tour.
+function createTutorialServer() {
+  const prevId = activeId;
+  const mapKey = getMapList('ragnarok')[0].key;
+  const day = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+  const s = mkSrv('Tutorial Server', 'ragnarok', mapKey, day(0), day(5));
+  s.isTutorial = true;
+  // Give each guild a Day 0 foothold so the grid and stats have something to show.
+  const lv1 = getMapData('ragnarok', mapKey).kingdoms.filter(k => k.type === 'lv1');
+  s.guilds.forEach((g, i) => { if (lv1[i]) s.plan[0][lv1[i].id] = g.id; });
+  servers.push(s);
+  activeId = s.id;
+  renderTabs();
+  renderAll();
+  return prevId;
+}
+
+function removeTutorialServer(prevId) {
+  servers = servers.filter(s => !s.isTutorial);
+  activeId = servers.find(s => s.id === prevId) ? prevId : (servers[0]?.id || null);
+  save();
+  renderTabs();
+  renderAll();
+}
 
 function updGuildExcluded(gid, isExcluded){
   const s = activeSrv(); if(!s) return;

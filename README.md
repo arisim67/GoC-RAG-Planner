@@ -9,37 +9,38 @@ and auto-balance points, Darkwick and dorm time across guilds with a built-in MI
 ![Planner screenshot](docs/screenshot.png)
 
 ## Features
-
+ 
 - **Planning grid** for every town and day, with adjacency shown inline and drag-to-copy across days
 - **Live validation** of adjacency, daily declare limits (2 for GoC, 3 for Ragnarok) and map wipes
 - **⚡ Auto-Optimize**: proposes a full, legal plan that balances final points, Darkwick and dorm counts
 - **Import / export**: paste guild lists or daily placements; back up a whole server as JSON
 - **Save to Cloud**: share a live link with server leadership
 - **Screenshots and daily messages** ready to paste into Discord
+- **Interactive tutorial** on first visit, replayable from the 🎓 Tutorial button
 - Runs entirely in the browser and saves automatically to local storage
-
 ## Running locally
-
+ 
 There is no build step. The app uses ES modules and a Web Worker, so it must be served over HTTP;
 opening `index.html` directly from disk will not work.
-
+ 
 ```bash
 git clone https://github.com/arisim67/GoC-RAG-Planner.git
 cd GoC-RAG-Planner
 python3 -m http.server 8000
 # then open http://localhost:8000
 ```
-
+ 
 Any static file server works (`npx serve`, the VS Code Live Server extension, etc.).
-
+ 
 ## Project structure
-
+ 
 ```
 ├── index.html              App page
-├── css/style.css           Styles
+├── css/                    Styles (style.css, tour.css)
 ├── js/
 │   ├── app.js              UI, state, import/export, screenshots, cloud sync
 │   ├── config.js           Deployment settings (cloud sync URL)
+│   ├── tour.js             Interactive first-visit tutorial
 │   ├── maps/               Town layouts and adjacency for each map
 │   └── solver/
 │       ├── worker.js       Runs HiGHS in a Web Worker so the page stays responsive

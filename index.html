@@ -12,6 +12,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/tour.css">
 </head>
 <body>
 
@@ -19,9 +20,10 @@
   <div class="app-title" style="flex:1;">
     GoC / Ragnarok Planner <small>made with Claude & Gemini</small>
     <a href="https://github.com/arisim67/GoC-RAG-Planner/blob/main/docs/user-guide.md" target="_blank" rel="noopener noreferrer" style="color: var(--green); font-weight: 600; font-size: 11px; letter-spacing: 0.05em; text-decoration: none; text-shadow: none; background: var(--bg3); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); margin-left: 10px;">📖 User Guide</a>
+    <button type="button" class="tour-launch" onclick="startTour()">🎓 Tutorial</button>
     <span id="save-status" style="font-size:11px; color:var(--text3); font-family:var(--font-body); font-weight:500; margin-left:auto; text-shadow:none; transition: color 0.3s;"></span>
   </div>
-  <div class="tabs-bar" id="tabs-bar"></div>
+  <div class="tabs-bar" id="tabs-bar" data-tour="tabs"></div>
 </div>
 
 <div class="main" id="main-content">
