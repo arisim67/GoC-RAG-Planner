@@ -481,6 +481,23 @@ function renderAll(){
       ptsRow.querySelectorAll('th').forEach(th => th.style.top = h + 'px');
     }
   });
+
+  // 🚨 NEW: Drag and Drop Initialization
+  const guildListEl = document.getElementById('guild-list');
+  if (guildListEl && !srv.isViewOnly && typeof Sortable !== 'undefined') {
+    new Sortable(guildListEl, {
+      handle: '.drag-handle', // Prevents accidental dragging when typing in inputs
+      animation: 150,
+      onEnd: function () {
+        // Read the new DOM order via the data-id tags
+        const newOrder = Array.from(guildListEl.children).map(row => row.dataset.id);
+        // Rebuild the master guild array to match the new visual order
+        srv.guilds = newOrder.map(id => srv.guilds.find(g => g.id === id));
+        save();
+        renderAll(); 
+      }
+    });
+  }
 }
 
 function renderSettings(srv){
@@ -547,17 +564,15 @@ function renderSettings(srv){
 }
 
 function renderGuilds(srv){
-  const sortedGuilds = [...srv.guilds].sort((a, b) => 
-    (parseInt(b.basePoints || 0, 10)) - (parseInt(a.basePoints || 0, 10))
-  );
-  
+  // 🚨 Removed the .sort() function so the array stays in your manual dragged order
   const dAttr = srv.isViewOnly ? 'disabled' : '';
 
   return `<div class="section">
     <div class="sec-title">Guilds</div>
     <div class="guild-list" id="guild-list">
-      ${sortedGuilds.map((g,i)=>`
-        <div class="guild-row">
+      ${srv.guilds.map((g,i)=>`
+        <div class="guild-row" data-id="${g.id}">
+          ${!srv.isViewOnly ? `<div class="drag-handle" style="cursor:grab; padding-right:8px; color:var(--text3); font-size:14px; user-select:none; touch-action:none;">☰</div>` : ''}
           <div class="guild-dot" style="background:${g.color}"></div>
           
           <input class="guild-name-inp" data-guild-id="${g.id}" data-guild-field="name" value="${esc(g.name)}" placeholder="Guild name"

@@ -14,6 +14,7 @@ Before mapping out the territory, you need to define who is playing. Navigate to
 *   **Small Guild:** If a guild is on the smaller side and has difficulty consistently being in the top 8 for kudos, this checkbox will limit their declares to 1.
 *   **Base Points (Mid-Event):** If you are starting this plan mid-event, input the guilds’ current points into the `pts` box. Also fill in the `L3`, `L2`, and `L1` fields if planning mid-map. These counts are used by the optimizer to enforce fair rotation caps across the full event.
 *   **Add/Remove:** Use the **+ Add Guild** button or the **✕** next to a guild to adjust the roster.
+*   **Drag-and-Drop to Reorder:** Click and hold the ☰ drag handle on the left of the guild name. Drag to new position and release to reorder the guilds. Guild order is used to decide which guilds get extra points, dorm time, or castle time.
 
 ## 3. Planning the Map Strategy
 The core of the app is the Planning Grid. This table lists every town, its point value, and its adjacent towns.
