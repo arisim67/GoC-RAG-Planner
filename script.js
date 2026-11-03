@@ -486,6 +486,27 @@ function renderAll(){
 function renderSettings(srv){
   const maps=getMapList(srv.mode);
   const days=numDays(srv);
+  
+  // 🚨 VIEW-ONLY DASHBOARD
+  if (srv.isViewOnly) {
+    return `<div class="section" style="border:2px dashed var(--accent); background:rgba(107, 175, 245, 0.05);">
+      <div class="sec-title" style="color:var(--accent);">👀 View-Only Mode</div>
+      <div style="font-size:13px; color:var(--text); margin-bottom:12px;">
+        You are viewing a shared plan: <strong>${esc(srv.name)}</strong>. To make your own changes, you must copy it.
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+        <button class="btn-gold" onclick="duplicateCurrentPlan()">📋 Duplicate to Edit</button>
+        <button class="btn-accent" id="btn-sync-cloud" style="background:#b886ee;color:#0a1a14;box-shadow:0 4px 12px rgba(184,134,238,0.2)" onclick="syncFromCloud()">🔄 Pull Latest Updates</button>
+        <button class="btn-accent" style="background:#ff6b9d;color:#1a050d;box-shadow:0 4px 12px rgba(255,107,157,0.2)" onclick="takeScreenshots()">📸 Screenshots</button>
+        <button class="btn-accent" style="background:#ffb86b;color:#1a1105;box-shadow:0 4px 12px rgba(255,184,107,0.2)" onclick="exportServer()">📤 Export Data</button>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:var(--text3)">
+        ${days} days planned · ${getMapData(srv.mode,srv.mapKey).kingdoms.length} kingdoms · ${srv.guilds.length} guilds
+      </div>
+    </div>`;
+  }
+
+  // STANDARD EDIT DASHBOARD
   return `<div class="section">
     <div class="sec-title">Server Settings</div>
     <div class="row">
@@ -529,6 +550,8 @@ function renderGuilds(srv){
   const sortedGuilds = [...srv.guilds].sort((a, b) => 
     (parseInt(b.basePoints || 0, 10)) - (parseInt(a.basePoints || 0, 10))
   );
+  
+  const dAttr = srv.isViewOnly ? 'disabled' : '';
 
   return `<div class="section">
     <div class="sec-title">Guilds</div>
@@ -538,39 +561,40 @@ function renderGuilds(srv){
           <div class="guild-dot" style="background:${g.color}"></div>
           
           <input class="guild-name-inp" data-guild-id="${g.id}" data-guild-field="name" value="${esc(g.name)}" placeholder="Guild name"
-            oninput="updGuildName('${g.id}',this.value)" style="flex:1;">
+            oninput="updGuildName('${g.id}',this.value)" style="flex:1;" ${dAttr}>
             
           ${srv.mode === 'ragnarok' ? `
             <input type="checkbox" id="exc_${g.id}" class="guild-small-check" ${g.isExcluded ? 'checked' : ''} 
-              onchange="updGuildExcluded('${g.id}', this.checked)">
+              onchange="updGuildExcluded('${g.id}', this.checked)" ${dAttr}>
             <label for="exc_${g.id}" class="guild-small-label"
              title="Exclude from map (keeps Day 0 holdings, does not declare, ignores point balancing)">Exclude Guild</label>
           ` : `
             <input type="checkbox" id="sm_${g.id}" class="guild-small-check" ${g.isSmall ? 'checked' : ''} 
-              onchange="updGuildSmall('${g.id}', this.checked)">
-            <label for="sm_${g.id}" class="guild-small-label" title="Check this if this is a smaller guild. The optimizer will limit them to 1 declare and deprioritize their point totals, while still giving them fair Castle/Dorm time.">Small Guild</label>
+              onchange="updGuildSmall('${g.id}', this.checked)" ${dAttr}>
+            <label for="sm_${g.id}" class="guild-small-label" title="Check this if this is a smaller guild.">Small Guild</label>
           `}
 
           <input type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="points" value="${esc(g.basePoints||0)}" style="width:50px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 6px;margin-left:12px;"
-            onchange="updGuildPoints('${g.id}',this.value)" title="Current points">
+            onchange="updGuildPoints('${g.id}',this.value)" title="Current points" ${dAttr}>
             
           <input type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv3" value="${esc(g.baseLv3||0)}" style="width:40px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 6px;margin-left:8px;"
-            onchange="updGuildLv3('${g.id}',this.value)" title="Previous Lv3 Days">
+            onchange="updGuildLv3('${g.id}',this.value)" title="Previous Lv3 Days" ${dAttr}>
             
           <input type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv2" value="${esc(g.baseLv2||0)}" style="width:40px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 6px;margin-left:8px;"
-            onchange="updGuildLv2('${g.id}',this.value)" title="Previous Dorm Days">
+            onchange="updGuildLv2('${g.id}',this.value)" title="Previous Dorm Days" ${dAttr}>
             
           <input type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv1" value="${esc(g.baseLv1||0)}" style="width:40px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 6px;margin-left:8px;"
-            onchange="updGuildLv1('${g.id}',this.value)" title="Previous Lv1 Town Days">
+            onchange="updGuildLv1('${g.id}',this.value)" title="Previous Lv1 Town Days" ${dAttr}>
 
           <span style="font-size:9px;color:var(--text2);margin-left:4px">Pts/L3/L2/L1</span>
 
-          ${srv.guilds.length>2?`<span class="guild-remove" style="margin-left:auto;" onclick="removeGuild('${g.id}')">✕</span>`:''}
+          ${(!srv.isViewOnly && srv.guilds.length>2) ? `<span class="guild-remove" style="margin-left:auto;" onclick="removeGuild('${g.id}')">✕</span>` : ''}
         </div>`).join('')}
     </div>
+    ${!srv.isViewOnly ? `
     <div style="margin-top:8px;display:flex;gap:6px">
       <button class="btn-accent" onclick="addGuild()">+ Add Guild</button>
-    </div>
+    </div>` : ''}
   </div>`;
 }
 
@@ -676,6 +700,8 @@ function renderGrid(srv, days, mapData, issues, wipes) {
   const lv1 = mapData.kingdoms.filter(k => k.type === 'lv1');
   const ordered = [...lv3, ...lv2, ...lv1];
   const scores = calcScores(srv);
+  
+  const dAttr = srv.isViewOnly ? 'disabled' : '';
 
   return `<div class="section">
     <div class="sec-title">Planning Grid</div>
@@ -688,7 +714,7 @@ function renderGrid(srv, days, mapData, issues, wipes) {
           <th class="ktype">Type</th>
           ${Array.from({length:totalCols},(_,d)=>`<th>
             ${dateLabel(srv,d)}
-            <div style="margin-top:6px;"><button class="clear-day-btn" onclick="clearDay(${d})" style="background:var(--bg3);border:1px solid var(--border);color:var(--text3);font-size:9px;padding:2px 6px;border-radius:4px;cursor:pointer;">Clear</button></div>
+            ${srv.isViewOnly ? '' : `<div style="margin-top:6px;"><button class="clear-day-btn" onclick="clearDay(${d})" style="background:var(--bg3);border:1px solid var(--border);color:var(--text3);font-size:9px;padding:2px 6px;border-radius:4px;cursor:pointer;">Clear</button></div>`}
           </th>`).join('')}
         </tr>
         <tr class="pts-row">
@@ -725,7 +751,7 @@ function renderGrid(srv, days, mapData, issues, wipes) {
               const err = issSet.has(`${d}_${k.id}`);
               
               return `<td style="background:${g ? g.color+'18' : ''};" ${err ? 'class="cell-err"' : ''}>
-                <select class="csel" data-k="${k.id}" data-d="${d}" style="${g ? 'color:'+g.color : ''}" onchange="onCell(event)">
+                <select class="csel" data-k="${k.id}" data-d="${d}" style="${g ? 'color:'+g.color : ''}" onchange="onCell(event)" ${dAttr}>
                   ${gOpts.map(([v,n]) => `<option value="${v}" ${v===gid ? 'selected' : ''}>${esc(n)}</option>`).join('')}
                 </select>
               </td>`;
@@ -1753,20 +1779,20 @@ async function syncFromCloud() {
   btn.disabled = true;
 
   try {
-    // 🚨 Fix 2: Add timestamp cache-buster so the browser is forced to pull fresh data
     const res = await fetch(`${WORKER_URL}?plan=${srv.id}&t=${Date.now()}`, { cache: 'no-store' });
     if(!res.ok) throw new Error('Plan not found in cloud');
     
     const sharedSrv = await res.json();
-    sharedSrv.cloudSynced = true; // 🚨 NEW
+    sharedSrv.cloudSynced = true; 
+    
     const existingIdx = servers.findIndex(s => s.id === sharedSrv.id);
     if(existingIdx >= 0) {
+      // Preserve the view-only lock if a viewer syncs to get your latest changes
+      sharedSrv.isViewOnly = servers[existingIdx].isViewOnly;
       servers[existingIdx] = sharedSrv; 
     }
     
-    // 🚨 Fix 3: Ensure the URL updates if they clicked sync while on a base URL
     window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + srv.id);
-
     save();
     renderAll();
     
@@ -1789,13 +1815,16 @@ async function checkUrlForSharedPlan() {
     const res = await fetch(`${WORKER_URL}?plan=${planId}`);
     if(!res.ok) throw new Error('Plan not found');
     const sharedSrv = await res.json();
-    sharedSrv.cloudSynced = true; // 🚨 NEW
+    sharedSrv.cloudSynced = true; 
     
     const existingIdx = servers.findIndex(s => s.id === sharedSrv.id);
     if(existingIdx >= 0) {
+      // The creator already has it in local storage, so keep it editable
+      sharedSrv.isViewOnly = servers[existingIdx].isViewOnly;
       servers[existingIdx] = sharedSrv; 
     } else {
-      // 🚨 REMOVED: The line that appended " (Shared)" to the name
+      // It's a new visitor: Lock the UI
+      sharedSrv.isViewOnly = true;
       servers.push(sharedSrv); 
     }
     activeId = sharedSrv.id;
@@ -1805,6 +1834,22 @@ async function checkUrlForSharedPlan() {
     alert("Could not load the shared plan. It may have expired or the link is incorrect.");
   }
 }
+
+// Gives viewers a way to create their own editable sandbox copy
+window.duplicateCurrentPlan = function() {
+  const src = activeSrv();
+  if(!src) return;
+  const copy = JSON.parse(JSON.stringify(src));
+  copy.id   = 's' + Date.now() + '_' + Math.random().toString(36).slice(2);
+  copy.name = src.name + ' (My Copy)';
+  copy.isViewOnly = false; // Unlock the copy!
+  const idx = servers.findIndex(s => s.id === src.id);
+  servers.splice(idx + 1, 0, copy);
+  activeId = copy.id;
+  save(); 
+  renderTabs(); 
+  renderAll();
+};
 
 // ══════════════════════════════════════════════════════════════
 //  INIT
