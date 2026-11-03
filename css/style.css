@@ -245,3 +245,105 @@ td.cell-err{
 html.capturing .csel { font-size: 12px !important; padding: 4px 6px !important; }
 html.capturing .clear-day-btn { font-size: 9px !important; padding: 2px 6px !important; }
 html.capturing input[type=number][data-guild-field] { width: 40px !important; font-size: 12px !important; }
+/* ══════════════════════════════════════════════════════════════
+   Components (formerly inline styles in index.html / js/render.js)
+   Selectors carry enough context to beat the generic rules above,
+   just as the inline styles used to.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Header and footer */
+.app-title.app-title-grow{flex:1;}
+.header-link{color:var(--green);font-weight:600;font-size:11px;letter-spacing:0.05em;text-decoration:none;text-shadow:none;background:var(--bg3);padding:4px 8px;border-radius:6px;border:1px solid var(--border);margin-left:10px;}
+.save-status{font-size:11px;color:var(--text3);font-family:var(--font-body);font-weight:500;margin-left:auto;text-shadow:none;transition:color 0.3s;}
+.empty-state{color:var(--text2);text-align:center;padding:60px 0;font-size:13px;}
+.empty-state .empty-state-cta{color:var(--accent2);}
+.site-footer{text-align:center;padding:10px 20px 30px;color:var(--text3);font-size:11px;font-weight:500;}
+.site-footer .site-footer-text{margin:0;}
+.site-footer .site-footer-link{color:var(--accent2);font-weight:600;letter-spacing:0.05em;text-decoration:underline;text-underline-offset:2px;}
+
+/* Modals */
+.modal.modal-wide{width:min(600px,96vw);}
+.modal.modal-confirm{width:min(360px,92vw);text-align:center;}
+.modal .modal-field{margin-bottom:10px;}
+.modal .input-full{width:100%;}
+.modal .import-text{min-height:150px;margin-top:12px;}
+.modal .row.import-options{margin-top:15px;gap:15px;}
+.modal .import-help{font-size:11px;color:var(--text3);margin-top:10px;}
+.modal .modal-row.modal-row-spaced{margin-top:20px;}
+.modal .modal-row.modal-row-center{justify-content:center;margin-top:20px;gap:12px;}
+.dropzone-icon{font-size:24px;margin-bottom:8px;}
+.dropzone-title{font-weight:600;color:var(--text);}
+.dropzone-hint{font-size:11px;color:var(--text3);margin-top:4px;}
+.confirm-msg{color:var(--text2);font-size:13px;margin-bottom:8px;}
+.confirm-hint{color:var(--text3);font-size:11px;}
+.btn.btn-danger,.btn.btn-danger:hover{border-color:var(--red);color:var(--red);}
+#tab-ctx .ctx-item.ctx-danger{color:var(--red);}
+
+/* Server settings: inputs and coloured action buttons */
+.row .fg input.settings-input{width:130px;}
+.btn-group{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.settings-meta{margin-top:8px;font-size:10px;color:var(--text3);}
+.solve-badge{font-size:11px;color:var(--green);font-weight:600;background:var(--bg3);padding:4px 8px;border-radius:4px;border:1px solid var(--border);}
+/* Each button keeps its own colour on hover (only the lift changes), as before */
+.btn-accent.btn-import,.btn-accent.btn-import:hover{background:#6bffb4;color:#0a1a14;box-shadow:0 4px 12px rgba(107,255,180,0.2);}
+.btn-accent.btn-export,.btn-accent.btn-export:hover{background:#ffb86b;color:#1a1105;box-shadow:0 4px 12px rgba(255,184,107,0.2);}
+.btn-accent.btn-screenshot,.btn-accent.btn-screenshot:hover{background:#ff6b9d;color:#1a050d;box-shadow:0 4px 12px rgba(255,107,157,0.2);}
+.btn-accent.btn-share,.btn-accent.btn-share:hover{background:#6baff5;color:#0a1a14;box-shadow:0 4px 12px rgba(107,175,245,0.2);}
+.btn-accent.btn-sync,.btn-accent.btn-sync:hover{background:#b886ee;color:#0a1a14;box-shadow:0 4px 12px rgba(184,134,238,0.2);}
+.btn-accent.btn-undo{border-color:var(--gold);color:var(--gold2);}
+
+/* View-only banner (shared plans) */
+.section.view-only{border:2px dashed var(--accent);background:rgba(107,175,245,0.05);}
+.section.view-only .sec-title.view-only-title{color:var(--accent);}
+.view-only-msg{font-size:13px;color:var(--text);margin-bottom:12px;}
+
+/* Screenshot capture wrappers */
+.capture-wrap{background:var(--bg);padding:2px;border-radius:16px;}
+.capture-wrap.capture-wrap-stats{margin-top:20px;}
+
+/* Guild rows */
+.guild-row .drag-handle{cursor:grab;padding-right:8px;color:var(--text3);font-size:14px;user-select:none;touch-action:none;}
+.guild-row input.guild-num{width:40px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 6px;margin-left:8px;}
+.guild-row input.guild-num.guild-num-pts{width:50px;margin-left:12px;}
+.guild-num-label{font-size:9px;color:var(--text2);margin-left:4px;}
+.guild-row .guild-remove{margin-left:auto;}
+.guild-actions{margin-top:8px;display:flex;gap:6px;}
+
+/* Section titles */
+.sec-title .sec-note{font-size:9px;color:var(--text3);font-family:var(--font-body);font-weight:400;letter-spacing:0;}
+.sec-title.sec-title-row{display:flex;justify-content:space-between;align-items:center;}
+.status-issues{font-size:10px;color:var(--red);margin-top:4px;}
+
+/* Planning grid header */
+.clear-day-wrap{margin-top:6px;}
+table.ptbl .clear-day-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text3);font-size:9px;padding:2px 6px;border-radius:4px;cursor:pointer;}
+table.ptbl tr.pts-row th.pts-blank{background:var(--bg,#191425);border-bottom:1px solid var(--border);}
+table.ptbl tr.pts-row th.kname.pts-label{position:sticky;left:0;z-index:40;background:var(--bg,#191425);padding:4px 10px;font-size:10px;color:var(--text2);text-align:right;border-bottom:1px solid var(--border);}
+table.ptbl tr.pts-row th.pts-cell{padding:4px 4px 8px;vertical-align:top;border-bottom:1px solid var(--border);}
+
+/* Total occupation table */
+.otbl.otbl-fixed{width:100%;table-layout:fixed;}
+.otbl th.col-guild{text-align:left;padding-left:10px;width:20%;}
+.otbl th.col-lv1{color:var(--lv1);text-align:center;width:20%;}
+.otbl th.col-lv2{color:var(--lv2);text-align:center;width:20%;}
+.otbl th.col-lv3{color:var(--lv3);text-align:center;width:20%;}
+.otbl th.col-total{text-align:center;width:20%;}
+.otbl td.occ-guild{text-align:left;padding-left:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.occ-guild-inner{display:flex;align-items:center;gap:5px;}
+.occ-guild-name{overflow:hidden;text-overflow:ellipsis;}
+.otbl td.occ-lv1{color:var(--lv1);text-align:center;}
+.otbl td.occ-lv2{color:var(--lv2);text-align:center;}
+.otbl td.occ-lv3{color:var(--lv3);text-align:center;}
+.otbl td.occ-total{font-weight:600;text-align:center;}
+
+/* Declares & giveaways table */
+.dtbl td.dec-guild{display:flex;align-items:center;gap:5px;font-weight:500;white-space:nowrap;}
+.dec-max{font-size:9px;color:var(--text3);margin-left:4px;}
+.dtbl .dec-count{font-weight:600;}
+.dec-towns{font-size:9px;color:var(--text2);}
+.dec-give{font-size:9px;color:var(--text3);}
+
+/* Daily messages */
+.msg-date{font-size:10px;color:var(--accent2);margin-bottom:4px;font-weight:600;}
+.msg-copied{color:var(--green);font-size:9px;}
+.msg-body{font-size:10px;line-height:1.6;white-space:pre-wrap;}

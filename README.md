@@ -4,7 +4,7 @@ A browser-based planning tool for **Tokyo Debunker** guild events: **Game of Cla
 Server leads use it to lay out who takes which town on which day, check that the plan is legal,
 and auto-balance points, Darkwick and dorm time across guilds with a built-in MILP optimizer.
 
-**[Open the app](https://arisim67.github.io/GoC-RAG-Planner/)** · **[User guide](docs/user-guide.md)**
+**[Open the app](https://arisim67.github.io/GoC-RAG-Planner/)** · **[User guide](docs/user-guide.md)** · [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md)
 
 ![Planner screenshot](docs/screenshot.png)
 
@@ -61,10 +61,14 @@ Any static file server works (`npx serve`, the VS Code Live Server extension, et
 │       ├── twophase.js     GoC two-phase strategy (Darkwick/dorms, then points)
 │       ├── paths.js        Works out the Lv1 towns needed to reach Darkwick/dorms
 │       └── check.js        Plain-JS legality check for solver output
+├── cloud-worker/           Runs on Cloudflare, not in the browser (deployed separately)
+│   └── worker.js           Stores and serves shared plans for Save to Cloud
 ├── vendor/highs/           Vendored HiGHS solver (WebAssembly)
 ├── images/                 Favicons
 └── docs/                   User guide and screenshots
 ```
+
+At the root you'll also find `README.md`, `CHANGELOG.md`, `PRIVACY.md` and `LICENSE`.
 
 ## How the optimizer works
 

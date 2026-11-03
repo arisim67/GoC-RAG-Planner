@@ -46,7 +46,7 @@ export function renderTabs(){
 export function renderAll(){
   const srv=activeSrv();
   const mc=document.getElementById('main-content');
-  if(!srv){mc.innerHTML='<div style="color:var(--text2);text-align:center;padding:60px 0;font-size:13px;">No servers yet. Click <strong style="color:var(--accent2)">+ Add Server</strong> to get started.</div>';return;}
+  if(!srv){mc.innerHTML='<div class="empty-state">No servers yet. Click <strong class="empty-state-cta">+ Add Server</strong> to get started.</div>';return;}
   const days=numDays(srv);
   const mapData=getMapData(srv.mode,srv.mapKey);
   const scores=calcScores(srv);
@@ -69,12 +69,12 @@ export function renderAll(){
     ${renderStatus(srv,issues,wipes)}
     
     <!-- WRAPPER 1: The Grid -->
-    <div id="capture-grid" style="background:var(--bg); padding:2px; border-radius:16px;">
+    <div class="capture-wrap" id="capture-grid">
       ${renderGrid(srv,days,mapData,issues,wipes)}
     </div>
 
     <!-- WRAPPER 2: The Stats -->
-    <div id="capture-stats" data-tour="stats" style="background:var(--bg); padding:2px; border-radius:16px; margin-top:20px;">
+    <div class="capture-wrap capture-wrap-stats" id="capture-stats" data-tour="stats">
       ${renderScores(srv,scores,targets)}
       ${renderOcc(srv,occ)}
       ${renderDecTable(srv,days,dec,give)}
@@ -121,18 +121,18 @@ function renderSettings(srv){
   
   // 🚨 VIEW-ONLY DASHBOARD
   if (srv.isViewOnly) {
-    return `<div class="section" style="border:2px dashed var(--accent); background:rgba(107, 175, 245, 0.05);">
-      <div class="sec-title" style="color:var(--accent);">👀 View-Only Mode</div>
-      <div style="font-size:13px; color:var(--text); margin-bottom:12px;">
+    return `<div class="section view-only">
+      <div class="sec-title view-only-title">👀 View-Only Mode</div>
+      <div class="view-only-msg">
         You are viewing a shared plan: <strong>${esc(srv.name)}</strong>. To make your own changes, you must copy it.
       </div>
-      <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+      <div class="btn-group">
         <button class="btn-gold" onclick="duplicateCurrentPlan()">📋 Duplicate to Edit</button>
-        <button class="btn-accent" id="btn-sync-cloud" style="background:#b886ee;color:#0a1a14;box-shadow:0 4px 12px rgba(184,134,238,0.2)" onclick="syncFromCloud()">🔄 Pull Latest Updates</button>
-        <button class="btn-accent" style="background:#ff6b9d;color:#1a050d;box-shadow:0 4px 12px rgba(255,107,157,0.2)" onclick="takeScreenshots()">📸 Screenshots</button>
-        <button class="btn-accent" style="background:#ffb86b;color:#1a1105;box-shadow:0 4px 12px rgba(255,184,107,0.2)" onclick="exportServer()">📤 Export Data</button>
+        <button class="btn-accent btn-sync" id="btn-sync-cloud" onclick="syncFromCloud()">🔄 Pull Latest Updates</button>
+        <button class="btn-accent btn-screenshot" onclick="takeScreenshots()">📸 Screenshots</button>
+        <button class="btn-accent btn-export" onclick="exportServer()">📤 Export Data</button>
       </div>
-      <div style="margin-top:8px;font-size:10px;color:var(--text3)">
+      <div class="settings-meta">
         ${days} days planned · ${getMapData(srv.mode,srv.mapKey).kingdoms.length} kingdoms · ${srv.guilds.length} guilds
       </div>
     </div>`;
@@ -143,7 +143,7 @@ function renderSettings(srv){
     <div class="sec-title">Server Settings</div>
     <div class="row">
       <div class="fg"><label>Server Name</label>
-        <input type="text" value="${esc(srv.name)}" onchange="updName(this.value)" style="width:130px"></div>
+        <input class="settings-input" type="text" value="${esc(srv.name)}" onchange="updName(this.value)"></div>
       <div class="fg"><label>Mode</label>
         <select onchange="updMode(this.value)">
           <option value="ragnarok"${srv.mode==='ragnarok'?' selected':''}>Ragnarok</option>
@@ -154,25 +154,25 @@ function renderSettings(srv){
           ${maps.map(m=>`<option value="${m.key}"${srv.mapKey===m.key?' selected':''}>${m.name}</option>`).join('')}
         </select></div>
       <div class="fg"><label>Start Date</label>
-        <input type="date" value="${srv.startDate||''}" onchange="updStart(this.value)" style="width:130px"></div>
+        <input class="settings-input" type="date" value="${srv.startDate||''}" onchange="updStart(this.value)"></div>
       <div class="fg"><label>End Date</label>
-        <input type="date" value="${srv.endDate||''}" onchange="updEnd(this.value)" style="width:130px"></div>
+        <input class="settings-input" type="date" value="${srv.endDate||''}" onchange="updEnd(this.value)"></div>
       <div class="fg"><label>&nbsp;</label>
-        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+        <div class="btn-group">
           <button class="btn" onclick="clearPlan()">Clear Plan</button>
-          <button class="btn-accent" style="background:#6bffb4;color:#0a1a14;box-shadow:0 4px 12px rgba(107,255,180,0.2)" onclick="openImport()" data-tour="import">📥 Import</button>
-          <button class="btn-accent" style="background:#ffb86b;color:#1a1105;box-shadow:0 4px 12px rgba(255,184,107,0.2)" onclick="exportServer()">📤 Export Server</button>
-          <button class="btn-accent" style="background:#ff6b9d;color:#1a050d;box-shadow:0 4px 12px rgba(255,107,157,0.2)" onclick="takeScreenshots()">📸 Screenshots</button>
+          <button class="btn-accent btn-import" onclick="openImport()" data-tour="import">📥 Import</button>
+          <button class="btn-accent btn-export" onclick="exportServer()">📤 Export Server</button>
+          <button class="btn-accent btn-screenshot" onclick="takeScreenshots()">📸 Screenshots</button>
           <button id="opt-btn" class="btn-gold" data-tour="optimize" onclick="autoOptimize()">⚡ Auto-Optimize</button>
           
-          ${srv.lastSolveTime ? `<span style="font-size:11px;color:var(--green);font-weight:600;background:var(--bg3);padding:4px 8px;border-radius:4px;border:1px solid var(--border);">Last solve: ${srv.lastSolveTime}s</span>` : ''}
+          ${srv.lastSolveTime ? `<span class="solve-badge">Last solve: ${srv.lastSolveTime}s</span>` : ''}
           
-          ${srv.undoPlan ? `<button class="btn-accent" onclick="undoOptimize()" style="border-color:var(--gold);color:var(--gold2)">↩ Undo Optimize</button>` : ''}
-          <button class="btn-accent" id="btn-share-cloud" data-tour="share" style="background:#6baff5;color:#0a1a14;box-shadow:0 4px 12px rgba(107,175,245,0.2)" onclick="publishToCloud()">🔗 Save to Cloud</button>
-          <button class="btn-accent" id="btn-sync-cloud" style="background:#b886ee;color:#0a1a14;box-shadow:0 4px 12px rgba(184,134,238,0.2)" onclick="syncFromCloud()">🔄 Sync from Cloud</button>
+          ${srv.undoPlan ? `<button class="btn-accent btn-undo" onclick="undoOptimize()">↩ Undo Optimize</button>` : ''}
+          <button class="btn-accent btn-share" id="btn-share-cloud" data-tour="share" onclick="publishToCloud()">🔗 Save to Cloud</button>
+          <button class="btn-accent btn-sync" id="btn-sync-cloud" onclick="syncFromCloud()">🔄 Sync from Cloud</button>
         </div></div>
     </div>
-    <div style="margin-top:8px;font-size:10px;color:var(--text3)">
+    <div class="settings-meta">
       ${days} days planned · ${getMapData(srv.mode,srv.mapKey).kingdoms.length} kingdoms · ${srv.guilds.length} guilds
     </div>
   </div>`;
@@ -187,11 +187,11 @@ function renderGuilds(srv){
     <div class="guild-list" id="guild-list">
       ${srv.guilds.map((g,i)=>`
         <div class="guild-row" data-id="${g.id}">
-          ${!srv.isViewOnly ? `<div class="drag-handle" style="cursor:grab; padding-right:8px; color:var(--text3); font-size:14px; user-select:none; touch-action:none;">☰</div>` : ''}
+          ${!srv.isViewOnly ? `<div class="drag-handle">☰</div>` : ''}
           <div class="guild-dot" style="background:${g.color}"></div>
           
           <input class="guild-name-inp" data-guild-id="${g.id}" data-guild-field="name" value="${esc(g.name)}" placeholder="Guild name"
-            oninput="updGuildName('${g.id}',this.value)" style="flex:1;" ${dAttr}>
+            oninput="updGuildName('${g.id}',this.value)" ${dAttr}>
             
           ${srv.mode === 'ragnarok' ? `
             <input type="checkbox" id="exc_${g.id}" class="guild-small-check" ${g.isExcluded ? 'checked' : ''} 
@@ -204,25 +204,25 @@ function renderGuilds(srv){
             <label for="sm_${g.id}" class="guild-small-label" title="Check this if this is a smaller guild.">Small Guild</label>
           `}
 
-          <input type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="points" value="${esc(g.basePoints||0)}" style="width:50px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 6px;margin-left:12px;"
+          <input class="guild-num guild-num-pts" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="points" value="${esc(g.basePoints||0)}"
             onchange="updGuildPoints('${g.id}',this.value)" title="Current points" ${dAttr}>
             
-          <input type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv3" value="${esc(g.baseLv3||0)}" style="width:40px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 6px;margin-left:8px;"
+          <input class="guild-num" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv3" value="${esc(g.baseLv3||0)}"
             onchange="updGuildLv3('${g.id}',this.value)" title="Previous Lv3 Days" ${dAttr}>
             
-          <input type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv2" value="${esc(g.baseLv2||0)}" style="width:40px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 6px;margin-left:8px;"
+          <input class="guild-num" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv2" value="${esc(g.baseLv2||0)}"
             onchange="updGuildLv2('${g.id}',this.value)" title="Previous Dorm Days" ${dAttr}>
             
-          <input type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv1" value="${esc(g.baseLv1||0)}" style="width:40px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 6px;margin-left:8px;"
+          <input class="guild-num" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv1" value="${esc(g.baseLv1||0)}"
             onchange="updGuildLv1('${g.id}',this.value)" title="Previous Lv1 Town Days" ${dAttr}>
 
-          <span style="font-size:9px;color:var(--text2);margin-left:4px">Pts/L3/L2/L1</span>
+          <span class="guild-num-label">Pts/L3/L2/L1</span>
 
-          ${(!srv.isViewOnly && srv.guilds.length>2) ? `<span class="guild-remove" style="margin-left:auto;" onclick="removeGuild('${g.id}')">✕</span>` : ''}
+          ${(!srv.isViewOnly && srv.guilds.length>2) ? `<span class="guild-remove" onclick="removeGuild('${g.id}')">✕</span>` : ''}
         </div>`).join('')}
     </div>
     ${!srv.isViewOnly ? `
-    <div style="margin-top:8px;display:flex;gap:6px">
+    <div class="guild-actions">
       <button class="btn-accent" onclick="addGuild()">+ Add Guild</button>
     </div>` : ''}
   </div>`;
@@ -250,7 +250,7 @@ function renderScores(srv, scores, targets) {
   const maxPts = Math.max(...final.map(x => x.pts), 1);
   
   return `<div class="section">
-    <div class="sec-title">Final Scores <span style="font-size:9px;color:var(--text3);font-family:var(--font-body);font-weight:400;letter-spacing:0"> Even target: ${targetHeader} pts</span></div>
+    <div class="sec-title">Final Scores <span class="sec-note"> Even target: ${targetHeader} pts</span></div>
     <div class="score-grid">
       ${final.map(({g, pts}) => {
         
@@ -318,7 +318,7 @@ function renderStatus(srv, issues, wipes){
         ${wipes.length ? `No Map Wipes (${wipes.length})` : 'No Map Wipes'}
       </div>
     </div>
-    ${issueText ? `<div style="font-size:10px;color:var(--red);margin-top:4px">${issueText}</div>` : ''}
+    ${issueText ? `<div class="status-issues">${issueText}</div>` : ''}
   </div>`;
 }
 
@@ -344,15 +344,15 @@ function renderGrid(srv, days, mapData, issues, wipes) {
           <th class="ktype">Type</th>
           ${Array.from({length:totalCols},(_,d)=>`<th>
             ${dateLabel(srv,d)}
-            ${srv.isViewOnly ? '' : `<div style="margin-top:6px;"><button class="clear-day-btn" onclick="clearDay(${d})" style="background:var(--bg3);border:1px solid var(--border);color:var(--text3);font-size:9px;padding:2px 6px;border-radius:4px;cursor:pointer;">Clear</button></div>`}
+            ${srv.isViewOnly ? '' : `<div class="clear-day-wrap"><button class="clear-day-btn" onclick="clearDay(${d})">Clear</button></div>`}
           </th>`).join('')}
         </tr>
         <tr class="pts-row">
-          <th class="kadj" style="background:var(--bg, #191425); border-bottom:1px solid var(--border);"></th>
-          <th class="kname" style="position:sticky; left:0; z-index:40; background:var(--bg, #191425); padding:4px 10px; font-size:10px; color:var(--text2); text-align:right; border-bottom:1px solid var(--border);">Running pts →</th>
-          <th class="ktype" style="background:var(--bg, #191425); border-bottom:1px solid var(--border);"></th>
+          <th class="kadj pts-blank"></th>
+          <th class="kname pts-label">Running pts →</th>
+          <th class="ktype pts-blank"></th>
           ${Array.from({length:totalCols},(_,d)=>{
-            return `<th style="padding:4px 4px 8px;vertical-align:top;border-bottom:1px solid var(--border);">
+            return `<th class="pts-cell">
               ${srv.guilds.map(g => {
                 let pts = 0;
                 if (d === 0) {
@@ -397,26 +397,26 @@ function renderGrid(srv, days, mapData, issues, wipes) {
 function renderOcc(srv, occ) {
   return `<div class="section">
     <div class="sec-title">Total Occupation (all days combined)</div>
-    <div class="tbl-wrap"><table class="otbl" style="width: 100%; table-layout: fixed;">
+    <div class="tbl-wrap"><table class="otbl otbl-fixed">
       <thead><tr>
-        <th style="text-align:left;padding-left:10px; width:20%;">Guild</th>
-        <th style="color:var(--lv1); text-align:center; width:20%;">Lv1 Towns</th>
-        <th style="color:var(--lv2); text-align:center; width:20%;">Lv2 Dorms</th>
-        <th style="color:var(--lv3); text-align:center; width:20%;">Lv3 Darkwick</th>
-        <th style="text-align:center; width:20%;">Total</th>
+        <th class="col-guild">Guild</th>
+        <th class="col-lv1">Lv1 Towns</th>
+        <th class="col-lv2">Lv2 Dorms</th>
+        <th class="col-lv3">Lv3 Darkwick</th>
+        <th class="col-total">Total</th>
       </tr></thead>
       <tbody>
         ${srv.guilds.map(g => `<tr>
-          <td style="text-align:left;padding-left:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            <div style="display:flex;align-items:center;gap:5px">
+          <td class="occ-guild">
+            <div class="occ-guild-inner">
               <div class="guild-dot" style="background:${g.color}; flex-shrink:0;"></div>
-              <span style="overflow:hidden; text-overflow:ellipsis;">${esc(g.name)}</span>
+              <span class="occ-guild-name">${esc(g.name)}</span>
             </div>
           </td>
-          <td style="color:var(--lv1); text-align:center;">${occ[g.id].lv1}</td>
-          <td style="color:var(--lv2); text-align:center;">${occ[g.id].lv2}</td>
-          <td style="color:var(--lv3); text-align:center;">${occ[g.id].lv3}</td>
-          <td style="font-weight:600; text-align:center;">${occ[g.id].total}</td>
+          <td class="occ-lv1">${occ[g.id].lv1}</td>
+          <td class="occ-lv2">${occ[g.id].lv2}</td>
+          <td class="occ-lv3">${occ[g.id].lv3}</td>
+          <td class="occ-total">${occ[g.id].total}</td>
         </tr>`).join('')}
       </tbody>
     </table></div>
@@ -436,17 +436,17 @@ function renderDecTable(srv,days,dec,give){
         ${srv.guilds.map(g=>{
           const maxDecl = g.isSmall ? 1 : baseMaxDecl;
           return `<tr>
-          <td style="display:flex;align-items:center;gap:5px;font-weight:500;white-space:nowrap">
+          <td class="dec-guild">
             <div class="guild-dot" style="background:${g.color}"></div>${esc(g.name)}
-            ${g.isSmall ? `<span style="font-size:9px;color:var(--text3);margin-left:4px">(Max 1)</span>` : ''}
+            ${g.isSmall ? `<span class="dec-max">(Max 1)</span>` : ''}
           </td>
           ${Array.from({length:days},(_,d)=>{
             const cnt=dec[g.id][d].length;
             const cls=cnt>maxDecl?'dc-bad':cnt>0?'dc-warn':'dc-ok';
             return `<td>
-              <div class="${cls}" style="font-weight:600">${cnt}▲</div>
-              <div style="font-size:9px;color:var(--text2)">${dec[g.id][d].join(', ')||'—'}</div>
-              ${give[g.id][d].length?`<div style="font-size:9px;color:var(--text3)">↓${give[g.id][d].join(',')}</div>`:''}
+              <div class="${cls} dec-count">${cnt}▲</div>
+              <div class="dec-towns">${dec[g.id][d].join(', ')||'—'}</div>
+              ${give[g.id][d].length?`<div class="dec-give">↓${give[g.id][d].join(',')}</div>`:''}
             </td>`;
           }).join('')}
         </tr>`}).join('')}
@@ -516,16 +516,16 @@ function renderMsgs(srv,days,dec,give){
   });
   
   return `<div class="section" data-tour="messages">
-    <div class="sec-title" style="display:flex; justify-content:space-between; align-items:center;">
-      <div>Daily Messages <span style="font-size:9px;color:var(--text3);font-family:var(--font-body);letter-spacing:0;font-weight:400"> — click to copy</span></div>
+    <div class="sec-title sec-title-row">
+      <div>Daily Messages <span class="sec-note"> — click to copy</span></div>
     </div>
     
     <div class="msg-grid">
       ${msgs.map((m,d)=>`<div class="msg-card" onclick="cpyMsg(this,${d})" data-msg="${esc(m)}">
-        <div style="font-size:10px;color:var(--accent2);margin-bottom:4px;font-weight:600">
-          ${dateLabelShort(srv,d+1).replace('<br>',' ')} <span id="cpd-${d}" style="color:var(--green);font-size:9px"></span>
+        <div class="msg-date">
+          ${dateLabelShort(srv,d+1).replace('<br>',' ')} <span class="msg-copied" id="cpd-${d}"></span>
         </div>
-        <div style="font-size:10px;line-height:1.6;white-space:pre-wrap">${esc(m)}</div>
+        <div class="msg-body">${esc(m)}</div>
       </div>`).join('')}
     </div>
   </div>`;
