@@ -1,0 +1,15 @@
+# Dependencies (HiGHS is vendored in vendor/highs instead)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/
+.idea/
+*.swp
+
+# Logs and local scratch
+*.log
+.env

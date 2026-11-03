@@ -24,7 +24,7 @@ export const GOC_MAPS = {
   woodlands: woodlandsMap
 };
 
-// Export your helper functions directly from here so script.js stays clean
+// Export your helper functions directly from here so app.js stays clean
 export function getMaps(mode) { 
   return mode === 'ragnarok' ? RAG_MAPS : GOC_MAPS; 
 }

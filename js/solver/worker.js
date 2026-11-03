@@ -1,16 +1,16 @@
-// worker.js
-import loadHighs from './solver/node_modules/highs/build/highs.mjs';
+// js/solver/worker.js
+import loadHighs from '../../vendor/highs/highs.mjs';
 
 let highsInstance = null;
 
 // HiGHS prints its progress log to stdout/stderr; forward every line to the main thread
-// so it shows up in the normal page console (see script.js) instead of a hidden worker context.
+// so it shows up in the normal page console (see js/app.js) instead of a hidden worker context.
 const sendLog = (text) => self.postMessage({ status: 'log', text });
 
 async function initSolver() {
   if (!highsInstance) {
     highsInstance = await loadHighs({
-      locateFile: (file) => './solver/node_modules/highs/build/' + file,
+      locateFile: (file) => new URL('../../vendor/highs/' + file, import.meta.url).href,
       print: sendLog,
       printErr: sendLog
     });

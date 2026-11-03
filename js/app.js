@@ -1,8 +1,9 @@
+import { CLOUD_SYNC_URL } from './config.js';
 import { getMaps, getMapList, getMapData } from './maps/index.js';
-import { MilpBuilder } from './milp.js';
-import { buildModel, getPerfectTargets } from './model.js';
+import { MilpBuilder } from './solver/milp.js';
+import { buildModel, getPerfectTargets } from './solver/model_ragnarok.js';
 
-const solverWorker = new Worker('worker.js', { type: 'module' });
+const solverWorker = new Worker(new URL('./solver/worker.js', import.meta.url), { type: 'module' });
 
 // HiGHS log forwarding: lines are printed to the console and kept in window.highsLog.
 // In DevTools, run  copy(window.highsLog.join('\n'))  to copy the whole log.
@@ -65,11 +66,22 @@ function showToast(msg, isError = true, duration = 5000) {
 //  STATE
 // ══════════════════════════════════════════════════════════════
 
+// 15 guild colors, picked to be clearly distinct from each other on the dark background
+// (every pair is at least ~11 apart in CIEDE2000 colour difference). The guild limit is
+// GUILD_COLORS.length, so no two guilds on a server ever share a colour.
 const GUILD_COLORS = [
   '#a08cff','#6bffb4','#ffb86b','#ff6b9d','#6baff5',
   '#f5e46b','#ff6b6b','#6bffe8','#d46bff','#b4ff6b',
-  '#ff9f6b','#6b9dff','#ffe06b','#6bffcf','#ff6bda','#a8ff6b'
+  '#ff9f6b','#26c0d0','#fec4ff','#9bb670','#ff6bda'
 ];
+const MAX_GUILDS = GUILD_COLORS.length;
+
+// First palette colour not already used by a guild on this server
+// (falls back to cycling the palette only if every colour is taken).
+function nextGuildColor(guilds) {
+  const used = new Set(guilds.map(g => (g.color || '').toLowerCase()));
+  return GUILD_COLORS.find(c => !used.has(c)) || GUILD_COLORS[guilds.length % GUILD_COLORS.length];
+}
 
 let servers = [];
 let activeId  = null;
@@ -929,7 +941,7 @@ function updMode(v){
   const maps=getMapList(v);s.mapKey=maps[0].key;
   // reset guilds to mode default
   const n=v==='ragnarok'?4:8;
-  while(s.guilds.length<n)s.guilds.push({id:'g'+Date.now()+'_'+s.guilds.length,name:`Guild ${s.guilds.length+1}`,color:GUILD_COLORS[s.guilds.length%GUILD_COLORS.length]});
+  while(s.guilds.length<n)s.guilds.push({id:'g'+Date.now()+'_'+s.guilds.length,name:`Guild ${s.guilds.length+1}`,color:nextGuildColor(s.guilds)});
   while(s.guilds.length>n)s.guilds.pop();
   resetPlan(s);save();renderAll();
 }
@@ -1009,8 +1021,8 @@ function updGuildLv1(gid,value){
   save(); renderAll();
 }
 function addGuild(){
-  const s=activeSrv();if(!s||s.guilds.length>=16)return;
-  s.guilds.push({id:'g'+Date.now(),name:`Guild ${s.guilds.length+1}`,color:GUILD_COLORS[s.guilds.length%GUILD_COLORS.length],basePoints:0});
+  const s=activeSrv();if(!s||s.guilds.length>=MAX_GUILDS)return;
+  s.guilds.push({id:'g'+Date.now(),name:`Guild ${s.guilds.length+1}`,color:nextGuildColor(s.guilds),basePoints:0});
   save();renderAll();
 }
 function removeGuild(gid){
@@ -1148,6 +1160,10 @@ function processImport(){
     parsed = JSON.parse(text);
   } catch(e) { /* not JSON, continue to line-based parsing */ }
 
+  // One entry per pasted line. Blank lines are kept so that, for the daily map import,
+  // line N still lines up with town N in the planning grid.
+  const lines = text.split(/\r?\n/);
+
   if(parsed && parsed.version === 1 && parsed.server) {
     // EXPORTED SERVER FORMAT - full server restore
     const imp = parsed.server;
@@ -1183,15 +1199,18 @@ function processImport(){
     // Extract unique, valid names
     const uniqueNames = [...new Set(lines.map(line => line.trim().replace(/^["']|["']$/g, ''))
       .filter(name => name && name.toLowerCase() !== 'none' && name !== '—'))];
-    
-    const colors = ['#FF5E7E','#FF9F5E','#FFD15E','#5EFEFF','#5E8FFF','#B85EFF','#FF5EEB','#5EFF8B','#FFFFFF','#A0A0A0'];
-    
+
+    if (uniqueNames.length > MAX_GUILDS) {
+      alert(`That list has ${uniqueNames.length} guilds; a server can have at most ${MAX_GUILDS}. Please shorten the list and try again.`);
+      return;
+    }
+
     // Completely replace the guild list
     srv.guilds = uniqueNames.map((name, index) => {
       return {
         id: 'g_' + Date.now() + index, // Generate fresh IDs
         name: name,
-        color: colors[index % colors.length],
+        color: GUILD_COLORS[index % GUILD_COLORS.length],
         basePoints: 0,
         baseLv3s: 0,
         baseLv2s: 0
@@ -1373,7 +1392,7 @@ async function autoOptimize() {
     const mapData = getMapData(srv.mode, srv.mapKey);
 
     if (srv.mode !== 'goc') {
-      // RAGNAROK: the original single-solve model (model.js), unchanged.
+      // RAGNAROK: the original single-solve model (model_ragnarok.js), unchanged.
       // 2. Generate the algebraic matrix and decoder
       console.time('Matrix Generation');
       const { milp, decode } = buildModel(srv, mapData);
@@ -1395,7 +1414,7 @@ async function autoOptimize() {
       // Progress goes to the console only; the button keeps showing "Finding Optimal Plan... (Ns)".
       const onProgress = (label) => console.log(`[TwoPhase] ${label}`);
       // Loaded on demand: if twophase.js / paths.js are missing from the site, only Auto-Optimize fails, not the whole page.
-      const { solveGoc } = await import('./twophase.js');
+      const { solveGoc } = await import('./solver/twophase.js');
       srv.plan = await solveGoc(srv, mapData, runHighsSolver, { onProgress });
     }
 
@@ -1744,7 +1763,7 @@ async function takeScreenshots() {
 //  CLOUD SYNC & SHARING
 // ══════════════════════════════════════════════════════════════
 
-const WORKER_URL = "https://mio-susuhara.elysesim.workers.dev"; // Replace with your subdomain!
+const WORKER_URL = CLOUD_SYNC_URL; // set in js/config.js
 
 async function publishToCloud() {
   const srv = activeSrv();
