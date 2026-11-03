@@ -764,33 +764,35 @@ function renderGrid(srv, days, mapData, issues, wipes) {
   </div>`;
 }
 
-function renderOcc(srv,occ){
+function renderOcc(srv, occ) {
   return `<div class="section">
     <div class="sec-title">Total Occupation (all days combined)</div>
-    <div class="tbl-wrap"><table class="otbl">
+    <div class="tbl-wrap"><table class="otbl" style="width: 100%; table-layout: fixed;">
       <thead><tr>
-        <th style="text-align:left;padding-left:10px">Guild</th>
-        <th style="color:var(--lv1)">Lv1 Towns</th>
-        <th style="color:var(--lv2)">Lv2 Dorms</th>
-        <th style="color:var(--lv3)">Lv3 Darkwick</th>
-        <th>Total</th>
+        <th style="text-align:left;padding-left:10px; width:20%;">Guild</th>
+        <th style="color:var(--lv1); text-align:center; width:20%;">Lv1 Towns</th>
+        <th style="color:var(--lv2); text-align:center; width:20%;">Lv2 Dorms</th>
+        <th style="color:var(--lv3); text-align:center; width:20%;">Lv3 Darkwick</th>
+        <th style="text-align:center; width:20%;">Total</th>
       </tr></thead>
       <tbody>
-        ${srv.guilds.map(g=>`<tr>
-          <td style="text-align:left;padding-left:10px">
+        ${srv.guilds.map(g => `<tr>
+          <td style="text-align:left;padding-left:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
             <div style="display:flex;align-items:center;gap:5px">
-              <div class="guild-dot" style="background:${g.color}"></div>${esc(g.name)}
+              <div class="guild-dot" style="background:${g.color}; flex-shrink:0;"></div>
+              <span style="overflow:hidden; text-overflow:ellipsis;">${esc(g.name)}</span>
             </div>
           </td>
-          <td style="color:var(--lv1)">${occ[g.id].lv1}</td>
-          <td style="color:var(--lv2)">${occ[g.id].lv2}</td>
-          <td style="color:var(--lv3)">${occ[g.id].lv3}</td>
-          <td style="font-weight:600">${occ[g.id].total}</td>
+          <td style="color:var(--lv1); text-align:center;">${occ[g.id].lv1}</td>
+          <td style="color:var(--lv2); text-align:center;">${occ[g.id].lv2}</td>
+          <td style="color:var(--lv3); text-align:center;">${occ[g.id].lv3}</td>
+          <td style="font-weight:600; text-align:center;">${occ[g.id].total}</td>
         </tr>`).join('')}
       </tbody>
     </table></div>
   </div>`;
 }
+
 
 function renderDecTable(srv,days,dec,give){
   const baseMaxDecl=srv.mode==='goc'?2:3;

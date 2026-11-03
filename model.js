@@ -43,22 +43,53 @@ export function getPerfectTargets(srv, mapData) {
   const reach = getReachableMatrix(GUILDS, KINGDOMS, DAYS, srv);
 
   const activeGuilds = GUILDS.filter(g => !( !isGoC && g.isExcluded ));
+  const excludedGuilds = GUILDS.filter(g => ( !isGoC && g.isExcluded ));
   const N = activeGuilds.length;
   
-  const sortedGuilds = [...activeGuilds].sort((a, b) => 
-    (parseInt(b.basePoints || 0, 10)) - (parseInt(a.basePoints || 0, 10))
-  );
-
   const target = {};
+  GUILDS.forEach(g => {
+    target[g.id] = { grandLv3: 0, grandLv2: 0, grandPts: 0, mapLv3: 0, mapLv2: 0, mapPts: 0 };
+  });
+
+  // 1. Isolate Excluded Guilds' locked points
+  const startDay = srv.plan[0] || {};
+  const excludedHeldTowns = new Set();
+  
+  excludedGuilds.forEach(g => {
+    let eL3 = parseInt(g.baseLv3 || 0, 10);
+    let eL2 = parseInt(g.baseLv2 || 0, 10);
+    let ePts = parseInt(g.basePoints || 0, 10);
+    
+    for (let d = 1; d <= DAYS; d++) {
+      for (const t of KINGDOMS) {
+        if (startDay[t.id] === g.id) {
+          if (d === 1) excludedHeldTowns.add(t.id); // Track permanently blocked towns
+          if (t.type === 'lv3') { eL3++; ePts += 3; }
+          if (t.type === 'lv2') { eL2++; ePts += 2; }
+          if (t.type === 'lv1') { ePts += 1; }
+        }
+      }
+    }
+    target[g.id].grandLv3 = eL3;
+    target[g.id].grandLv2 = eL2;
+    target[g.id].grandPts = ePts;
+  });
+
+  // 2. Calculate reachable points strictly for ACTIVE guilds
   if (N > 0) {
     let mapLv3 = 0, mapLv2 = 0, mapPts = 0;
     
     for (let d = 1; d <= DAYS; d++) {
       for (const t of KINGDOMS) {
+        // If an excluded guild holds this town, active guilds cannot take it
+        if (excludedHeldTowns.has(t.id)) continue;
+
         let canReach = false;
         for (let g = 0; g < GUILDS.length; g++) {
+          if (!isGoC && GUILDS[g].isExcluded) continue; // Ignore excluded guilds' reachability
           if (reach[g][d][t.id]) { canReach = true; break; }
         }
+        
         if (canReach) {
           if (t.type === 'lv3') { mapLv3++; mapPts += 3; }
           if (t.type === 'lv2') { mapLv2++; mapPts += 2; }
@@ -68,11 +99,14 @@ export function getPerfectTargets(srv, mapData) {
     }
 
     let grandLv3 = mapLv3, grandLv2 = mapLv2, grandPts = mapPts;
+    const sortedGuilds = [...activeGuilds].sort((a, b) => 
+      (parseInt(b.basePoints || 0, 10)) - (parseInt(a.basePoints || 0, 10))
+    );
+
     sortedGuilds.forEach(g => {
       grandLv3 += parseInt(g.baseLv3 || 0, 10);
       grandLv2 += parseInt(g.baseLv2 || 0, 10);
       grandPts += parseInt(g.basePoints || 0, 10);
-      target[g.id] = { grandLv3: 0, grandLv2: 0, grandPts: 0 };
     });
 
     const baseLv3 = Math.floor(grandLv3 / N);
