@@ -3,19 +3,6 @@
 Notable changes to the GoC / Ragnarok Planner, newest first.
 The app is updated continuously rather than in numbered releases, so entries are grouped by date.
 
-## Unreleased
-
-### Added
-- Privacy policy ([PRIVACY.md](PRIVACY.md)), linked from the page footer.
-
-### Changed
-- Page styling moved out of the HTML and JavaScript into `css/style.css`. The app looks exactly the same.
-- Removed a font (Cinzel) that was loaded but never used, so the page loads slightly faster.
-
-### Fixed
-- The 📸 Screenshots button no longer loses its text colour after taking screenshots.
-- Removed a stray copy of `index.html` inside `js/`, which loaded as a broken page.
-
 ## 2026-11-03
 
 ### Added
@@ -23,16 +10,22 @@ The app is updated continuously rather than in numbered releases, so entries are
 - **Drag-to-copy** in the planning grid: select cells and drag the handle to copy guilds across days.
 - **Reorder guilds** by dragging the ☰ handle. Guild order decides who gets extra points, dorm time or castle time.
 - **View-only shared links.** People who open a shared plan see a read-only copy and can duplicate it to edit.
+- Privacy policy ([PRIVACY.md](PRIVACY.md)), linked from the page footer.
+- **Link previews**: sharing the site link in Discord and other apps now shows a title, description and preview image.
 
 ### Changed
 - Guild colours: a new palette of 15 clearly distinct colours (some of the old ones were near-identical). A new guild always gets a colour that isn't already in use, and a server can have up to 15 guilds.
 - Game of Claws optimizer refined for better point balancing.
 - Project reorganised: source split into `css/`, `js/`, `js/solver/` and `vendor/`; the main script split into focused modules; new README, user guide moved to `docs/`, MIT licence added.
+- Page styling moved out of the HTML and JavaScript into `css/style.css`. The app looks exactly the same.
+- Removed a font (Cinzel) that was loaded but never used, so the page loads slightly faster.
 
 ### Fixed
 - **Import Guild List** and **Import Daily Map Data** were failing with an error; both work again.
 - Guild List import now uses the same colours as the rest of the app (it had its own list of 10, so colours repeated).
 - **Exclude Guild** in Ragnarok now behaves correctly.
+- The 📸 Screenshots button no longer loses its text colour after taking screenshots.
+- Removed a stray copy of `index.html` inside `js/`, which loaded as a broken page.
 
 ## 2026-11-02
 
