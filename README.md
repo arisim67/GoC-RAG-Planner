@@ -38,7 +38,18 @@ Any static file server works (`npx serve`, the VS Code Live Server extension, et
 ├── index.html              App page
 ├── css/                    Styles (style.css, tour.css)
 ├── js/
-│   ├── app.js              UI, state, import/export, screenshots, cloud sync
+│   ├── app.js              Entry point: startup, and the functions the HTML buttons call
+│   ├── state.js            Servers, active server, guild colours, saving/loading
+│   ├── calc.js             Scores, occupation, declares, plan validation
+│   ├── render.js           Builds the page (tabs, settings, guilds, grid, stats, messages)
+│   ├── handlers.js         Edits made in the page (settings, guilds, grid cells)
+│   ├── servers.js          Server tabs: add, switch, rename, duplicate, delete
+│   ├── import-export.js    Import modal and Export Server
+│   ├── optimize.js         ⚡ Auto-Optimize (runs the solver in a Web Worker)
+│   ├── grid-fill.js        Select cells and drag to copy across days
+│   ├── screenshots.js      📸 Screenshots
+│   ├── cloud.js            Save to Cloud / Sync and shared plan links
+│   ├── ui.js               Small helpers (toasts, escaping, date labels)
 │   ├── config.js           Deployment settings (cloud sync URL)
 │   ├── tour.js             Interactive first-visit tutorial
 │   ├── maps/               Town layouts and adjacency for each map

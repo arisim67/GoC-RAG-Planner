@@ -1,0 +1,116 @@
+// js/cloud.js
+// Save to Cloud / Sync from Cloud, and opening shared plan links (?plan=...).
+
+import { CLOUD_SYNC_URL } from './config.js';
+import { state, activeSrv, save } from './state.js';
+import { renderAll } from './render.js';
+
+const WORKER_URL = CLOUD_SYNC_URL; // set in js/config.js
+
+export async function publishToCloud() {
+  const srv = activeSrv();
+  if(!srv) return;
+  
+  const btn = document.getElementById('btn-share-cloud');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '⏳ Saving...';
+  btn.disabled = true;
+
+  try {
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      body: JSON.stringify(srv),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if(response.ok) {
+      srv.cloudSynced = true; // 🚨 NEW
+      save();                 // 🚨 NEW
+
+      // 🚨 Fix 1: Force the creator's URL bar to update immediately
+      window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + srv.id);
+      
+      const shareUrl = window.location.origin + window.location.pathname + '?plan=' + srv.id;
+      // Safari drops the "user gesture" after an awaited fetch, so the clipboard write can be
+      // refused even though the save worked. Treat that as a copy failure, not a save failure.
+      let copied = false;
+      try { await navigator.clipboard.writeText(shareUrl); copied = true; } catch (e) { console.warn('Clipboard blocked', e); }
+      btn.innerHTML = copied ? '✓ Saved & Copied!' : '✓ Saved!';
+      setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 2500);
+      if (!copied) setTimeout(() => window.prompt('Saved! Copy this share link:', shareUrl), 50);
+    } else {
+      throw new Error('Failed to save to cloud');
+    }
+  } catch(err) {
+    console.error(err);
+    alert("Failed to sync to cloud. Check your connection or Worker URL.");
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+}
+
+export async function syncFromCloud() {
+  const srv = activeSrv();
+  if(!srv) return;
+  
+  const btn = document.getElementById('btn-sync-cloud');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '⏳ Syncing...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${WORKER_URL}?plan=${srv.id}&t=${Date.now()}`, { cache: 'no-store' });
+    if(!res.ok) throw new Error('Plan not found in cloud');
+    
+    const sharedSrv = await res.json();
+    sharedSrv.cloudSynced = true; 
+    
+    const existingIdx = state.servers.findIndex(s => s.id === sharedSrv.id);
+    if(existingIdx >= 0) {
+      // Preserve the view-only lock if a viewer syncs to get your latest changes
+      sharedSrv.isViewOnly = state.servers[existingIdx].isViewOnly;
+      state.servers[existingIdx] = sharedSrv; 
+    }
+    
+    window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + srv.id);
+    save();
+    renderAll();
+    
+    btn.innerHTML = '✓ Synced!';
+  } catch(err) {
+    console.error(err);
+    alert("No cloud updates found for this specific server.");
+    btn.innerHTML = '❌ Error';
+  }
+  
+  setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 2500);
+}
+
+export async function checkUrlForSharedPlan() {
+  const params = new URLSearchParams(window.location.search);
+  const planId = params.get('plan');
+  if(!planId) return;
+
+  try {
+    const res = await fetch(`${WORKER_URL}?plan=${planId}`);
+    if(!res.ok) throw new Error('Plan not found');
+    const sharedSrv = await res.json();
+    sharedSrv.cloudSynced = true; 
+    
+    const existingIdx = state.servers.findIndex(s => s.id === sharedSrv.id);
+    if(existingIdx >= 0) {
+      // The creator already has it in local storage, so keep it editable
+      sharedSrv.isViewOnly = state.servers[existingIdx].isViewOnly;
+      state.servers[existingIdx] = sharedSrv; 
+    } else {
+      // It's a new visitor: Lock the UI
+      sharedSrv.isViewOnly = true;
+      state.servers.push(sharedSrv); 
+    }
+    state.activeId = sharedSrv.id;
+    save();
+  } catch(err) {
+    console.error(err);
+    alert("Could not load the shared plan. It may have expired or the link is incorrect.");
+  }
+}
