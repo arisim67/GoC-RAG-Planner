@@ -1334,7 +1334,7 @@ async function autoOptimize() {
 
   // Game of Claws plans are solved in several steps and take a while: let the user know up front.
   if (srv.mode === 'goc') {
-    showToast('Game of Claws plans can take around 10 minutes to optimize. Please keep this browser open until it finishes.', false, 10000);
+    showToast('Game of Claws plans can take around 10-15 minutes to optimize. Please keep this browser open until it finishes.', false, 10000);
   }
 
   const btn = document.getElementById('opt-btn'); // Use your actual button ID here

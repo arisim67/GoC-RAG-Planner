@@ -6,8 +6,12 @@
 //   Phase 2: Darkwick, dorms and the path towns are locked. All remaining lv1 towns are handed out over the
 //            whole event in ONE solve, to even out total points. Phase 2 is quick, so it is tried with a few
 //            different (equally valid) sets of locked paths and the most even result is kept.
+//   Clean-up: if Darkwick or dorms still are not perfectly even, a few days at a time are re-solved with
+//            everything else fixed (before phase 2). After phase 2, the lv1 towns are re-solved a few days at a
+//            time to even out points further. Every candidate must pass checkPlan() and improve things to be kept.
 import { buildModel, getPerfectTargets } from './model_goc.js';
 import { extractPathCells } from './paths.js';
+import { checkPlan } from './check.js';
 
 export const TWO_PHASE_DEFAULTS = {
   commitDays: 4,        // phase 1: days committed per window
@@ -16,8 +20,14 @@ export const TWO_PHASE_DEFAULTS = {
   phase1Gap: 500,       // stop a window when provably within this many objective units (~1 point = 6000)
   phase2TimeLimit: 120, // seconds per phase 2 attempt
   phase2Gap: 500,
-  phase2Attempts: 3,    // different locked-path sets to try (stops early once points are perfectly even)
+  phase2Attempts: 1,    // different locked-path sets to try (stops early once points are perfectly even)
   phase2Budget: 240,    // seconds in total for phase 2
+  repairWindow: 7,      // clean-up: days re-solved at a time when Darkwick / dorms are not even
+  repairTimeLimit: 60,  // seconds per repair window
+  repairBudget: 180,    // seconds in total for the Darkwick / dorm clean-up
+  refineWindows: [5, 8, 11], // clean-up: days re-solved at a time to even out points
+  refineTimeLimit: 40,  // seconds per refine window
+  refineBudget: 150,    // seconds in total for the points clean-up
 };
 
 export function numDays(srv) {
@@ -106,7 +116,112 @@ export async function solveGocPhase2(srv, mapData, runSolver, phase1Plan, userOp
   return best;
 }
 
+// Total distance of every guild's Darkwick and dorm counts from its target (0 = perfectly even)
+export function scarceDeviation(plan, srv, mapData, FULL, target) {
+  let dev = 0;
+  for (const g of srv.guilds) {
+    const t = target[g.id];
+    if (!t) continue;
+    let lv3 = 0, lv2 = 0;
+    for (let d = 1; d <= FULL; d++) for (const k of mapData.kingdoms) {
+      if (plan[d][k.id] === g.id) { if (k.type === 'lv3') lv3++; if (k.type === 'lv2') lv2++; }
+    }
+    dev += Math.abs(lv3 - t.mapLv3) + Math.abs(lv2 - t.mapLv2);
+  }
+  return dev;
+}
+
+function windowStarts(FULL, K, stride) {
+  if (K >= FULL) return [1];
+  const starts = [];
+  for (let ws = 1; ws + K - 1 <= FULL; ws += stride) starts.push(ws);
+  if (starts[starts.length - 1] !== FULL - K + 1) starts.push(FULL - K + 1);
+  return starts;
+}
+
+// Darkwick / dorm clean-up. phase1Plan: the plan from phase 1. Returns the best legal plan found.
+export async function repairScarce(srv, mapData, runSolver, phase1Plan, userOpts = {}) {
+  const o = { ...TWO_PHASE_DEFAULTS, ...userOpts };
+  const onProgress = o.onProgress || (() => {});
+  const FULL = numDays(srv);
+  const target = getPerfectTargets(srv, mapData);
+  const locks = JSON.parse(JSON.stringify(srv.plan));
+  let plan = phase1Plan;
+  let dev = scarceDeviation(plan, srv, mapData, FULL, target);
+  if (dev === 0) return plan;
+  const t0 = Date.now();
+  const K = Math.min(o.repairWindow, FULL);
+  for (let pass = 1; pass <= 2 && dev > 0; pass++) {
+    let improved = false;
+    for (const ws of windowStarts(FULL, K, 1)) {
+      if ((Date.now() - t0) / 1000 > o.repairBudget || dev === 0) break;
+      const we = ws + K - 1;
+      onProgress(`Clean-up · Darkwick & dorms · days ${ws}-${we} (${dev} off)`);
+      try {
+        const work = { ...srv, plan: JSON.parse(JSON.stringify(plan)) };
+        for (let d = ws; d <= we; d++) work.plan[d] = {};
+        const { milp, decode } = buildModel(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'scarce', locks });
+        const result = await runSolver(milp.toArrays(), { timeLimit: o.repairTimeLimit, absGap: o.phase1Gap });
+        const dec = decode(result);
+        const cand = JSON.parse(JSON.stringify(plan));
+        for (let d = ws; d <= we; d++) cand[d] = dec[d];
+        const d2 = scarceDeviation(cand, srv, mapData, FULL, target);
+        if (d2 < dev && checkPlan(cand, srv, mapData, FULL, locks).length === 0) { plan = cand; dev = d2; improved = true; }
+      } catch (e) { console.warn(`[TwoPhase] repair window ${ws}-${we} skipped: ${e.message}`); }
+    }
+    if (!improved) break;
+  }
+  return plan;
+}
+
+// Points clean-up. Darkwick, dorms and every other plan row stay as they are; only Lv1 towns are re-solved,
+// a few days at a time, and a result is kept only if it is legal and brings the points closer to even.
+export async function refinePoints(srv, mapData, runSolver, plan0, userOpts = {}) {
+  const o = { ...TWO_PHASE_DEFAULTS, ...userOpts };
+  const onProgress = o.onProgress || (() => {});
+  const FULL = numDays(srv);
+  const target = getPerfectTargets(srv, mapData);
+  const locks = JSON.parse(JSON.stringify(srv.plan));
+  let plan = plan0;
+  let dev = pointsDeviation(plan, srv, mapData, FULL, target);
+  if (dev === 0) return plan;
+  const t0 = Date.now();
+  for (const K0 of o.refineWindows) {
+    const K = Math.min(K0, FULL);
+    for (const ws of windowStarts(FULL, K, 2)) {
+      if ((Date.now() - t0) / 1000 > o.refineBudget || dev === 0) return plan;
+      const we = ws + K - 1;
+      onProgress(`Clean-up · points · days ${ws}-${we} (${dev} off)`);
+      try {
+        const work = { ...srv, plan: JSON.parse(JSON.stringify(plan)) };
+        for (let d = ws; d <= we; d++) for (const k of mapData.kingdoms) if (k.type === 'lv1') work.plan[d][k.id] = '';
+        const { milp, decode } = buildModel(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'lv1', locks });
+        const result = await runSolver(milp.toArrays(), { timeLimit: o.refineTimeLimit, absGap: o.phase2Gap });
+        const dec = decode(result);
+        const cand = JSON.parse(JSON.stringify(plan));
+        for (let d = ws; d <= we; d++) cand[d] = dec[d];
+        const d2 = pointsDeviation(cand, srv, mapData, FULL, target);
+        if (d2 < dev && checkPlan(cand, srv, mapData, FULL, locks).length === 0) { plan = cand; dev = d2; }
+      } catch (e) { console.warn(`[TwoPhase] refine window ${ws}-${we} skipped: ${e.message}`); }
+    }
+    if (K >= FULL) break;
+  }
+  return plan;
+}
+
+// Phases after phase 1: Darkwick / dorm clean-up, phase 2, points clean-up, final legality check.
+export async function solveGocFinish(srv, mapData, runSolver, phase1Plan, userOpts = {}) {
+  const FULL = numDays(srv);
+  const locks = JSON.parse(JSON.stringify(srv.plan));
+  const repaired = await repairScarce(srv, mapData, runSolver, phase1Plan, userOpts);
+  const phase2 = await solveGocPhase2(srv, mapData, runSolver, repaired, userOpts);
+  const plan = await refinePoints(srv, mapData, runSolver, phase2, userOpts);
+  const problems = checkPlan(plan, srv, mapData, FULL, locks);
+  if (problems.length) throw new Error('The optimizer could not build a legal plan this time. Please try again.');
+  return plan;
+}
+
 export async function solveGoc(srv, mapData, runSolver, userOpts = {}) {
   const phase1Plan = await solveGocPhase1(srv, mapData, runSolver, userOpts);
-  return solveGocPhase2(srv, mapData, runSolver, phase1Plan, userOpts);
+  return solveGocFinish(srv, mapData, runSolver, phase1Plan, userOpts);
 }

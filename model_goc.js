@@ -329,7 +329,7 @@ export function buildModel(srv, mapData, opts = {}) {
     // lv1 phase: from winStart on, Darkwick / dorms / path towns are already decided
     let fixedFuture = 0;
     if (phase === 'lv1') {
-      for (let d = winStart; d <= FULL_DAYS; d++) {
+      for (let d = winStart; d <= (repair ? DAYS : FULL_DAYS); d++) {   // repair: days after the window are counted in `got`
         for (const t of KINGDOMS) {
           const holder = t.type !== 'lv1' ? (srv.plan[d] || {})[t.id] : (pathCells[d] || {})[t.id];
           if (holder === guild.id) fixedFuture += pointValues[t.type] || 0;
