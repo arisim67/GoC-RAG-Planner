@@ -7,7 +7,11 @@ import { calcScores, calcOcc, validateAdj, validateWipes, calcDec, kPts, getElig
 import { openTabCtx, openAdd } from './servers.js';
 import { renderFillSel } from './grid-fill.js';
 import { getMapData, getMapList } from './maps/index.js';
-import { getPerfectTargets } from './solver/model_ragnarok.js';
+// Each mode's targets come from that mode's own model: Game of Claws has rules Ragnarok does not
+// (Darkwick needs a dorm or two lv1 towns behind it), so the GoC model is the only one that knows
+// which towns are really winnable. Reading GoC targets out of the Ragnarok model overstated them.
+import { getPerfectTargets as getGocTargets } from './solver/model_goc.js';
+import { getPerfectTargets as getRagnarokTargets } from './solver/model_ragnarok.js';
 
 export function renderTabs(){
   const bar=document.getElementById('tabs-bar');
@@ -56,7 +60,7 @@ export function renderAll(){
   const{dec,give}=calcDec(srv);
   const totalPts=mapData.kingdoms.reduce((s,k)=>s+kPts(k.type),0)*days;
   const totalBase=srv.guilds.reduce((s,g)=>s+(parseInt(g.basePoints||0,10)||0),0);
-  const targets=getPerfectTargets(srv, mapData);
+  const targets=(srv.mode==='goc'?getGocTargets:getRagnarokTargets)(srv, mapData);
 
   // Remember scroll positions so editing a cell doesn't snap the grid back to the left
   const scrollSel = '.tbl-wrap, .guild-list';

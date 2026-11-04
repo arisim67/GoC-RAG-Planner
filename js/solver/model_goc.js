@@ -6,6 +6,7 @@ import { MilpBuilder } from './milp.js';
 function getReachableMatrix(GUILDS, KINGDOMS, DAYS, srv, fromIdx = 0) {
   const reach = [];
   const startDay = srv.plan[fromIdx] || {};
+  const isGoC = srv.mode === 'goc';
 
   for (let g = 0; g < GUILDS.length; g++) {
     const gid = GUILDS[g].id;
@@ -19,11 +20,27 @@ function getReachableMatrix(GUILDS, KINGDOMS, DAYS, srv, fromIdx = 0) {
     for (let d = fromIdx + 1; d <= DAYS; d++) {
       reach[g][d] = {};
       const prev = reach[g][d - 1];
-      
+
+      // Darkwick needs backing, not just a neighbour: the model only lets a guild take it with a dorm
+      // or two lv1 towns held the day before (gain <= lv2 + 0.5*lv1, see the constraint below). Without
+      // that backing it cannot be taken, so its points must not be counted into anyone's target --
+      // otherwise "perfect" is arithmetically out of reach and the solver spends its time chasing
+      // points nobody can win. That is what happens on a map whose only castle neighbour is a guild
+      // holding a single lv1 town on day 0. Like the rest of this matrix this stays an upper bound: it
+      // asks whether the supporting towns were reachable at all, not whether one guild could hold them
+      // all at once, so it only ever removes targets that were impossible.
+      let backing = 0;
+      for (const t of KINGDOMS) {
+        if (!prev[t.id]) continue;
+        if (t.type === 'lv2') backing += 1;
+        else if (t.type === 'lv1') backing += 0.5;
+      }
+
       for (const t of KINGDOMS) {
         let canReach = prev[t.id];
         if (!canReach) canReach = t.adj.some(nId => prev[nId]);
-        
+        if (!prev[t.id] && isGoC && t.id === 'Darkwick' && backing < 1) canReach = false;
+
         const heldYesterday = Object.values(prev).some(held => held);
         if (!heldYesterday && t.type === 'lv1') canReach = true;
 

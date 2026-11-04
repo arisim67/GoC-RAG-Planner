@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**GoC / Ragnarok Planner** · Last updated: 3 November 2026
+**GoC / Ragnarok Planner** · Last updated: 4 November 2026
 
 The planner is a free, fan-made tool. It has no accounts, no cookies, no ads and no analytics.
 This page explains what little data is involved and where it goes.
@@ -17,11 +17,13 @@ time by clearing this site's data in your browser settings. Note that this also 
 
 When you click **🔗 Save to Cloud**, the server you are viewing is uploaded so it can be shared:
 its name, mode, map and dates, the guild names, points and settings, and the plan itself.
-It is stored on [Cloudflare](https://www.cloudflare.com/privacypolicy/) and gets a link with a random ID.
+A preview image of the plan (its name, final scores and a colour map of the towns) is uploaded with it,
+so the link shows a preview when it's posted in Discord or other apps.
+Both are stored on [Cloudflare](https://www.cloudflare.com/privacypolicy/) under a link with a random ID.
 
 - **Anyone who has the link can view that plan.** Only share it with people you want to see it.
-- Uploading again replaces the stored copy.
-- Saved plans are deleted automatically **30 days after they were last saved**. After that, the link no longer works, though anyone who already opened it keeps their copy in their own browser.
+- Uploading again replaces the stored copy and its preview image.
+- Saved plans and their preview images are deleted automatically **30 days after they were last saved**. After that, the link no longer works, though anyone who already opened it keeps their copy in their own browser.
 - To have a shared plan deleted, message `arianes.` on Discord with the link.
 
 Nothing is uploaded unless you click Save to Cloud. Opening a shared link downloads that plan into your

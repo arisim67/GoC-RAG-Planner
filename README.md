@@ -49,6 +49,7 @@ Any static file server works (`npx serve`, the VS Code Live Server extension, et
 │   ├── grid-fill.js        Select cells and drag to copy across days
 │   ├── screenshots.js      📸 Screenshots
 │   ├── cloud.js            Save to Cloud / Sync and shared plan links
+│   ├── preview.js          Draws the link-preview image for a shared plan
 │   ├── ui.js               Small helpers (toasts, escaping, date labels)
 │   ├── config.js           Deployment settings (cloud sync URL)
 │   ├── tour.js             Interactive first-visit tutorial
@@ -62,7 +63,7 @@ Any static file server works (`npx serve`, the VS Code Live Server extension, et
 │       ├── paths.js        Works out the Lv1 towns needed to reach Darkwick/dorms
 │       └── check.js        Plain-JS legality check for solver output
 ├── cloud-worker/           Runs on Cloudflare, not in the browser (deployed separately)
-│   └── worker.js           Stores and serves shared plans for Save to Cloud
+│   └── worker.js           Stores shared plans and serves share links with their previews
 ├── vendor/highs/           Vendored HiGHS solver (WebAssembly)
 ├── images/                 Favicons
 └── docs/                   User guide and screenshots

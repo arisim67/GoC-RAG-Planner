@@ -1,9 +1,12 @@
 // js/cloud.js
 // Save to Cloud / Sync from Cloud, and opening shared plan links (?plan=...).
+// Share links point at the cloud worker (/s/<id>) so each plan gets its own link preview;
+// the worker sends people on to this page with ?plan=<id>.
 
 import { CLOUD_SYNC_URL } from './config.js';
 import { state, activeSrv, save } from './state.js';
 import { renderAll } from './render.js';
+import { renderPlanPreview, previewText } from './preview.js';
 
 const WORKER_URL = CLOUD_SYNC_URL; // set in js/config.js
 
@@ -17,9 +20,14 @@ export async function publishToCloud() {
   btn.disabled = true;
 
   try {
+    // Link-preview image for Discord etc. If it can't be drawn, the plan still saves.
+    const preview = null;
+    const { title, description } = previewText(srv);
+    const body = preview ? { ...srv, preview, previewMeta: { title, description } } : srv;
+
     const response = await fetch(WORKER_URL, {
       method: 'POST',
-      body: JSON.stringify(srv),
+      body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' }
     });
     
@@ -53,10 +61,11 @@ export async function syncFromCloud() {
   const srv = activeSrv();
   if(!srv) return;
   
-  const btn = document.getElementById('btn-sync-cloud');
-  const originalText = btn.innerHTML;
-  btn.innerHTML = '⏳ Syncing...';
-  btn.disabled = true;
+  // renderAll() rebuilds the page, replacing this button, so always look up the current one.
+  const syncBtn = () => document.getElementById('btn-sync-cloud');
+  const setBtn = (html, disabled) => { const b = syncBtn(); if (b) { b.innerHTML = html; b.disabled = disabled; } };
+  const originalText = syncBtn().innerHTML;
+  setBtn('⏳ Syncing...', true);
 
   try {
     const res = await fetch(`${WORKER_URL}?plan=${srv.id}&t=${Date.now()}`, { cache: 'no-store' });
@@ -76,14 +85,14 @@ export async function syncFromCloud() {
     save();
     renderAll();
     
-    btn.innerHTML = '✓ Synced!';
+    setBtn('✓ Synced!', true);
   } catch(err) {
     console.error(err);
     alert("No cloud updates found for this specific server.");
-    btn.innerHTML = '❌ Error';
+    setBtn('❌ Error', true);
   }
   
-  setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 2500);
+  setTimeout(() => setBtn(originalText, false), 2500);
 }
 
 export async function checkUrlForSharedPlan() {
