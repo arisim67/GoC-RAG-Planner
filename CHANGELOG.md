@@ -8,6 +8,9 @@ The app is updated continuously rather than in numbered releases, so entries are
 ### Changed
 - Game of Claws optimizer refined for better point balancing
 
+### Fixed
+- Replace Obscuary with Dionysia on Wetland Game of Claws map
+
 ## 2026-11-03
 
 ### Added
