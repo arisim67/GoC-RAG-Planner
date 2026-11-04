@@ -5,8 +5,8 @@ The app is updated continuously rather than in numbered releases, so entries are
 
 ## 2026-11-04
 
-  ### Added
-  - 🔗 Save to Cloud now also stores a preview image of the plan, ready for link previews on the upcoming new site address.
+### Added
+- 🔗 Save to Cloud now also stores a preview image of the plan, ready for link previews on the upcoming new site address.
 
 ### Changed
 - Game of Claws optimizer refined for better point balancing

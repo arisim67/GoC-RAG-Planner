@@ -62,6 +62,8 @@ Any static file server works (`npx serve`, the VS Code Live Server extension, et
 │       ├── twophase.js     GoC two-phase strategy (Darkwick/dorms, then points)
 │       ├── paths.js        Works out the Lv1 towns needed to reach Darkwick/dorms
 │       └── check.js        Plain-JS legality check for solver output
+├── functions/index.js      Cloudflare Pages only: gives shared plan links their own preview
+├── _routes.json            Cloudflare Pages only: runs that function for the main page only
 ├── cloud-worker/           Runs on Cloudflare, not in the browser (deployed separately)
 │   └── worker.js           Stores shared plans and serves share links with their previews
 ├── vendor/highs/           Vendored HiGHS solver (WebAssembly)

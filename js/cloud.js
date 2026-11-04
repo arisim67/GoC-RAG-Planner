@@ -1,7 +1,6 @@
 // js/cloud.js
 // Save to Cloud / Sync from Cloud, and opening shared plan links (?plan=...).
-// Share links point at the cloud worker (/s/<id>) so each plan gets its own link preview;
-// the worker sends people on to this page with ?plan=<id>.
+// On Cloudflare Pages, functions/index.js gives each shared plan link its own preview.
 
 import { CLOUD_SYNC_URL } from './config.js';
 import { state, activeSrv, save } from './state.js';
@@ -21,7 +20,7 @@ export async function publishToCloud() {
 
   try {
     // Link-preview image for Discord etc. If it can't be drawn, the plan still saves.
-    const preview = null;
+    const preview = await renderPlanPreview(srv);
     const { title, description } = previewText(srv);
     const body = preview ? { ...srv, preview, previewMeta: { title, description } } : srv;
 
@@ -38,7 +37,9 @@ export async function publishToCloud() {
       // 🚨 Fix 1: Force the creator's URL bar to update immediately
       window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + srv.id);
       
-      const shareUrl = window.location.origin + window.location.pathname + '?plan=' + srv.id;
+      // Built from wherever the app is opened (GitHub Pages or Cloudflare Pages). &v= changes on each
+      // save so Discord fetches the new preview instead of reusing a cached one; the app ignores it.
+      const shareUrl = window.location.origin + window.location.pathname + '?plan=' + srv.id + '&v=' + Date.now().toString(36);
       // Safari drops the "user gesture" after an awaited fetch, so the clipboard write can be
       // refused even though the save worked. Treat that as a copy failure, not a save failure.
       let copied = false;

@@ -6,7 +6,9 @@
 import { numDays } from './state.js';
 import { calcScores } from './calc.js';
 import { getMapData, getMapList } from './maps/index.js';
-import { getPerfectTargets } from './solver/model_ragnarok.js';
+// Same targets as the Final Scores section (each mode uses its own model's rules)
+import { getPerfectTargets as getGocTargets } from './solver/model_goc.js';
+import { getPerfectTargets as getRagnarokTargets } from './solver/model_ragnarok.js';
 
 export const PREVIEW_W = 1200;
 export const PREVIEW_H = 630;
@@ -119,7 +121,7 @@ export async function renderPlanPreview(srv) {
     // Final Scores (same numbers and order as the Final Scores section)
     const days = numDays(srv);
     const scores = calcScores(srv);
-    const targets = getPerfectTargets(srv, mapData) || {};
+    const targets = (srv.mode === 'goc' ? getGocTargets : getRagnarokTargets)(srv, mapData) || {};
     const final = srv.guilds
       .map(gd => {
         const pts = (scores.cumul[gd.id] && scores.cumul[gd.id][days - 1]) || 0;
