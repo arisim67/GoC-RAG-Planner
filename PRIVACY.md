@@ -21,7 +21,7 @@ It is stored on [Cloudflare](https://www.cloudflare.com/privacypolicy/) and gets
 
 - **Anyone who has the link can view that plan.** Only share it with people you want to see it.
 - Uploading again replaces the stored copy.
-- **[TODO: how long saved plans are kept, e.g. "until you ask for them to be deleted" or "for 90 days"]**
+- Saved plans are deleted automatically **30 days after they were last saved**. After that, the link no longer works, though anyone who already opened it keeps their copy in their own browser.
 - To have a shared plan deleted, message `arianes.` on Discord with the link.
 
 Nothing is uploaded unless you click Save to Cloud. Opening a shared link downloads that plan into your
