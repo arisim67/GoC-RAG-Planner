@@ -1,11 +1,11 @@
 // js/preview.js
-// Draws the 1200×630 link-preview image for a shared plan: server name, mode, map and dates,
-// the Total Occupation table with each guild's points, and a colour mini-map of the plan
-// (towns × days). Uploaded with Save to Cloud so Discord and other apps can show it when the
-// share link is posted.
+// Draws the 1200×630 link-preview image for a shared plan: the Total Occupation table with each
+// guild's points, and each guild's declares and giveaways per day (towns and dorms named).
+// Uploaded with Save to Cloud so Discord and other apps can show it when the share link is posted.
+// The plan's name, mode, map and dates are not drawn: apps show them as text above the image.
 
 import { numDays } from './state.js';
-import { calcScores, calcOcc } from './calc.js';
+import { calcScores, calcOcc, calcDec } from './calc.js';
 import { getMapData, getMapList } from './maps/index.js';
 
 export const PREVIEW_W = 1200;
@@ -90,75 +90,71 @@ export async function renderPlanPreview(srv) {
     g.addColorStop(0, 'rgba(45,35,72,0.6)'); g.addColorStop(1, 'rgba(45,35,72,0)');
     ctx.fillStyle = g; ctx.fillRect(0, 0, PREVIEW_W, PREVIEW_H);
 
-    const L = 56, leftW = 556;
+    // No title block: Discord and other apps already show the plan's name, mode, map and dates
+    // as text above the image, so the whole image goes to the two tables.
+    const L = 48, R = 1152;
     ctx.textBaseline = 'alphabetic';
+    const spaced = on => { if ('letterSpacing' in ctx) ctx.letterSpacing = on ? '2px' : '0px'; };
 
-    // Eyebrow
-    ctx.fillStyle = C.green; ctx.font = `600 15px ${BODY}`;
-    if ('letterSpacing' in ctx) ctx.letterSpacing = '2px';
-    ctx.fillText('GOC / RAGNAROK PLANNER  ·  SHARED PLAN', L, 74);
-    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
-
-    // Server name: shrink to fit one line, then ellipsize
-    const name = srv.name || 'Shared plan';
-    let size = 54;
-    ctx.font = `800 ${size}px ${HEAD}`;
-    while (size > 36 && ctx.measureText(name).width > leftW) { size -= 2; ctx.font = `800 ${size}px ${HEAD}`; }
-    ctx.fillStyle = C.gold;
-    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 3;
-    ctx.fillText(fit(ctx, name, leftW), L, 136);
-    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-
-    // Mode · map, then dates · guild count
-    const { subtitle } = previewText(srv);
-    ctx.font = `500 22px ${BODY}`; ctx.fillStyle = C.text2;
-    ctx.fillText(fit(ctx, subtitle.slice(0, 2).join('  ·  '), leftW), L, 180);
-    ctx.fillStyle = C.text3;
-    ctx.fillText(fit(ctx, subtitle.slice(2).join('  ·  '), leftW), L, 212);
-
-    // Total Occupation table (same numbers and guild order as that section in the app), with each
-    // guild's final points in the last column instead of the town total
     const days = numDays(srv);
     const scores = calcScores(srv);
     const occ = calcOcc(srv);
+    const { dec, give } = calcDec(srv);
+    const typeOf = {};
+    mapData.kingdoms.forEach(k => { typeOf[k.id] = k.type; });
+    const baseMax = srv.mode === 'goc' ? 2 : 3;
     const rows = srv.guilds.map(gd => ({
       gd,
       o: occ[gd.id] || { lv1: 0, lv2: 0, lv3: 0 },
       pts: (scores.cumul[gd.id] && scores.cumul[gd.id][days - 1]) || 0,
+      max: gd.isSmall ? 1 : baseMax,
     }));
 
-    ctx.font = `700 15px ${HEAD}`; ctx.fillStyle = C.gold;
-    if ('letterSpacing' in ctx) ctx.letterSpacing = '2px';
-    ctx.fillText('TOTAL OCCUPATION', L, 262);
-    const titleW = ctx.measureText('TOTAL OCCUPATION').width;
-    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
-    ctx.strokeStyle = C.border; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(L + titleW + 16, 257.5); ctx.lineTo(L + leftW, 257.5); ctx.stroke();
+    // Two tables side by side whose rows line up, so each guild reads straight across
+    const LX = L, LW = 400;            // Total Occupation
+    const RX = 476, RW = R - 476;      // Declares & Giveaways
+    const sectionTitle = (text, x, w) => {
+      ctx.font = `700 15px ${HEAD}`; ctx.fillStyle = C.gold; ctx.textAlign = 'left';
+      spaced(true); ctx.fillText(text, x, 60); const tw = ctx.measureText(text).width; spaced(false);
+      ctx.strokeStyle = C.border; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x + tw + 14, 55.5); ctx.lineTo(x + w, 55.5); ctx.stroke();
+    };
+    sectionTitle('TOTAL OCCUPATION', LX, LW);
+    sectionTitle('DECLARES & GIVEAWAYS', RX, RW);
 
-    // Columns: Guild | Lv1 Towns | Lv2 Dorms | Lv3 Darkwick | Points
-    const colX = [0, 0.36, 0.52, 0.68, 0.84, 1].map(f => L + f * leftW);
+    const headY = 102, top = 114, bottom = 580;
+    const n = rows.length;
+    const rowH = (bottom - top) / Math.max(n, 1);
+    const fs = Math.max(13, Math.min(30, Math.round(rowH * 0.42)));
+
+    // Row stripes run across both tables
+    rows.forEach((r, i) => {
+      if (i % 2) return;
+      roundRect(ctx, L, top + i * rowH + 1, R - L, rowH - 2, Math.min(8, rowH / 3));
+      ctx.fillStyle = hexA('#352a4f', 0.5); ctx.fill();
+    });
+
+    // ── Total Occupation: Guild | Towns | Dorms | Castle | Points (days held, all days combined) ──
+    const colX = [0, 0.40, 0.55, 0.70, 0.85, 1].map(f => LX + f * LW);
     const cols = [
-      { label: 'Lv1 Towns', color: C.lv1, val: r => r.o.lv1 },
-      { label: 'Lv2 Dorms', color: C.lv2, val: r => r.o.lv2 },
-      { label: 'Lv3 Darkwick', color: C.lv3, val: r => r.o.lv3 },
+      { label: 'Towns', color: C.lv1, val: r => r.o.lv1 },
+      { label: 'Dorms', color: C.lv2, val: r => r.o.lv2 },
+      { label: 'Castle', color: C.lv3, val: r => r.o.lv3 },
       { label: 'Points', color: C.text, val: r => r.pts, strong: true },
     ];
-    const headY = 290, top = 302, bottom = 578;
-    ctx.font = `600 13px ${BODY}`;
-    ctx.fillStyle = C.text3; ctx.textAlign = 'left';
+    ctx.font = `600 14px ${BODY}`; ctx.fillStyle = C.text3; ctx.textAlign = 'left';
     ctx.fillText('Guild', colX[0] + 14, headY);
     ctx.textAlign = 'center';
     cols.forEach((c, i) => { ctx.fillStyle = c.color; ctx.fillText(c.label, (colX[i + 1] + colX[i + 2]) / 2, headY); });
-
-    const n = rows.length;
-    const rowH = Math.min(46, (bottom - top) / Math.max(n, 1));
-    const fs = Math.max(13, Math.min(21, Math.round(rowH * 0.5)));
     rows.forEach((r, i) => {
-      const y = top + i * rowH, mid = y + rowH / 2;
-      if (i % 2 === 0) { roundRect(ctx, L, y + 1, leftW, rowH - 2, Math.min(8, rowH / 3)); ctx.fillStyle = hexA('#352a4f', 0.5); ctx.fill(); }
-      ctx.fillStyle = r.gd.color; ctx.beginPath(); ctx.arc(colX[0] + 18, mid, Math.max(4, fs * 0.3), 0, Math.PI * 2); ctx.fill();
-      ctx.textAlign = 'left'; ctx.fillStyle = C.text; ctx.font = `500 ${fs}px ${BODY}`;
-      ctx.fillText(fit(ctx, r.gd.name || '', colX[1] - colX[0] - 40), colX[0] + 32, mid + fs * 0.36);
+      const mid = top + i * rowH + rowH / 2;
+      ctx.fillStyle = r.gd.color; ctx.beginPath(); ctx.arc(colX[0] + 18, mid, Math.max(4, fs * 0.28), 0, Math.PI * 2); ctx.fill();
+      ctx.textAlign = 'left'; ctx.fillStyle = C.text;
+      const nameW = colX[1] - colX[0] - 38;
+      let nfs = fs;
+      ctx.font = `500 ${nfs}px ${BODY}`;
+      while (nfs > 13 && ctx.measureText(r.gd.name || '').width > nameW) { nfs--; ctx.font = `500 ${nfs}px ${BODY}`; }
+      ctx.fillText(fit(ctx, r.gd.name || '', nameW), colX[0] + 32, mid + nfs * 0.36);
       ctx.textAlign = 'center';
       cols.forEach((c, j) => {
         ctx.fillStyle = c.color;
@@ -166,46 +162,117 @@ export async function renderPlanPreview(srv) {
         ctx.fillText(String(c.val(r)), (colX[j + 1] + colX[j + 2]) / 2, mid + fs * 0.38);
       });
     });
-    ctx.textAlign = 'left';
 
-    // Mini-map of the plan: one row per town, one column per day (Day 0 onwards)
-    const PX = 652, PY = 56, PW = 492, PH = 522;
-    roundRect(ctx, PX, PY, PW, PH, 18);
-    ctx.fillStyle = C.bg2; ctx.fill();
-    ctx.strokeStyle = '#5c4b8a'; ctx.stroke();
+    // ── Declares & Giveaways: towns as letters, dorms and Darkwick by the names players use ──
+    const cw = RW / days;
+    const dayDate = d => {
+      if (!srv.startDate) return '';
+      const [y, m, dd] = srv.startDate.split('-').map(Number);
+      const dt = new Date(y, m - 1, dd + d - 1);
+      return `${dt.getMonth() + 1}/${dt.getDate()}`;
+    };
+    ctx.textAlign = 'center';
+    for (let d = 1; d <= days; d++) {
+      const cx = RX + (d - 0.5) * cw;
+      ctx.font = `700 14px ${BODY}`; ctx.fillStyle = C.text2; ctx.fillText(`D${d}`, cx, headY - 17);
+      ctx.font = `500 12px ${BODY}`; ctx.fillStyle = C.text3; ctx.fillText(dayDate(d), cx, headY);
+    }
+    // The names players use for Darkwick and the dorms; towns keep their letters
+    const NICKNAMES = {
+      Darkwick: 'DW', Obscuary: 'Obs', Mortkranken: 'Mort', Dionysia: 'Dio', Vagastrom: 'Vaga',
+      Frostheim: 'Frost', Jabberwock: 'Jabb', Sinostra: 'Sino', Hotarubi: 'Hota',
+    };
+    const short = id => NICKNAMES[id] || (typeOf[id] === 'lv1' ? id : id.slice(0, 4));
+    const tokColor = id => C[typeOf[id]] || C.text2;
+    // A cell's two lines: "▲ A Hot" (declares) and "↓ C" (giveaways)
+    const cellOf = (r, d) => {
+      const de = (dec[r.gd.id] && dec[r.gd.id][d - 1]) || [];
+      const gv = (give[r.gd.id] && give[r.gd.id][d - 1]) || [];
+      return { de, gv, over: de.length > r.max };
+    };
+    // Lay a cell out as lines: declares first ("▲ A Hot", wrapping onto more lines if needed),
+    // then giveaways ("↓ C"), each line no wider than the day column.
+    const maxW = cw - 8;
+    const wrap = (prefix, ids, size, weight) => {
+      if (!ids.length) return [];
+      ctx.font = `${weight} ${size}px ${BODY}`;
+      const sp = ctx.measureText(' ').width;
+      const lines = []; let cur = []; let w = ctx.measureText(prefix).width;
+      for (const id of ids) {
+        const tw = ctx.measureText(short(id)).width;
+        if (cur.length && w + sp + tw > maxW) { lines.push(cur); cur = []; w = 0; }
+        cur.push(id); w += (w ? sp : 0) + tw;
+      }
+      lines.push(cur);
+      return lines.map((l, i) => ({ prefix: i === 0 ? prefix : '', ids: l, size, weight }));
+    };
+    const lineWidth = ln => {
+      ctx.font = `${ln.weight} ${ln.size}px ${BODY}`;
+      const sp = ctx.measureText(' ').width;
+      const pw = ln.prefix ? ctx.measureText(ln.prefix).width + sp : 0;
+      return pw + ln.ids.reduce((w, id, i) => w + (i ? sp : 0) + ctx.measureText(short(id)).width, 0);
+    };
+    const giveSize = f => Math.max(9, Math.round(f * 0.88));
+    const layoutCell = (c, f) => [...wrap('▲', c.de, f, 700), ...wrap('↓', c.gv, giveSize(f), 500)];
+    const lineH = f => Math.round(f * 1.18);
+    // One text size for the whole table: the largest at which every cell's lines fit its row
+    let cfs = Math.max(10, Math.min(22, Math.floor(rowH * 0.36)));
+    const fitsAll = f => rows.every(r => {
+      for (let d = 1; d <= days; d++) {
+        const ls = layoutCell(cellOf(r, d), f);
+        if (ls.length * lineH(f) > rowH - 4 || ls.some(ln => lineWidth(ln) > maxW)) return false;
+      }
+      return true;
+    });
+    while (cfs > 10 && !fitsAll(cfs)) cfs--;
 
-    const towns = mapData.kingdoms;
-    const colsD = days + 1;
-    const gx = PX + 22 + 10, gy = PY + 44, gw = PW - 44 - 10, gh = PH - 44 - 18;
-    const cg = 3;
-    const cw = (gw - cg * (colsD - 1)) / colsD;
-    const ch = (gh - cg * (towns.length - 1)) / towns.length;
-    // Day labels
-    ctx.font = `600 12px ${BODY}`; ctx.fillStyle = C.text3; ctx.textAlign = 'center';
-    const step = colsD > 10 ? 2 : 1;
-    for (let d = 0; d < colsD; d += step) ctx.fillText(`D${d}`, gx + d * (cw + cg) + cw / 2, PY + 30);
-    ctx.textAlign = 'left';
-    const colorOf = {};
-    srv.guilds.forEach(gd => { colorOf[gd.id] = gd.color; });
-    towns.forEach((k, r) => {
-      const y = gy + r * (ch + cg);
-      // town level marker
-      ctx.fillStyle = C[k.type] || C.lv1;
-      roundRect(ctx, PX + 18, y, 5, ch, 2); ctx.fill();
-      for (let d = 0; d < colsD; d++) {
-        const gid = srv.plan[d] && srv.plan[d][k.id];
-        const x = gx + d * (cw + cg);
-        roundRect(ctx, x, y, cw, ch, Math.min(4, ch / 3));
-        ctx.fillStyle = gid && colorOf[gid] ? hexA(colorOf[gid], 0.88) : C.empty;
-        ctx.fill();
+    rows.forEach((r, i) => {
+      const y0 = top + i * rowH, mid = y0 + rowH / 2;
+      for (let d = 1; d <= days; d++) {
+        const cx = RX + (d - 0.5) * cw;
+        const c = cellOf(r, d);
+        if (!c.de.length && !c.gv.length) {
+          ctx.font = `500 ${cfs}px ${BODY}`; ctx.fillStyle = C.text3; ctx.textAlign = 'center';
+          ctx.fillText('–', cx, mid + cfs * 0.36);
+          continue;
+        }
+        let ls = layoutCell(c, cfs);
+        // Only in very unusual plans: more lines than the row can hold, so end the last one with "…"
+        const maxLines = Math.max(1, Math.floor((rowH - 4) / lineH(cfs)));
+        if (ls.length > maxLines) { ls = ls.slice(0, maxLines); ls[maxLines - 1] = { ...ls[maxLines - 1], ids: [...ls[maxLines - 1].ids, '…'] }; }
+        const total = ls.length * lineH(cfs);
+        let y = mid - total / 2 + lineH(cfs) * 0.78;
+        ls.forEach(ln => {
+          const isGive = ln.weight === 500;
+          ctx.font = `${ln.weight} ${ln.size}px ${BODY}`; ctx.textAlign = 'left';
+          const sp = ctx.measureText(' ').width;
+          let x = cx - lineWidth(ln) / 2;
+          if (ln.prefix) {
+            ctx.fillStyle = isGive ? C.text3 : (c.over ? C.red : C.gold);
+            ctx.fillText(ln.prefix, x, y); x += ctx.measureText(ln.prefix).width + sp;
+          }
+          ln.ids.forEach((id, k) => {
+            if (k) x += sp;
+            ctx.fillStyle = isGive || id === '…' ? C.text3 : tokColor(id);
+            const t = id === '…' ? '…' : short(id);
+            ctx.fillText(t, x, y); x += ctx.measureText(t).width;
+          });
+          y += lineH(cfs);
+        });
       }
     });
+    ctx.textAlign = 'left';
 
-    // Footer
-    ctx.font = `500 15px ${BODY}`; ctx.fillStyle = C.text3;
-    ctx.fillText('arisim67.github.io/GoC-RAG-Planner', L, 610);
-    ctx.textAlign = 'right';
-    ctx.fillText('Fan-made tool for Tokyo Debunker', PX + PW, 610);
+    // Footer: key on the left, site on the right
+    ctx.font = `500 14px ${BODY}`;
+    let fx = L;
+    const key = (t, color) => { ctx.fillStyle = color; ctx.fillText(t, fx, 614); fx += ctx.measureText(t).width; };
+    key('▲ declares   ↓ giveaways   ', C.text3);
+    key('A', C.lv1); key(' town   ', C.text3);
+    key('Obs', C.lv2); key(' dorm   ', C.text3);
+    key('DW', C.lv3); key(' Darkwick', C.text3);
+    ctx.textAlign = 'right'; ctx.fillStyle = C.text3;
+    ctx.fillText('GoC / Ragnarok Planner', R, 614);
     ctx.textAlign = 'left';
 
     return cv.toDataURL('image/png');
