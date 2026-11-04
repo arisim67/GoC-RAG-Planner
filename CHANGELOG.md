@@ -10,6 +10,8 @@ The app is updated continuously rather than in numbered releases, so entries are
 
 ### Changed
 - Game of Claws optimizer refined for better point balancing
+- **Castle time now comes in one block.** A guild with two days of Darkwick gets them back-to-back instead of scattered across the event, so there's less moving around for the same points. On a 10-guild Wetland plan this cut castle hand-overs from 12 to the minimum 10.
+- Guilds that start with no towns now enter the map at the first opportunity. The optimizer used to be free to leave a guild idle for days and pay it back later with higher-value towns, which balanced the totals but wasted that guild's early days.
 
 ### Fixed
 - Replace Obscuary with Dionysia on Wetland Game of Claws map

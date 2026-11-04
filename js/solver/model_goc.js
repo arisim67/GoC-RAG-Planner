@@ -166,6 +166,28 @@ const PATH_FOOTPRINT_COST = 25;
 // map early without swamping the rest of the objective.
 const DAY1_LATE_COST = 30000;
 
+// Cost of a guild holding nothing at all on a given day, used in the phases that actually hand out
+// lv1 towns. Phase 1 forces everyone onto the map by day 1, but it only fixes Darkwick, the dorms and
+// the lv1 cells that serve as paths to them -- every other lv1 cell goes back to phase 2, so a guild
+// whose only day-1 town was not a path cell gets dropped again and can sit idle for days. Points alone
+// do not prevent this: the solver can leave a guild off early and pay it back later with higher-value
+// towns, which balances the totals while wasting that guild's first days. A guild that holds something
+// can never be wiped (see the no-map-wipes row), so a guild's idle days are always its first ones, and
+// charging per idle day is the same as making it enter as early as it can.
+// Deliberately below one point of target miss (MISS_TIERS_PTS[0] = 6000): entering early breaks ties
+// between otherwise equal plans, but never buys itself a worse point distribution.
+const ABSENT_DAY_COST = 1000;
+
+// Cost of newly capturing Darkwick. Holding the castle two days running is one move; holding it on two
+// scattered days is two moves and two declares, for exactly the same points. `gain` is already 1 only
+// on the day a guild TAKES a town rather than keeps it, so charging it makes a guild's castle days land
+// consecutively whenever the rest of the plan is indifferent.
+// Kept well below one point of target miss (MISS_TIERS_PTS[0] = 6000) so fewer moves never buy
+// themselves a worse point or dorm distribution. Note this pulls against ABSENT_DAY_COST: consolidating
+// the castle can want a lv1 town that a guild still waiting to enter would otherwise take, which is why
+// both costs are needed together -- the castle one alone delays a late guild by a day.
+const CASTLE_STINT_COST = 2000;
+
 // Penalty for the 1st point a guild is off its target, the 2nd, and every point after that.
 // Not every target is reachable (nobody can take Darkwick on day 1, for instance), so some plans have
 // to miss by a few points. With ONE flat penalty the solver is indifferent between "one guild 5 points
@@ -261,6 +283,7 @@ export function buildModel(srv, mapData, opts = {}) {
   // Kept so warmStart() below can work out what every variable is worth under a given plan.
   const enterVar = [];        // enterVar[g][d]
   const lateVar = [];         // lateVar[g] (day-1 presence slack, scarce/castle only)
+  const absentVar = [];       // absentVar[g][d] (holds nothing that day, lv1 / full phases only)
   const gainVar = [];         // gainVar[g][d][townId]
   const missSpecs = [];       // one per target: { terms, rhs, pos: [{v, cap}], neg: [...] }
 
@@ -311,6 +334,16 @@ export function buildModel(srv, mapData, opts = {}) {
         }
       }
 
+      // ... and in the phases that choose the lv1 towns, keep pushing: every day a guild holds nothing
+      // costs ABSENT_DAY_COST, so a guild still waiting to enter comes on at the first opportunity
+      // instead of being parked and compensated later.
+      if (phase === 'lv1' || phase === undefined) {
+        const absent = milp.continuous(`absent_g${g}_d${d}`, 0, 1);
+        (absentVar[g] = absentVar[g] || [])[d] = absent;
+        milp.addCost(absent, ABSENT_DAY_COST);
+        milp.atLeast([ ...VALID_KINGDOMS.map(k => [1, ownAt(g, d, k.id)]), [1, absent] ], 1);
+      }
+
       for (const t of VALID_KINGDOMS) {
         const now = ownAt(g, d, t.id);
         const before = ownAt(g, d - 1, t.id);
@@ -322,6 +355,8 @@ export function buildModel(srv, mapData, opts = {}) {
         declaredTerms.push([1, gain]);
         
         milp.addCost(gain, 1); 
+        // Prefer one unbroken castle stint over the same number of scattered castle days.
+        if (isGoC && t.type === 'lv3') milp.addCost(gain, CASTLE_STINT_COST);
 
         milp.atMost([ [1, now], [-1, before], [-1, gain] ], 0);
         milp.atMost([ [1, gain], [-1, now] ], 0);
@@ -507,6 +542,11 @@ export function buildModel(srv, mapData, opts = {}) {
       // otherwise good warm start is not rejected as inconsistent.
       const lv = lateVar[g];
       if (lv) x[lv.col] = VALID_KINGDOMS.some(k => held(g, 1, k.id)) ? 0 : 1;
+      // Same for the per-day "holds nothing" slack, so the warm start stays consistent.
+      for (let d = winStart; d <= LASTD; d++) {
+        const av = (absentVar[g] || [])[d];
+        if (av) x[av.col] = VALID_KINGDOMS.some(k => held(g, d, k.id)) ? 0 : 1;
+      }
     }
     // Whatever the plan misses its targets by goes into the slack tiers, cheapest tier first.
     for (const spec of missSpecs) {
