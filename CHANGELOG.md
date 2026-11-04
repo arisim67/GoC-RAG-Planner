@@ -10,6 +10,7 @@ The app is updated continuously rather than in numbered releases, so entries are
 
 ### Fixed
 - Replace Obscuary with Dionysia on Wetland Game of Claws map
+- Total Occupation table now matches the width of Final Scores and Declares & Giveaways in Screenshots
 
 ## 2026-11-03
 

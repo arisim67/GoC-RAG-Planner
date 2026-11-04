@@ -57,14 +57,16 @@ export async function takeScreenshots() {
         c.style.boxShadow = 'none';
       });
 
-      const table = el.querySelector('table');
-      if (table) {
+      // 🚨 FIX 2: Pin the planning grid and the Total Occupation table to their natural width while
+      // the container is measured. (Occupation uses table-layout:fixed, and a fixed-layout table at
+      // width:100% inside a shrink-to-fit box claims a near-infinite width, which breaks the capture.)
+      const pinned = el.querySelectorAll('table.ptbl, table.otbl');
+      pinned.forEach(table => {
         originalStyles.push({ el: table, prop: 'width', val: table.style.width });
         originalStyles.push({ el: table, prop: 'minWidth', val: table.style.minWidth });
-        // 🚨 FIX 2: Force the table to use natural text width (no stretching, no squishing)
         table.style.width = 'max-content';
         table.style.minWidth = 'max-content';
-      }
+      });
 
       originalStyles.push({ el: el, prop: 'width', val: el.style.width });
       originalStyles.push({ el: el, prop: 'maxWidth', val: el.style.maxWidth });
@@ -74,6 +76,14 @@ export async function takeScreenshots() {
       el.style.display = 'inline-block';
       el.style.width = 'max-content';
       el.style.maxWidth = 'none';
+
+      // Now that the container's width is known, fix it in pixels and let Total Occupation
+      // stretch to fill it, so it matches the width of Final Scores and Declares & Giveaways.
+      const occTables = el.querySelectorAll('table.otbl');
+      if (occTables.length) {
+        el.style.width = el.getBoundingClientRect().width + 'px';
+        occTables.forEach(table => { table.style.width = '100%'; table.style.minWidth = '0'; });
+      }
 
       return originalStyles;
     }
