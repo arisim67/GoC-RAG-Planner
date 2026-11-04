@@ -3,6 +3,11 @@
 Notable changes to the GoC / Ragnarok Planner, newest first.
 The app is updated continuously rather than in numbered releases, so entries are grouped by date.
 
+## 2026-11-04
+
+### Changed
+- Game of Claws optimizer refined for better point balancing
+
 ## 2026-11-03
 
 ### Added

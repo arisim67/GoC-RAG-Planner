@@ -80,7 +80,7 @@ Plans are written as mixed-integer linear programs and solved in the browser wit
   Darkwick and the dorms a few days at a time with lookahead, and fixes the Lv1 "path" towns each
   guild needs to reach them. Phase 2 hands out the remaining Lv1 towns in one solve to even out total
   points. Every result is re-checked by `check.js` before it replaces a legal plan. A full run takes
-  around 10–15 minutes.
+  around 5–15 minutes.
 
 The optimizer gives a strong starting point, not a guaranteed-perfect plan. Check the Stats table and
 adjust by hand where needed.

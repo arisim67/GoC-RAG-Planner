@@ -24,10 +24,15 @@ export const TWO_PHASE_DEFAULTS = {
   phase2Budget: 240,    // seconds in total for phase 2
   repairWindow: 7,      // clean-up: days re-solved at a time when Darkwick / dorms are not even
   repairTimeLimit: 60,  // seconds per repair window
-  repairBudget: 180,    // seconds in total for the Darkwick / dorm clean-up
+  repairBudget: 180,    // seconds in total for the all-free clean-up. It skips every window with
+                        // nothing out of place, so it costs this much only while there is work to do.
+  castleWindow: 7,      // clean-up: days re-solved at a time when only Darkwick is uneven
+  castleTimeLimit: 45,  // seconds per Darkwick window
+  castleBudget: 135,    // seconds in total for the Darkwick clean-up
   refineWindows: [5, 8, 11], // clean-up: days re-solved at a time to even out points
   refineTimeLimit: 40,  // seconds per refine window
-  refineBudget: 150,    // seconds in total for the points clean-up
+  refineBudget: 300,    // seconds in total for the points clean-up (it stops as soon as points are even,
+                        // so this only matters on the maps that need the time)
 };
 
 export function numDays(srv) {
@@ -45,18 +50,43 @@ function mulberry32(a) {
   };
 }
 
-// Total distance of every guild's map points from its target (0 = perfectly even)
-export function pointsDeviation(plan, srv, mapData, FULL, target) {
+// How much a set of target misses hurts. The cost per point rises, mirroring the solver's own tiered
+// penalty (MISS_TIERS in model_goc.js): "one guild 5 points short" is worse than "five guilds 1 point
+// short", even though both are 5 points off in total. The clean-up steps compare candidates on this
+// instead of the plain total, so a candidate that shares an unavoidable miss out is kept rather than
+// rejected for tying on the total.
+const MISS_COST_PTS = [1, 1.33, 1.58];       // = MISS_TIERS_PTS / 6000
+const MISS_COST_SCARCE = [1, 1.67, 2.5];     // = MISS_TIERS_SCARCE / 6000
+function missCost(devs, tiers) {
+  let c = 0;
+  for (const dev of devs) {
+    for (let i = 0; i < dev; i++) c += tiers[Math.min(i, tiers.length - 1)];
+  }
+  return c;
+}
+
+// How far every guild's map points are from its target, one entry per guild (all 0 = perfectly even)
+function pointDevs(plan, srv, mapData, FULL, target) {
   const val = { lv3: 3, lv2: 2, lv1: 1 };
-  let dev = 0;
+  const devs = [];
   for (const g of srv.guilds) {
     const t = target[g.id];
     if (!t) continue;
     let pts = 0;
     for (let d = 1; d <= FULL; d++) for (const k of mapData.kingdoms) if (plan[d][k.id] === g.id) pts += val[k.type] || 0;
-    dev += Math.abs(pts - t.mapPts);
+    devs.push(Math.abs(pts - t.mapPts));
   }
-  return dev;
+  return devs;
+}
+
+// Total distance of every guild's map points from its target (0 = perfectly even). For reporting.
+export function pointsDeviation(plan, srv, mapData, FULL, target) {
+  return pointDevs(plan, srv, mapData, FULL, target).reduce((a, b) => a + b, 0);
+}
+
+// The same misses weighed by missCost(), for comparing two candidate plans.
+export function pointsMissCost(plan, srv, mapData, FULL, target) {
+  return missCost(pointDevs(plan, srv, mapData, FULL, target), MISS_COST_PTS);
 }
 
 // runSolver(matrixArrays, { timeLimit, absGap }) -> Promise<Float64Array|number[]>
@@ -72,9 +102,21 @@ export async function solveGocPhase1(srv, mapData, runSolver, userOpts = {}) {
     const we = ws + size - 1;
     const he = Math.min(FULL, we + o.lookahead);
     onProgress(`Phase 1/2 · Darkwick & dorms · window ${w + 1}/${nWin} (days ${ws}-${we})`);
-    const { milp, decode } = buildModel(work, mapData, { winStart: ws, winEnd: he, phase: 'scarce' });
-    const result = await runSolver(milp.toArrays(), { timeLimit: o.phase1TimeLimit, absGap: o.phase1Gap });
-    const decoded = decode(result);
+    let decoded;
+    try {
+      const { milp, decode } = buildModel(work, mapData, { winStart: ws, winEnd: he, phase: 'scarce' });
+      const result = await runSolver(milp.toArrays(), { timeLimit: o.phase1TimeLimit, absGap: o.phase1Gap });
+      decoded = decode(result);
+    } catch (e) {
+      // "Every guild on the map from day 1" is planning scaffolding, not a rule of the event, and it is the
+      // one thing in here that can make a window impossible to satisfy (more guilds than there are towns to
+      // stand on, say). Rather than fail the whole solve, drop it to a penalty and ask again: the worst case
+      // is a plan where a guild or two start a day late.
+      onProgress(`Phase 1/2 · window ${w + 1}/${nWin} has no plan with every guild placed on day 1 · retrying`);
+      const { milp, decode } = buildModel(work, mapData, { winStart: ws, winEnd: he, phase: 'scarce', softDay1: true });
+      const result = await runSolver(milp.toArrays(), { timeLimit: o.phase1TimeLimit, absGap: o.phase1Gap });
+      decoded = decode(result);
+    }
     for (let d = ws; d <= we; d++) work.plan[d] = decoded[d];
     ws = we + 1;
   }
@@ -95,7 +137,7 @@ export async function solveGocPhase2(srv, mapData, runSolver, phase1Plan, userOp
   }
   const work2 = { ...srv, plan: plan2 };
 
-  let best = null, bestDev = Infinity;
+  let best = null, bestDev = Infinity, bestCost = Infinity;
   const t0 = Date.now();
   for (let a = 0; a < o.phase2Attempts; a++) {
     if (a > 0 && (Date.now() - t0) / 1000 > o.phase2Budget) break;
@@ -105,9 +147,9 @@ export async function solveGocPhase2(srv, mapData, runSolver, phase1Plan, userOp
       const { milp, decode } = buildModel(work2, mapData, { phase: 'lv1', pathCells, locks });
       const result = await runSolver(milp.toArrays(), { timeLimit: o.phase2TimeLimit, absGap: o.phase2Gap });
       const plan = decode(result);
-      const dev = pointsDeviation(plan, srv, mapData, FULL, target);
-      if (dev < bestDev) { best = plan; bestDev = dev; }
-      if (bestDev === 0) break;
+      const cost = pointsMissCost(plan, srv, mapData, FULL, target);
+      if (cost < bestCost) { best = plan; bestCost = cost; bestDev = pointsDeviation(plan, srv, mapData, FULL, target); }
+      if (bestCost === 0) break;
     } catch (e) {
       console.warn(`[TwoPhase] phase 2 try ${a + 1} failed: ${e.message}`);
       if (a === 0 && !best) throw e;   // nothing usable yet: report the failure
@@ -116,9 +158,9 @@ export async function solveGocPhase2(srv, mapData, runSolver, phase1Plan, userOp
   return best;
 }
 
-// Total distance of every guild's Darkwick and dorm counts from its target (0 = perfectly even)
-export function scarceDeviation(plan, srv, mapData, FULL, target) {
-  let dev = 0;
+// How far every guild's Darkwick and dorm counts are from their targets (all 0 = perfectly even)
+function scarceDevs(plan, srv, mapData, FULL, target) {
+  const devs = [];
   for (const g of srv.guilds) {
     const t = target[g.id];
     if (!t) continue;
@@ -126,9 +168,19 @@ export function scarceDeviation(plan, srv, mapData, FULL, target) {
     for (let d = 1; d <= FULL; d++) for (const k of mapData.kingdoms) {
       if (plan[d][k.id] === g.id) { if (k.type === 'lv3') lv3++; if (k.type === 'lv2') lv2++; }
     }
-    dev += Math.abs(lv3 - t.mapLv3) + Math.abs(lv2 - t.mapLv2);
+    devs.push(Math.abs(lv3 - t.mapLv3), Math.abs(lv2 - t.mapLv2));
   }
-  return dev;
+  return devs;
+}
+
+// Total distance of every guild's Darkwick and dorm counts from its target (0 = perfectly even)
+export function scarceDeviation(plan, srv, mapData, FULL, target) {
+  return scarceDevs(plan, srv, mapData, FULL, target).reduce((a, b) => a + b, 0);
+}
+
+// The same misses weighed by missCost(), for comparing two candidate plans.
+export function scarceMissCost(plan, srv, mapData, FULL, target) {
+  return missCost(scarceDevs(plan, srv, mapData, FULL, target), MISS_COST_SCARCE);
 }
 
 function windowStarts(FULL, K, stride) {
@@ -139,7 +191,31 @@ function windowStarts(FULL, K, stride) {
   return starts;
 }
 
+// Which days are worth re-solving: the days on which a guild that is ABOVE its Darkwick / dorm target
+// is holding one. A surplus has to be given up on one of those days before a guild that is short can
+// pick it up, so the windows covering them are tried first. Taking the windows left to right instead
+// spends the whole budget on the first few days, and an imbalance late in the event is never reached.
+function scarceHeat(plan, srv, mapData, FULL, target, only) {
+  const heat = new Array(FULL + 2).fill(0);
+  for (const g of srv.guilds) {
+    const t = target[g.id];
+    if (!t) continue;
+    const days3 = [], days2 = [];
+    for (let d = 1; d <= FULL; d++) for (const k of mapData.kingdoms) {
+      if (plan[d][k.id] !== g.id) continue;
+      if (k.type === 'lv3') days3.push(d);
+      if (k.type === 'lv2') days2.push(d);
+    }
+    if (only !== 'lv2' && days3.length > t.mapLv3) for (const d of days3) heat[d]++;
+    if (only !== 'lv3' && days2.length > t.mapLv2) for (const d of days2) heat[d]++;
+  }
+  return heat;
+}
+
 // Darkwick / dorm clean-up. phase1Plan: the plan from phase 1. Returns the best legal plan found.
+// This re-solves a window with every cell free, so it can fix either, but it is expensive. It runs
+// after the much cheaper repairCastle() below, which often settles Darkwick on its own in seconds -
+// and when nothing is left out of place this returns straight away.
 export async function repairScarce(srv, mapData, runSolver, phase1Plan, userOpts = {}) {
   const o = { ...TWO_PHASE_DEFAULTS, ...userOpts };
   const onProgress = o.onProgress || (() => {});
@@ -147,29 +223,83 @@ export async function repairScarce(srv, mapData, runSolver, phase1Plan, userOpts
   const target = getPerfectTargets(srv, mapData);
   const locks = JSON.parse(JSON.stringify(srv.plan));
   let plan = phase1Plan;
-  let dev = scarceDeviation(plan, srv, mapData, FULL, target);
+  let dev = scarceDeviation(plan, srv, mapData, FULL, target);      // shown to the user
+  let cost = scarceMissCost(plan, srv, mapData, FULL, target);      // what candidates are judged on
   if (dev === 0) return plan;
   const t0 = Date.now();
   const K = Math.min(o.repairWindow, FULL);
   for (let pass = 1; pass <= 2 && dev > 0; pass++) {
     let improved = false;
-    for (const ws of windowStarts(FULL, K, 1)) {
+    // Re-read the heat every pass: once a surplus moves, the days worth re-solving move with it.
+    let hot = scarceHeat(plan, srv, mapData, FULL, target);
+    const covered = (ws) => { let s = 0; for (let d = ws; d <= ws + K - 1; d++) s += hot[d] || 0; return s; };
+    const starts = windowStarts(FULL, K, 1).sort((a, b) => covered(b) - covered(a) || a - b);
+    for (const ws of starts) {
       if ((Date.now() - t0) / 1000 > o.repairBudget || dev === 0) break;
+      if (covered(ws) === 0) continue;   // nothing out of place in these days
+
       const we = ws + K - 1;
       onProgress(`Clean-up · Darkwick & dorms · days ${ws}-${we} (${dev} off)`);
       try {
         const work = { ...srv, plan: JSON.parse(JSON.stringify(plan)) };
         for (let d = ws; d <= we; d++) work.plan[d] = {};
-        const { milp, decode } = buildModel(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'scarce', locks });
-        const result = await runSolver(milp.toArrays(), { timeLimit: o.repairTimeLimit, absGap: o.phase1Gap });
+        const { milp, decode, warmStart } = buildModel(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'scarce', locks });
+        const result = await runSolver(milp.toArrays(), { timeLimit: o.repairTimeLimit, absGap: o.phase1Gap, warmStart: warmStart(plan) });
         const dec = decode(result);
         const cand = JSON.parse(JSON.stringify(plan));
         for (let d = ws; d <= we; d++) cand[d] = dec[d];
-        const d2 = scarceDeviation(cand, srv, mapData, FULL, target);
-        if (d2 < dev && checkPlan(cand, srv, mapData, FULL, locks).length === 0) { plan = cand; dev = d2; improved = true; }
+        const c2 = scarceMissCost(cand, srv, mapData, FULL, target);
+        if (c2 < cost - 1e-9 && checkPlan(cand, srv, mapData, FULL, locks).length === 0) {
+          plan = cand; cost = c2; dev = scarceDeviation(cand, srv, mapData, FULL, target); improved = true;
+          hot = scarceHeat(plan, srv, mapData, FULL, target);   // the days out of place have moved
+        }
       } catch (e) { console.warn(`[TwoPhase] repair window ${ws}-${we} skipped: ${e.message}`); }
     }
     if (!improved) break;
+  }
+  return plan;
+}
+
+// Darkwick clean-up, run when the dorms are already even but Darkwick is not - one guild holding it
+// twice while another never does. The dorms stay exactly as they are and only Darkwick and the lv1
+// towns are re-solved, which is a much smaller problem than the all-free clean-up above and gives a
+// swap between two guilds a real chance of being found. A candidate is kept only if it is legal and
+// evens Darkwick out without disturbing the dorms.
+export async function repairCastle(srv, mapData, runSolver, plan0, userOpts = {}) {
+  const o = { ...TWO_PHASE_DEFAULTS, ...userOpts };
+  const onProgress = o.onProgress || (() => {});
+  const FULL = numDays(srv);
+  const target = getPerfectTargets(srv, mapData);
+  const locks = JSON.parse(JSON.stringify(srv.plan));
+  let plan = plan0;
+  let dev = scarceDeviation(plan, srv, mapData, FULL, target);
+  let cost = scarceMissCost(plan, srv, mapData, FULL, target);
+  if (dev === 0) return plan;
+  const t0 = Date.now();
+  const K = Math.min(o.castleWindow, FULL);
+  let hot = scarceHeat(plan, srv, mapData, FULL, target, 'lv3');
+  const covered = (ws) => { let s = 0; for (let d = ws; d <= ws + K - 1; d++) s += hot[d] || 0; return s; };
+  for (const ws of windowStarts(FULL, K, 1).sort((a, b) => covered(b) - covered(a) || a - b)) {
+    if ((Date.now() - t0) / 1000 > o.castleBudget || dev === 0) break;
+    if (covered(ws) === 0) continue;
+    const we = ws + K - 1;
+    onProgress(`Clean-up · Darkwick · days ${ws}-${we} (${dev} off)`);
+    try {
+      const work = { ...srv, plan: JSON.parse(JSON.stringify(plan)) };
+      for (let d = ws; d <= we; d++) for (const k of mapData.kingdoms) {
+        if (k.type !== 'lv2') work.plan[d][k.id] = '';
+      }
+      const { milp, decode, warmStart } = buildModel(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'castle', locks });
+      const result = await runSolver(milp.toArrays(), { timeLimit: o.castleTimeLimit, absGap: o.phase1Gap, warmStart: warmStart(plan) });
+      const dec = decode(result);
+      const cand = JSON.parse(JSON.stringify(plan));
+      for (let d = ws; d <= we; d++) cand[d] = dec[d];
+      const c2 = scarceMissCost(cand, srv, mapData, FULL, target);
+      if (c2 < cost - 1e-9 && checkPlan(cand, srv, mapData, FULL, locks).length === 0) {
+        plan = cand; cost = c2; dev = scarceDeviation(cand, srv, mapData, FULL, target);
+        hot = scarceHeat(plan, srv, mapData, FULL, target, 'lv3');
+      }
+    } catch (e) { console.warn(`[TwoPhase] Darkwick window ${ws}-${we} skipped: ${e.message}`); }
   }
   return plan;
 }
@@ -183,7 +313,8 @@ export async function refinePoints(srv, mapData, runSolver, plan0, userOpts = {}
   const target = getPerfectTargets(srv, mapData);
   const locks = JSON.parse(JSON.stringify(srv.plan));
   let plan = plan0;
-  let dev = pointsDeviation(plan, srv, mapData, FULL, target);
+  let dev = pointsDeviation(plan, srv, mapData, FULL, target);      // shown to the user
+  let cost = pointsMissCost(plan, srv, mapData, FULL, target);      // what candidates are judged on
   if (dev === 0) return plan;
   const t0 = Date.now();
   for (const K0 of o.refineWindows) {
@@ -195,13 +326,15 @@ export async function refinePoints(srv, mapData, runSolver, plan0, userOpts = {}
       try {
         const work = { ...srv, plan: JSON.parse(JSON.stringify(plan)) };
         for (let d = ws; d <= we; d++) for (const k of mapData.kingdoms) if (k.type === 'lv1') work.plan[d][k.id] = '';
-        const { milp, decode } = buildModel(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'lv1', locks });
-        const result = await runSolver(milp.toArrays(), { timeLimit: o.refineTimeLimit, absGap: o.phase2Gap });
+        const { milp, decode, warmStart } = buildModel(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'lv1', locks });
+        const result = await runSolver(milp.toArrays(), { timeLimit: o.refineTimeLimit, absGap: o.phase2Gap, warmStart: warmStart(plan) });
         const dec = decode(result);
         const cand = JSON.parse(JSON.stringify(plan));
         for (let d = ws; d <= we; d++) cand[d] = dec[d];
-        const d2 = pointsDeviation(cand, srv, mapData, FULL, target);
-        if (d2 < dev && checkPlan(cand, srv, mapData, FULL, locks).length === 0) { plan = cand; dev = d2; }
+        const c2 = pointsMissCost(cand, srv, mapData, FULL, target);
+        if (c2 < cost - 1e-9 && checkPlan(cand, srv, mapData, FULL, locks).length === 0) {
+          plan = cand; cost = c2; dev = pointsDeviation(cand, srv, mapData, FULL, target);
+        }
       } catch (e) { console.warn(`[TwoPhase] refine window ${ws}-${we} skipped: ${e.message}`); }
     }
     if (K >= FULL) break;
@@ -214,7 +347,14 @@ export async function solveGocFinish(srv, mapData, runSolver, phase1Plan, userOp
   const FULL = numDays(srv);
   const locks = JSON.parse(JSON.stringify(srv.plan));
   const repaired = await repairScarce(srv, mapData, runSolver, phase1Plan, userOpts);
-  const phase2 = await solveGocPhase2(srv, mapData, runSolver, repaired, userOpts);
+  let phase2 = await solveGocPhase2(srv, mapData, runSolver, repaired, userOpts);
+  // Darkwick is easier to even out once phase 2 has filled in every lv1 town: before that the plan
+  // holds only the few path towns, which leaves a guild that is short of Darkwick nothing to stand on.
+  // It costs seconds, and the points clean-up below puts right the lv1 towns it moves.
+  const target = getPerfectTargets(srv, mapData);
+  if (scarceDeviation(phase2, srv, mapData, FULL, target) > 0) {
+    phase2 = await repairCastle(srv, mapData, runSolver, phase2, userOpts);
+  }
   const plan = await refinePoints(srv, mapData, runSolver, phase2, userOpts);
   const problems = checkPlan(plan, srv, mapData, FULL, locks);
   if (problems.length) throw new Error('The optimizer could not build a legal plan this time. Please try again.');

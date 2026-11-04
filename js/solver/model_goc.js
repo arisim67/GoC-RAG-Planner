@@ -134,8 +134,30 @@ export function getPerfectTargets(srv, mapData) {
 //   them legal, no lv1 reward / points target);  'lv1' = Darkwick + dorms are FIXED from srv.plan for
 //   every day, the lv1 'path' cells in opts.pathCells are FIXED too, and only the remaining lv1 cells are
 //   chosen, to balance total points;  omitted = everything at once.
+//   'castle' = the dorms are FIXED from srv.plan, and only Darkwick and the lv1 towns are chosen, to
+//   even out who holds Darkwick. Far fewer choices than 'scarce', which is what makes a late swap of
+//   Darkwick between two guilds findable at all.
 // opts.pathCells: { day: { lv1TownId: guildId } } (see paths.js)
 const PATH_FOOTPRINT_COST = 25;
+
+// Cost of a guild NOT being on the map on day 1, used ONLY when there are more guilds than towns.
+// "Everyone on the map from day 1" is not a game rule, it is scaffolding that keeps the two-phase split
+// honest, so it must never be the reason no plan exists: one town holds one guild, so with 20 guilds on
+// an 18-town map that row is unsatisfiable and the whole model came back infeasible. While it IS
+// satisfiable it stays a hard row (so every configuration that already worked is untouched, to the bit);
+// past that it becomes this penalty, worth about three lv1 town-days, which still pushes guilds onto the
+// map early without swamping the rest of the objective.
+const DAY1_LATE_COST = 30000;
+
+// Penalty for the 1st point a guild is off its target, the 2nd, and every point after that.
+// Not every target is reachable (nobody can take Darkwick on day 1, for instance), so some plans have
+// to miss by a few points. With ONE flat penalty the solver is indifferent between "one guild 5 points
+// short" and "five guilds 1 point short" - both cost 5 x penalty - and it tends to dump the whole miss
+// on a single guild. Rising weights make it share an unavoidable miss out instead.
+// Every weight stays BELOW the reward for holding the town itself, so the solver still takes every
+// reachable town rather than leaving one empty to dodge a penalty.
+const MISS_TIERS_PTS = [6000, 8000, 9500];      // points: a lv1 town is worth 10000
+const MISS_TIERS_SCARCE = [6000, 10000, 15000]; // Darkwick / dorm counts: a dorm is worth 20000
 
 export function buildModel(srv, mapData, opts = {}) {
   const milp = new MilpBuilder();
@@ -152,7 +174,9 @@ export function buildModel(srv, mapData, opts = {}) {
   const lockSrc = opts.locks || srv.plan;
   const phase = opts.phase || 'full';
   const pathCells = opts.pathCells || {};
-  const isFixedCell = (d, t) => phase === 'lv1' && (t.type !== 'lv1' || !!(pathCells[d] || {})[t.id]);
+  const isFixedCell = (d, t) =>
+    (phase === 'lv1' && (t.type !== 'lv1' || !!(pathCells[d] || {})[t.id])) ||
+    (phase === 'castle' && t.type === 'lv2');
 
   const GUILDS = srv.guilds;
   const KINGDOMS = mapData.kingdoms;
@@ -217,6 +241,18 @@ export function buildModel(srv, mapData, opts = {}) {
   }
   const ownAt = (g, d, tId) => own[g][d][tId];
 
+  // Kept so warmStart() below can work out what every variable is worth under a given plan.
+  const enterVar = [];        // enterVar[g][d]
+  const lateVar = [];         // lateVar[g] (day-1 presence slack, scarce/castle only)
+  const gainVar = [];         // gainVar[g][d][townId]
+  const missSpecs = [];       // one per target: { terms, rhs, pos: [{v, cap}], neg: [...] }
+
+  // Can every guild stand somewhere on day 1 at all? One town holds one guild, so this is simply
+  // whether there are at least as many towns in play as guilds competing for them. That test is
+  // necessary but not sufficient, so the caller can also force the penalty form after a failed solve.
+  const day1FitsAll = !opts.softDay1
+    && GUILDS.filter(g => isGoC || !g.isExcluded).length <= VALID_KINGDOMS.length;
+
   // 3. CORE CONSTRAINTS
   for (let d = winStart; d <= LASTD; d++) {
     for (const t of VALID_KINGDOMS) {
@@ -234,6 +270,7 @@ export function buildModel(srv, mapData, opts = {}) {
       // `entering` is exact: 1 iff the guild held NOTHING yesterday.
       // Disaggregated (one row per town) instead of a big-M, for a much tighter LP relaxation.
       const entering = milp.binary(`enter_g${g}_d${d}`);
+      (enterVar[g] = enterVar[g] || [])[d] = entering;
       const prevVars = VALID_KINGDOMS.map(k => ownAt(g, d - 1, k.id));
       for (const pv of prevVars) milp.atMost([ [1, entering], [1, pv] ], 1);
       milp.atLeast([ [1, entering], ...prevVars.map(pv => [1, pv]) ], 1);
@@ -244,8 +281,17 @@ export function buildModel(srv, mapData, opts = {}) {
       // Two-phase planning: every guild is on the map from day 1 (a guild that starts empty enters on day 1).
       // Otherwise phase 1 leaves such guilds off the map for days, and the lv1 path locked for phase 2
       // would depend on them still being empty.
-      if (phase === 'scarce' && d === 1) {
-        milp.atLeast(VALID_KINGDOMS.map(k => [1, ownAt(g, d, k.id)]), 1);
+      // Hard while every guild fits on the map at once, a penalty when they do not (see DAY1_LATE_COST).
+      if ((phase === 'scarce' || phase === 'castle') && d === 1) {
+        const onMap = VALID_KINGDOMS.map(k => [1, ownAt(g, d, k.id)]);
+        if (day1FitsAll) {
+          milp.atLeast(onMap, 1);
+        } else {
+          const late = milp.continuous(`late_g${g}`, 0, 1);
+          lateVar[g] = late;
+          milp.addCost(late, DAY1_LATE_COST);
+          milp.atLeast([ ...onMap, [1, late] ], 1);
+        }
       }
 
       for (const t of VALID_KINGDOMS) {
@@ -255,6 +301,7 @@ export function buildModel(srv, mapData, opts = {}) {
         if (now === 0 && before === 0) continue;
 
         const gain = milp.continuous(`gain_g${g}_d${d}_${t.id}`, 0, 1);
+        ((gainVar[g] = gainVar[g] || [])[d] = gainVar[g][d] || {})[t.id] = gain;
         declaredTerms.push([1, gain]);
         
         milp.addCost(gain, 1); 
@@ -296,11 +343,31 @@ export function buildModel(srv, mapData, opts = {}) {
   for (let d = winStart; d <= FULL_DAYS; d++) {
     for (const t of KINGDOMS) {
       if (!GUILDS.some((_, g) => reachFull[g][d][t.id])) continue;
-      if (phase === 'lv1' && isFixedCell(d, t)) continue;   // only FREE towns can be handed out in this phase
+      if (phase !== 'scarce' && isFixedCell(d, t)) continue;   // only FREE towns can be handed out in this phase
       supply.rest[t.type]++;
       if (d <= DAYS) supply.win[t.type]++;
     }
   }
+  // target = (terms) + slack, where the slack is split into tiers that get more expensive. The solver
+  // fills the cheap tier first all by itself, so the n-th point of a miss costs weights[n].
+  const tieredMiss = (name, terms, rhs, weights, cap) => {
+    const slacks = [];
+    const spec = { terms, rhs, pos: [], neg: [] };
+    weights.forEach((w, i) => {
+      const last = i === weights.length - 1;
+      const lim = last ? cap : 1;
+      const pos = milp.continuous(`spos${i}_${name}`, 0, lim);
+      const neg = milp.continuous(`sneg${i}_${name}`, 0, lim);
+      milp.addCost(pos, w);
+      milp.addCost(neg, w);
+      slacks.push([-1, pos], [1, neg]);
+      spec.pos.push({ v: pos, cap: lim });
+      spec.neg.push({ v: neg, cap: lim });
+    });
+    milp.equal([...terms, ...slacks], rhs);
+    missSpecs.push(spec);
+  };
+
   const share = (w, r) => (r > 0 ? w / r : 0);
   const ptsOf = (o) => 3 * o.lv3 + 2 * o.lv2 + o.lv1;
   // In repair mode the rest of the event is fixed, so the window must deliver the whole remainder.
@@ -350,11 +417,12 @@ export function buildModel(srv, mapData, opts = {}) {
     // This forces the solver to aggressively capture every reachable town on the map,
     // while perfectly feeding those towns to the guilds furthest below their targets.
     const ptReward = 10000;
-    
-    const basePen = 6000;
-    const penLv3 = basePen + (isBot ? offset : -offset); 
-    const penLv2 = basePen + (isBot ? offset : -offset);
-    const penPts = basePen + (isBot ? offset : -offset);
+
+    // The tiny offset only breaks ties between otherwise equal guilds, as before.
+    // 'full' (everything in one solve) is not used by the two-phase pipeline and keeps the old flat
+    // penalty: there the Darkwick/dorm miss and the point miss stack, and tiers could out-price a capture.
+    const tiers = (base) => (phase === 'full' ? base.slice(0, 1) : base)
+      .map(w => w + (isBot ? offset : -offset));
 
     const lv3Terms = [];
     const lv2Terms = [];
@@ -369,7 +437,7 @@ export function buildModel(srv, mapData, opts = {}) {
         const pts = pointValues[t.type] || 0;
         pointTerms.push([pts, ownAt(g, d, t.id)]);
         
-        if (phase === 'scarce' && t.type === 'lv1') {
+        if ((phase === 'scarce' || phase === 'castle') && t.type === 'lv1') {
           // No reward for lv1 here. A small cost per lv1 town-day instead, so the solver captures the towns it
           // needs for the path just in time rather than holding them for days (keeps phase 2 flexible).
           milp.addCost(ownAt(g, d, t.id), PATH_FOOTPRINT_COST);
@@ -380,29 +448,65 @@ export function buildModel(srv, mapData, opts = {}) {
     }
 
     if (phase !== 'lv1' && lv3Terms.length > 0) {
-      const sPosL3 = milp.continuous(`spos_l3_g${g}`, 0, 99);
-      const sNegL3 = milp.continuous(`sneg_l3_g${g}`, 0, 99);
-      milp.equal([ ...lv3Terms, [-1, sPosL3], [1, sNegL3] ], tgt.mapLv3);
-      milp.addCost(sPosL3, penLv3);
-      milp.addCost(sNegL3, penLv3);
+      tieredMiss(`l3_g${g}`, lv3Terms, tgt.mapLv3, tiers(MISS_TIERS_SCARCE), 99);
     }
 
-    if (phase !== 'lv1' && lv2Terms.length > 0) {
-      const sPosL2 = milp.continuous(`spos_l2_g${g}`, 0, 99);
-      const sNegL2 = milp.continuous(`sneg_l2_g${g}`, 0, 99);
-      milp.equal([ ...lv2Terms, [-1, sPosL2], [1, sNegL2] ], tgt.mapLv2);
-      milp.addCost(sPosL2, penLv2);
-      milp.addCost(sNegL2, penLv2);
+    if (phase !== 'lv1' && phase !== 'castle' && lv2Terms.length > 0) {
+      tieredMiss(`l2_g${g}`, lv2Terms, tgt.mapLv2, tiers(MISS_TIERS_SCARCE), 99);
     }
 
-    if (phase !== 'scarce') {
-      const sPosPts = milp.continuous(`spos_pt_g${g}`, 0, 999);
-      const sNegPts = milp.continuous(`sneg_pt_g${g}`, 0, 999);
-      milp.equal([ ...pointTerms, [-1, sPosPts], [1, sNegPts] ], tgt.mapPts);
-      milp.addCost(sPosPts, penPts);
-      milp.addCost(sNegPts, penPts);
+    if (phase !== 'scarce' && phase !== 'castle') {
+      tieredMiss(`pt_g${g}`, pointTerms, tgt.mapPts, tiers(MISS_TIERS_PTS), 999);
     }
   }
+
+  // Every variable's value under `plan`, as a starting point for the solver (model.setSolution).
+  // Without one, a re-solve of a window starts from nothing and spends its time limit catching up to
+  // the plan it is meant to improve on; with one it starts level and looks for something better.
+  // HiGHS checks the start rather than trusting it, so a plan that does not fit this model is simply
+  // ignored - it can never make the answer illegal.
+  const warmStart = (plan) => {
+    const x = new Float64Array(milp.columnCount);
+    // What guild g holds at (d, tId) under `plan`: the fixed value where the model fixed the cell.
+    const held = (g, d, tId) => {
+      const v = own[g][d][tId];
+      if (typeof v === 'number') return v;
+      return ((plan[d] || {})[tId] === GUILDS[g].id) ? 1 : 0;
+    };
+    for (let g = 0; g < GUILDS.length; g++) {
+      for (let d = 0; d <= LASTD; d++) {
+        for (const t of VALID_KINGDOMS) {
+          const v = own[g][d][t.id];
+          if (typeof v !== 'number') x[v.col] = held(g, d, t.id);
+        }
+      }
+      for (let d = winStart; d <= LASTD; d++) {
+        const ev = (enterVar[g] || [])[d];
+        if (ev) x[ev.col] = VALID_KINGDOMS.some(k => held(g, d - 1, k.id)) ? 0 : 1;
+        const gv = ((gainVar[g] || [])[d]) || {};
+        for (const tId in gv) x[gv[tId].col] = (held(g, d, tId) && !held(g, d - 1, tId)) ? 1 : 0;
+      }
+      // Day-1 presence slack: 1 exactly when the plan leaves this guild off the map on day 1, so an
+      // otherwise good warm start is not rejected as inconsistent.
+      const lv = lateVar[g];
+      if (lv) x[lv.col] = VALID_KINGDOMS.some(k => held(g, 1, k.id)) ? 0 : 1;
+    }
+    // Whatever the plan misses its targets by goes into the slack tiers, cheapest tier first.
+    for (const spec of missSpecs) {
+      let sum = 0;
+      for (const [k, v] of spec.terms) sum += k * (typeof v === 'number' ? v : x[v.col]);
+      let left = sum - spec.rhs;
+      const tiers = left > 0 ? spec.pos : spec.neg;
+      left = Math.abs(left);
+      for (const { v, cap } of tiers) {
+        const take = Math.min(left, cap);
+        x[v.col] = take;
+        left -= take;
+        if (left <= 1e-9) break;
+      }
+    }
+    return Array.from(x);
+  };
 
   const decode = (values) => {
     const plan = {};
@@ -428,5 +532,5 @@ export function buildModel(srv, mapData, opts = {}) {
     return plan;
   };
 
-  return { milp, decode };
+  return { milp, decode, warmStart };
 }
