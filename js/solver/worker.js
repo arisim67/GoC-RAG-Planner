@@ -58,7 +58,14 @@ self.onmessage = async function(e) {
       }
       
       model.passModel(payload);
-      
+
+      // A plan to start from (Game of Claws clean-up windows). HiGHS verifies it and quietly ignores
+      // anything that does not fit the model, so a bad start can only cost time, never correctness.
+      if (options && options.warmStart) {
+        try { model.setSolution({ colValue: options.warmStart }); }
+        catch (err) { sendLog(`warm start ignored: ${err}`); }
+      }
+
       const runStatus = model.run();
       const statuses = solver.constants.modelStatus;
       
