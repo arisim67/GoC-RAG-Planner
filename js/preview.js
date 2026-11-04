@@ -1,14 +1,12 @@
 // js/preview.js
 // Draws the 1200×630 link-preview image for a shared plan: server name, mode, map and dates,
-// the Final Scores, and a colour mini-map of the plan (towns × days). Uploaded with
-// Save to Cloud so Discord and other apps can show it when the share link is posted.
+// the Total Occupation table with each guild's points, and a colour mini-map of the plan
+// (towns × days). Uploaded with Save to Cloud so Discord and other apps can show it when the
+// share link is posted.
 
 import { numDays } from './state.js';
-import { calcScores } from './calc.js';
+import { calcScores, calcOcc } from './calc.js';
 import { getMapData, getMapList } from './maps/index.js';
-// Same targets as the Final Scores section (each mode uses its own model's rules)
-import { getPerfectTargets as getGocTargets } from './solver/model_goc.js';
-import { getPerfectTargets as getRagnarokTargets } from './solver/model_ragnarok.js';
 
 export const PREVIEW_W = 1200;
 export const PREVIEW_H = 630;
@@ -118,55 +116,57 @@ export async function renderPlanPreview(srv) {
     ctx.fillStyle = C.text3;
     ctx.fillText(fit(ctx, subtitle.slice(2).join('  ·  '), leftW), L, 212);
 
-    // Final Scores (same numbers and order as the Final Scores section)
+    // Total Occupation table (same numbers and guild order as that section in the app), with each
+    // guild's final points in the last column instead of the town total
     const days = numDays(srv);
     const scores = calcScores(srv);
-    const targets = (srv.mode === 'goc' ? getGocTargets : getRagnarokTargets)(srv, mapData) || {};
-    const final = srv.guilds
-      .map(gd => {
-        const pts = (scores.cumul[gd.id] && scores.cumul[gd.id][days - 1]) || 0;
-        const t = targets[gd.id] ? targets[gd.id].grandPts : 0;
-        return { gd, pts, diff: pts - t };
-      })
-      .sort((a, b) => b.pts - a.pts);
+    const occ = calcOcc(srv);
+    const rows = srv.guilds.map(gd => ({
+      gd,
+      o: occ[gd.id] || { lv1: 0, lv2: 0, lv3: 0 },
+      pts: (scores.cumul[gd.id] && scores.cumul[gd.id][days - 1]) || 0,
+    }));
 
     ctx.font = `700 15px ${HEAD}`; ctx.fillStyle = C.gold;
     if ('letterSpacing' in ctx) ctx.letterSpacing = '2px';
-    ctx.fillText('FINAL SCORES', L, 268);
+    ctx.fillText('TOTAL OCCUPATION', L, 262);
+    const titleW = ctx.measureText('TOTAL OCCUPATION').width;
     if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
     ctx.strokeStyle = C.border; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(L + 160, 263.5); ctx.lineTo(L + leftW, 263.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(L + titleW + 16, 257.5); ctx.lineTo(L + leftW, 257.5); ctx.stroke();
 
-    const top = 290, bottom = 578, n = final.length;
-    const cols = n <= 6 ? 1 : 2;
-    const perCol = Math.ceil(n / cols);
-    const gap = 8;
-    const rowH = Math.min(54, (bottom - top - gap * (perCol - 1)) / perCol);
-    const colW = (leftW - (cols - 1) * 16) / cols;
-    const fs = Math.max(14, Math.min(22, Math.round(rowH * 0.46)));
-    final.forEach(({ gd, pts, diff }, i) => {
-      const c = Math.floor(i / perCol), r = i % perCol;
-      const x = L + c * (colW + 16), y = top + r * (rowH + gap);
-      roundRect(ctx, x, y, colW, rowH, 10);
-      ctx.fillStyle = hexA('#352a4f', 0.55); ctx.fill();
-      ctx.strokeStyle = C.border; ctx.stroke();
-      const mid = y + rowH / 2;
-      ctx.fillStyle = gd.color; ctx.beginPath(); ctx.arc(x + 18, mid, Math.max(4, fs * 0.28), 0, Math.PI * 2); ctx.fill();
-      // diff, then score, right-aligned
-      ctx.textAlign = 'right';
-      const ad = Math.abs(diff);
-      ctx.fillStyle = ad <= 1 ? C.green : ad <= 3 ? C.gold : C.red;
-      ctx.font = `600 ${Math.round(fs * 0.72)}px ${BODY}`;
-      const dTxt = (diff >= 0 ? '+' : '') + diff;
-      ctx.fillText(dTxt, x + colW - 14, mid + fs * 0.26);
-      const dW = Math.max(ctx.measureText('+00').width, ctx.measureText(dTxt).width);
-      ctx.fillStyle = gd.color; ctx.font = `800 ${Math.round(fs * 1.2)}px ${HEAD}`;
-      ctx.fillText(String(pts), x + colW - 14 - dW - 10, mid + fs * 0.42);
-      const sW = ctx.measureText(String(pts)).width;
-      ctx.textAlign = 'left';
-      ctx.fillStyle = C.text; ctx.font = `500 ${fs}px ${BODY}`;
-      ctx.fillText(fit(ctx, gd.name || '', colW - 34 - 14 - dW - 10 - sW - 10), x + 32, mid + fs * 0.36);
+    // Columns: Guild | Lv1 Towns | Lv2 Dorms | Lv3 Darkwick | Points
+    const colX = [0, 0.36, 0.52, 0.68, 0.84, 1].map(f => L + f * leftW);
+    const cols = [
+      { label: 'Lv1 Towns', color: C.lv1, val: r => r.o.lv1 },
+      { label: 'Lv2 Dorms', color: C.lv2, val: r => r.o.lv2 },
+      { label: 'Lv3 Darkwick', color: C.lv3, val: r => r.o.lv3 },
+      { label: 'Points', color: C.text, val: r => r.pts, strong: true },
+    ];
+    const headY = 290, top = 302, bottom = 578;
+    ctx.font = `600 13px ${BODY}`;
+    ctx.fillStyle = C.text3; ctx.textAlign = 'left';
+    ctx.fillText('Guild', colX[0] + 14, headY);
+    ctx.textAlign = 'center';
+    cols.forEach((c, i) => { ctx.fillStyle = c.color; ctx.fillText(c.label, (colX[i + 1] + colX[i + 2]) / 2, headY); });
+
+    const n = rows.length;
+    const rowH = Math.min(46, (bottom - top) / Math.max(n, 1));
+    const fs = Math.max(13, Math.min(21, Math.round(rowH * 0.5)));
+    rows.forEach((r, i) => {
+      const y = top + i * rowH, mid = y + rowH / 2;
+      if (i % 2 === 0) { roundRect(ctx, L, y + 1, leftW, rowH - 2, Math.min(8, rowH / 3)); ctx.fillStyle = hexA('#352a4f', 0.5); ctx.fill(); }
+      ctx.fillStyle = r.gd.color; ctx.beginPath(); ctx.arc(colX[0] + 18, mid, Math.max(4, fs * 0.3), 0, Math.PI * 2); ctx.fill();
+      ctx.textAlign = 'left'; ctx.fillStyle = C.text; ctx.font = `500 ${fs}px ${BODY}`;
+      ctx.fillText(fit(ctx, r.gd.name || '', colX[1] - colX[0] - 40), colX[0] + 32, mid + fs * 0.36);
+      ctx.textAlign = 'center';
+      cols.forEach((c, j) => {
+        ctx.fillStyle = c.color;
+        ctx.font = c.strong ? `800 ${Math.round(fs * 1.1)}px ${HEAD}` : `600 ${fs}px ${BODY}`;
+        ctx.fillText(String(c.val(r)), (colX[j + 1] + colX[j + 2]) / 2, mid + fs * 0.38);
+      });
     });
+    ctx.textAlign = 'left';
 
     // Mini-map of the plan: one row per town, one column per day (Day 0 onwards)
     const PX = 652, PY = 56, PW = 492, PH = 522;
