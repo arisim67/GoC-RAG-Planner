@@ -62,7 +62,7 @@ function sharePage({ url, title, description, image, target }) {
 <meta property="og:image" content="${esc(image)}">
 <meta property="og:image:width" content="${IMG_W}">
 <meta property="og:image:height" content="${IMG_H}">
-<meta property="og:image:alt" content="Plan preview: final scores and a colour map of towns by day">
+<meta property="og:image:alt" content="Plan preview: each guild's final score and total occupation">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#e2c883">
 <meta name="robots" content="noindex">

@@ -17,7 +17,7 @@ time by clearing this site's data in your browser settings. Note that this also 
 
 When you click **🔗 Save to Cloud**, the server you are viewing is uploaded so it can be shared:
 its name, mode, map and dates, the guild names, points and settings, and the plan itself.
-A preview image of the plan (its name, final scores and a colour map of the towns) is uploaded with it,
+A preview image of the plan (each guild's final score and total occupation) is uploaded with it,
 so the link shows a preview when it's posted in Discord or other apps.
 Both are stored on [Cloudflare](https://www.cloudflare.com/privacypolicy/) under a link with a random ID.
 
