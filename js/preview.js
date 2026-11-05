@@ -193,7 +193,7 @@ export async function renderPlanPreview(srv) {
 
     // Footer
     ctx.font = `500 15px ${BODY}`; ctx.fillStyle = C.text3;
-    ctx.fillText('arisim67.github.io/GoC-RAG-Planner', L, 610);
+    ctx.fillText('goc-rag-planner.pages.dev', L, 610);
     ctx.textAlign = 'right';
     ctx.fillText('Fan-made tool for Tokyo Debunker', PX + PW, 610);
     ctx.textAlign = 'left';

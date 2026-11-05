@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**GoC / Ragnarok Planner** · Last updated: 4 November 2026
+**GoC / Ragnarok Planner** · Last updated: 15 November 2026
 
 The planner is a free, fan-made tool. It has no accounts, no cookies, no ads and no analytics.
 This page explains what little data is involved and where it goes.
@@ -36,13 +36,22 @@ IP address and basic browser information when you visit, as part of normally ser
 
 | Service | What it provides |
 |---|---|
-| [GitHub Pages](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement) | Hosts the website |
+| [Cloudflare Pages](https://www.cloudflare.com/privacypolicy/) | Hosts the website, and gives shared plan links their preview |
+| [GitHub Pages](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement) | Hosts the old address (arisim67.github.io), which points to the new one |
 | [Google Fonts](https://policies.google.com/privacy) | The Inter and Montserrat fonts |
 | [cdnjs (Cloudflare)](https://www.cloudflare.com/privacypolicy/) | JSZip and html2canvas, used for 📸 Screenshots |
 | [jsDelivr](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | SortableJS, used to reorder guilds |
 | [Cloudflare Workers](https://www.cloudflare.com/privacypolicy/) | Stores shared plans (only when you use Save to Cloud) |
 
 The planner itself does not collect, log or sell any of this.
+
+## Moving from the old address
+
+The planner moved from `arisim67.github.io/GoC-RAG-Planner` to `goc-rag-planner.pages.dev`.
+Each address keeps its own browser storage, so the old address offers **Move my servers**. It puts
+your saved servers in the new site's link after the `#`, a part of a link that browsers never send to
+any server, and the new site saves them in your browser. Nothing is uploaded, and the copy at the old
+address stays until you clear it.
 
 ## Clipboard
 

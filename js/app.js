@@ -12,18 +12,26 @@ import { autoOptimize, undoOptimize } from './optimize.js';
 import { takeScreenshots } from './screenshots.js';
 import { checkUrlForSharedPlan, publishToCloud, syncFromCloud } from './cloud.js';
 import { initTour } from './tour.js';
+import { isOldSite, forwardSharedLink, showMovedBanner, receiveMovedServers } from './move.js';
 
 load();
-checkUrlForSharedPlan().then(() => {
-  renderTabs();
-  renderAll();
-  initTour({
-    getActiveServer: () => activeSrv(),
-    isSharedLink: () => new URLSearchParams(window.location.search).has('plan'),
-    createDemoServer: createTutorialServer,
-    removeDemoServer: removeTutorialServer,
-  });
-});
+// Old address: shared plan links go straight to the new site; everything else gets the banner.
+if (!forwardSharedLink()) {
+  if (isOldSite()) showMovedBanner();
+  receiveMovedServers()
+    .then(() => checkUrlForSharedPlan())
+    .then(() => {
+      renderTabs();
+      renderAll();
+      initTour({
+        getActiveServer: () => activeSrv(),
+        // No automatic tutorial on a shared link or on the old address (people should move first).
+        isSharedLink: () => new URLSearchParams(window.location.search).has('plan') || isOldSite(),
+        createDemoServer: createTutorialServer,
+        removeDemoServer: removeTutorialServer,
+      });
+    });
+}
 
 window.openAdd = openAdd;
 window.confirmAdd = confirmAdd;

@@ -3,6 +3,13 @@
 Notable changes to the GoC / Ragnarok Planner, newest first.
 The app is updated continuously rather than in numbered releases, so entries are grouped by date.
 
+## 2026-11-15
+
+### Changed
+- **The planner has moved to [goc-rag-planner.pages.dev](https://goc-rag-planner.pages.dev/).** The old address shows a banner with **Move my servers**, which brings your saved servers (and whether you've seen the tutorial) to the new site without uploading them. Shared plan links made on the old address open on the new site automatically.
+- **Shared plan links now show the plan itself** in Discord and other apps: each guild's final score and total occupation.
+- Save to Cloud links made from the old address point to the new site.
+
 ## 2026-11-05
 
 ### Fixed
@@ -11,8 +18,8 @@ The app is updated continuously rather than in numbered releases, so entries are
 
 ## 2026-11-04
 
-### Added
-- 🔗 Save to Cloud now also stores a preview image of the plan, ready for link previews on the upcoming new site address.
+  ### Added
+  - 🔗 Save to Cloud now also stores a preview image of the plan, ready for link previews on the upcoming new site address.
 
 ### Changed
 - Game of Claws optimizer refined for better point balancing

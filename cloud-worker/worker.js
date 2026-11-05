@@ -10,7 +10,7 @@
 //
 // Everything expires TTL seconds after it was last saved.
 
-const APP_URL = "https://arisim67.github.io/GoC-RAG-Planner/";
+const APP_URL = "https://goc-rag-planner.pages.dev/";
 const DEFAULT_IMAGE = APP_URL + "images/social-preview.png";
 const TTL = 2592000; // 30 days
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;

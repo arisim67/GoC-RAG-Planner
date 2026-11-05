@@ -6,6 +6,7 @@ import { CLOUD_SYNC_URL } from './config.js';
 import { state, activeSrv, save } from './state.js';
 import { renderAll } from './render.js';
 import { renderPlanPreview, previewText } from './preview.js';
+import { isOldSite, newSiteUrl } from './move.js';
 
 const WORKER_URL = CLOUD_SYNC_URL; // set in js/config.js
 
@@ -37,9 +38,11 @@ export async function publishToCloud() {
       // 🚨 Fix 1: Force the creator's URL bar to update immediately
       window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + srv.id);
       
-      // Built from wherever the app is opened (GitHub Pages or Cloudflare Pages). &v= changes on each
-      // save so Discord fetches the new preview instead of reusing a cached one; the app ignores it.
-      const shareUrl = window.location.origin + window.location.pathname + '?plan=' + srv.id + '&v=' + Date.now().toString(36);
+      // Built from wherever the app is opened; from the old address, links point to the new site.
+      // &v= changes on each save so Discord fetches the new preview instead of reusing a cached one;
+      // the app ignores it.
+      const base = isOldSite() ? newSiteUrl() : window.location.origin + window.location.pathname;
+      const shareUrl = base + '?plan=' + srv.id + '&v=' + Date.now().toString(36);
       // Safari drops the "user gesture" after an awaited fetch, so the clipboard write can be
       // refused even though the save worked. Treat that as a copy failure, not a save failure.
       let copied = false;

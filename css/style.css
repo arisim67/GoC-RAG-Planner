@@ -347,3 +347,18 @@ table.ptbl tr.pts-row th.pts-cell{padding:4px 4px 8px;vertical-align:top;border-
 .msg-date{font-size:10px;color:var(--accent2);margin-bottom:4px;font-weight:600;}
 .msg-copied{color:var(--green);font-size:9px;}
 .msg-body{font-size:10px;line-height:1.6;white-space:pre-wrap;}
+/* Moving to the new address: banner on the old site, import dialog on the new one */
+.moved-banner{display:flex;align-items:center;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;padding:12px 20px;background:linear-gradient(90deg,rgba(226,200,131,0.16),rgba(226,200,131,0.06));border-bottom:1px solid rgba(226,200,131,0.45);color:var(--text);font-size:13px;line-height:1.45;}
+.moved-banner .moved-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 320px;}
+.moved-banner strong{color:var(--gold2);font-size:14px;}
+.moved-banner .moved-text a{color:var(--gold);white-space:nowrap;}
+.moved-banner .moved-text span{color:var(--text2);}
+.moved-banner .moved-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.moved-banner .moved-actions a{text-decoration:none;display:inline-block;}
+.moved-banner .btn-gold:disabled{opacity:.7;cursor:wait;}
+.modal.modal-move{width:min(420px,92vw);}
+.modal-move .move-msg{color:var(--text2);font-size:13px;margin-bottom:8px;}
+.modal-move .move-list{list-style:none;margin:0;padding:10px 14px;background:var(--bg3);border-radius:12px;max-height:240px;overflow-y:auto;font-size:13px;line-height:1.9;}
+.modal-move .move-list li::before{content:"• ";color:var(--accent);}
+.modal-move .move-viewonly{font-size:10px;color:var(--text3);border:1px solid var(--border2);border-radius:8px;padding:0 6px;margin-left:4px;}
+.modal-move .move-hint{color:var(--text3);font-size:12px;margin-top:10px;}
