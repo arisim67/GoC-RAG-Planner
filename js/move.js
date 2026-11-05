@@ -21,6 +21,7 @@ const STORE_KEY = 'goc_v3';
 const TOUR_KEY = 'goc_tour_seen';
 const HASH_PREFIX = '#move=';
 const MAX_LINK = 1800000; // stay well under browsers' URL length limits
+const OFF_DATE = 'January 1, 2027'; // when GitHub Pages (the old address) will be switched off
 
 const TEST_PARAM = 'moved-test';
 const TEST_HOST_RE = /^([a-z0-9-]+\.)?goc-rag-planner\.pages\.dev$/i;
@@ -128,8 +129,8 @@ export function showMovedBanner() {
     <div class="moved-text">
       <strong>📦 The planner has moved to <a href="${esc(newSiteUrl())}">${esc(host)}</a></strong>
       <span>${n
-        ? `Your ${n === 1 ? 'server is' : n + ' servers are'} saved in this browser for this address only. Move ${n === 1 ? 'it' : 'them'} to keep planning on the new site. Nothing is uploaded.`
-        : 'Update your bookmarks. This address will stop being updated.'}</span>
+        ? `Your ${n === 1 ? 'server is' : n + ' servers are'} saved in this browser for this address only. Move ${n === 1 ? 'it' : 'them'} before ${OFF_DATE}, when this address is turned off. Nothing is uploaded.`
+        : `Please update your bookmarks: this old address will be turned off on ${OFF_DATE}.`}</span>
     </div>
     <div class="moved-actions">
       ${n ? `<button type="button" class="btn-gold" id="btn-move-servers">Move my ${n === 1 ? 'server' : n + ' servers'} →</button>` : ''}
