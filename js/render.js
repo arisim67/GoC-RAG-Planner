@@ -480,7 +480,13 @@ function renderMsgs(srv,days,dec,give){
     for(const g of srv.guilds){
       const declares = dec[g.id][d] || [];
       const giveaways = give[g.id][d] || [];
-      
+
+      // Guilds with no towns going into the day (not on the map yet): if they aren't declaring,
+      // there's nothing to tell them, so leave them out; if they are, they're joining the map.
+      const hadTowns = Object.entries(srv.plan[d]||{}).some(([k,gid]) => gid===g.id && validKids.has(k));
+      if (!hadTowns && declares.length === 0) continue;
+      const joining = !hadTowns;
+
       const held = Object.entries(srv.plan[d+1]||{})
         .filter(([k,gid]) => gid===g.id && validKids.has(k))
         .map(([k]) => k)
@@ -500,7 +506,8 @@ function renderMsgs(srv,days,dec,give){
         });
 
         const best = candidates[0];
-        if (best.isHeld) {
+        if (best.isHeld || joining) {
+          // Joining guilds place def on the town they're declaring (no fallback needed)
           defText = best.id;
         } else {
           // If they have no held towns, check if they are giving anything away today
@@ -510,6 +517,14 @@ function renderMsgs(srv,days,dec,give){
             defText = `${best.id} or place smallest team if not available for battle phase`;
           }
         }
+      } else if (hadTowns) {
+        // Being wiped from the map today (towns yesterday, none today): place def on the town
+        // they're losing. If they lose several, use the highest level one (castle > dorm > town).
+        const losing = Object.entries(srv.plan[d]||{})
+          .filter(([k,gid]) => gid===g.id && validKids.has(k))
+          .map(([k]) => k)
+          .sort((a, b) => (typeScore[kTypeMap[b]] || 0) - (typeScore[kTypeMap[a]] || 0));
+        if (losing.length) defText = losing[0];
       }
         
       const safeName = g.name.replace(/([\\*_~`])/g, '\\$1');
