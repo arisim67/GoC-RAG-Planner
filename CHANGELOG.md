@@ -8,6 +8,7 @@ The app is updated continuously rather than in numbered releases, so entries are
 ### Fixed
 - **Daily messages for guilds joining the map.** A guild with no towns yet that declares one is now told to place def on that town, instead of getting the "or place smallest team if not available" fallback meant for guilds giving away their last town. Guilds not on the map yet and not declaring are left out of that day's message instead of showing "Place def on none".
 - **Daily messages for guilds being wiped from the map.** A guild losing all its towns that day is now told to place def on the town it's losing (the highest level one if it loses several), instead of "Place def on none".
+- Guild names in the **Declares & Giveaways** table now line up with their rows.
 
 ## 2026-11-04
 

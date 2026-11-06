@@ -441,8 +441,10 @@ function renderDecTable(srv,days,dec,give){
           const maxDecl = g.isSmall ? 1 : baseMaxDecl;
           return `<tr>
           <td class="dec-guild">
-            <div class="guild-dot" style="background:${g.color}"></div>${esc(g.name)}
-            ${g.isSmall ? `<span class="dec-max">(Max 1)</span>` : ''}
+            <div class="dec-guild-inner">
+              <div class="guild-dot" style="background:${g.color}"></div>${esc(g.name)}
+              ${g.isSmall ? `<span class="dec-max">(Max 1)</span>` : ''}
+            </div>
           </td>
           ${Array.from({length:days},(_,d)=>{
             const cnt=dec[g.id][d].length;
