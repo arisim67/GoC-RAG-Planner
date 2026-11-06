@@ -50,9 +50,12 @@ export async function autoOptimize() {
   const srv = activeSrv();
   if (!srv) return;
 
-  // Game of Claws plans are solved in several steps and take a while: let the user know up front.
+  // Game of Claws plans are solved in several steps and take a while: let the user know up front. How
+  // long is driven mostly by the number of guilds, and much more steeply than one to one, so the
+  // estimate follows the guild count instead of quoting one range that is far too long for most events.
   if (srv.mode === 'goc') {
-    showToast('Game of Claws plans can take around 10-15 minutes to optimize. Please keep this browser open until it finishes.', false, 10000);
+    const est = (srv.guilds || []).length <= 11 ? 'around 1-5 minutes' : 'up to around 10 minutes';
+    showToast(`Game of Claws plans take ${est} to optimize. Please keep this browser open until it finishes.`, false, 10000);
   }
 
   const btn = document.getElementById('opt-btn'); // Use your actual button ID here

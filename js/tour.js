@@ -80,7 +80,7 @@ function buildSteps(srv) {
       title: '⚡ Auto-Optimize',
       body: `Let the solver propose a full plan that follows the rules and evens out points${goc ? ', Darkwick and dorms' : ' and dorms'}.
              ${goc
-               ? 'Game of Claws takes around <b>10–15 minutes</b>: keep the tab open and visible until it finishes.'
+               ? 'Game of Claws takes around <b>1–3 minutes</b> for 10 guilds and up to about <b>10</b> for 13: keep the tab open and visible until it finishes.'
                : 'Ragnarok takes up to about a minute.'}
              <br><br>Not happy with the result? <b>↩ Undo Optimize</b> brings back your previous plan.`,
     },

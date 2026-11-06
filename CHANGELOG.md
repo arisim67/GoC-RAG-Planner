@@ -3,6 +3,25 @@
 Notable changes to the GoC / Ragnarok Planner, newest first.
 The app is updated continuously rather than in numbered releases, so entries are grouped by date.
 
+## 2026-11-06
+
+### Changed
+- **Run time estimates now match reality.** The app said 10-15 minutes for every Game of Claws plan.
+  It is closer to 1-3 minutes for 10 guilds and about 10 minutes for 13, and the message shown when
+  you start a plan now follows the guild count.
+
+### Fixed
+- **A guild with two castle days now holds them back to back.** The optimizer was already told to
+  prefer one unbroken stint, but it plans Game of Claws a few days at a time, and a guild given
+  Darkwick in an earlier batch looked free to be given it again in a later one — the stint already
+  open was invisible to the batch that split it. Castle days are now checked across the whole run,
+  and a split is closed whenever that can be done without costing anyone points or dorm time.
+- **Clean-up no longer skips the first week of a plan you filled in partly by hand.** Every clean-up
+  pass (dorms, Darkwick and points) cleared the days it was about to re-solve, including your own
+  placements, which left it an impossible problem and made it abandon those days silently. Your
+  placements are now kept, and a pass covering day 1 no longer gives up when a guild joins the
+  event later.
+
 ## 2026-11-05
 
 ### Fixed
