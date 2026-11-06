@@ -73,11 +73,21 @@ body.tour-active .modal-bg.open { z-index: 10001; }
   animation: tour-pulse 1.4s ease-in-out infinite;
 }
 @keyframes tour-pulse { 0%, 100% { opacity: .35; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
-/* Waiting: the Skip is the quiet way out, so the primary button stops shouting. */
-.tour-card-waiting .tour-next {
-  background: var(--bg3); color: var(--text2); box-shadow: none; font-weight: 500;
+/* Done: the hint turns into a nudge towards Next, which is now theirs to press. */
+.tour-wait-done { color: var(--green); }
+.tour-wait-tick { font-weight: 700; flex: none; }
+
+/* Next is out of reach until the step has been done - "Skip this step" is the way past otherwise. */
+.tour-next:disabled {
+  background: var(--bg3); color: var(--text3); box-shadow: none; cursor: not-allowed; font-weight: 500;
 }
-@media (hover: hover) { .tour-card-waiting .tour-next:hover { background: var(--bg4); color: var(--text); } }
+@media (hover: hover) { .tour-next:disabled:hover { background: var(--bg3); } }
+.tour-stepskip {
+  font-family: var(--font-body); font-size: 12px; font-weight: 500; cursor: pointer;
+  border-radius: 20px; padding: 7px 12px; border: none; background: none; color: var(--text3);
+}
+@media (hover: hover) { .tour-stepskip:hover { color: var(--text2); } }
+.tour-stepskip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
 .tour-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; gap: 8px; }
 .tour-nav { display: flex; gap: 6px; }

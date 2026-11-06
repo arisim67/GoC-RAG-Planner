@@ -24,6 +24,7 @@ The app is updated continuously rather than in numbered releases, so entries are
   were all missing. Drag-to-copy is described properly too: shift-click or drag to select as well as
   long-press, copying down towns as well as across days, and the block repeating rather than
   stretching.
+- **The tutorial can now set your first event up with you.** It opens by asking whether you want to be walked through creating an event or just shown around. The guided version waits while you do each step for real — create the server, name the guilds, fill in Day 0 — and moves on by itself once you have, so you finish with a server of your own rather than a demo. Any step can be skipped.
 
 ### Fixed
 - **A guild with two castle days now holds them back to back.** The optimizer was already told to

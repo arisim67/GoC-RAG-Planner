@@ -15,15 +15,25 @@
 //
 // A step that waits for the person is written with `wait`:
 //   wait.snap()      optional, read once when the step opens: what "before" looked like
-//   wait.done(snap)  true when they have done it; polled, and also re-measures the highlight because
+//   wait.done(snap)  true once they have done it; polled, and also re-measures the highlight because
 //                    the page re-renders underneath us
-//   wait.hint        shown in the card while waiting
-// While a step is waiting the page is live - clicks go through, keyboard shortcuts are off so typing
-// works, and the card does not take focus. "Skip this step" is always there for anyone who gets stuck.
+//   wait.hint        shown in the card until then
+//   wait.ready       shown once it is done (default: a nudge towards Next)
+//   wait.auto        move on by itself once done, instead of unlocking Next
+// Doing the thing unlocks Next; it does not move the tour on unless the step asked for that. Renaming
+// one guild is not a sign that you have finished renaming guilds, and a tour that jumps the moment you
+// type a character is worse than one that waits. The page stays live after the step is satisfied, so
+// they can carry on. `wait.auto` is for the one-off actions where there is nothing left to repeat and
+// a still-highlighted button would only be confusing - creating the server, and nothing else so far.
+// While such a step is open, clicks go through, keyboard shortcuts are off so typing works, and the
+// card does not take focus. "Skip this step" is there from the start for anyone who gets stuck.
 // If what the step asks for is already true when it opens (replaying the tour on a finished plan), it
 // is shown as an ordinary step instead of waiting for something that has already happened.
 
-const TOUR_VERSION = 2;   // 2: added the guided setup, so it is worth showing once more
+// Left at 1 on purpose when the guided setup was added: anyone who has already seen (or dismissed)
+// the tutorial should not be interrupted by it a second time. New visitors still get it, and anyone
+// can replay it from the 🎓 Tutorial button. Bump this only to deliberately show it to everyone again.
+const TOUR_VERSION = 1;
 const SEEN_KEY = 'goc_tour_seen';
 const WATCH_MS = 250;
 
@@ -35,7 +45,10 @@ let demoState = null;
 let lastFocus = null;
 let flow = null;    // 'setup' | 'features', chosen on the opening card
 let watch = null;   // interval while a step waits for the person
-let waiting = false;
+let waiting = false;  // step asked for something they have not done yet
+let live = false;     // page is clickable for this step
+let tracked = null;   // element the highlight is currently following
+let sizeWatch = null; // ResizeObserver on it, for controls that change shape in place
 
 // ── Steps ────────────────────────────────────────────────────────
 // target: a [data-tour="..."] name, a CSS selector starting with '#' or '.', or a function returning
@@ -65,6 +78,8 @@ function chooserStep() {
 // Guided setup. Each of these waits for the real thing to happen in the real app.
 function setupSteps() {
   const srv = () => hooks.getActiveServer();
+  // Older app.js builds do not pass getServerCount; fall back to watching the active server change.
+  const count = () => (hooks.getServerCount ? hooks.getServerCount() : (srv() ? 1 : 0));
   // What the guild list looks like now, so we can tell when they have touched it.
   const guildSig = () => { const s = srv(); return s ? s.guilds.map(g => g.name).join('\u0000') : ''; };
   // How many towns have someone on them on Day 0.
@@ -80,7 +95,15 @@ function setupSteps() {
              <b>Game of Claws</b>, the map, and the first and last day.
              <br><br>The mode matters most — it sets how many towns a guild may declare each day and
              which maps you can pick from, and it cannot be changed afterwards.`,
-      wait: { done: () => !!srv(), hint: 'Waiting for you to create it…' },
+      wait: {
+        // Someone replaying this already has servers, so "is there one?" would be true before they
+        // started and the step would sit there telling them to click a button it had already passed.
+        // Wait for one that was not there a moment ago instead.
+        snap: () => ({ n: count(), id: srv() ? srv().id : null }),
+        done: s0 => (hooks.getServerCount ? count() > s0.n : (!!srv() && (srv().id !== s0.id))),
+        hint: 'Waiting for you to create it…',
+        auto: true,   // nothing left to do here once it exists, so do not leave + Add Server lit up
+      },
     },
     {
       target: 'guilds',
@@ -299,6 +322,7 @@ function buildOverlay() {
       <div class="tour-actions">
         <button type="button" class="tour-skip">Skip tour</button>
         <div class="tour-nav">
+          <button type="button" class="tour-stepskip">Skip this step</button>
           <button type="button" class="tour-back">Back</button>
           <button type="button" class="tour-next">Next</button>
         </div>
@@ -317,10 +341,12 @@ function buildOverlay() {
     next: root.querySelector('.tour-next'),
     skip: root.querySelector('.tour-skip'),
     nav: root.querySelector('.tour-nav'),
+    stepSkip: root.querySelector('.tour-stepskip'),
   };
   els.back.onclick = () => show(index - 1, -1);
   els.next.onclick = () => (index >= steps.length - 1 ? endTour() : show(index + 1, 1));
   els.skip.onclick = () => endTour();
+  els.stepSkip.onclick = () => show(index + 1, 1);
   document.addEventListener('keydown', onKey, true);
   window.addEventListener('resize', reposition);
   window.addEventListener('scroll', reposition, true);
@@ -332,7 +358,7 @@ function onKey(e) {
   // While a step waits, the page belongs to the person: they are typing a server name, tabbing between
   // fields, pressing Enter in a dialog. The tour's own shortcuts would eat all of that, so it takes no
   // keys at all except Escape, and only when they are not in the middle of typing something.
-  if (waiting) {
+  if (live) {
     if (e.key !== 'Escape') return;
     const t = e.target;
     const typing = t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA');
@@ -393,6 +419,7 @@ function show(i, dir) {
   // The opening card offers the two ways through instead of a Next button.
   stopWatch();
   waiting = false;
+  live = false;
   if (step.choices) {
     els.nav.style.display = 'none';
     const list = document.createElement('div');
@@ -410,22 +437,35 @@ function show(i, dir) {
     els.nav.style.display = '';
   }
 
-  // A step that waits for the person: let the page through, and watch for them doing it.
+  // A step that waits for the person: let the page through, and watch for them doing it. Next stays
+  // out of reach until they have, and then it is theirs to press when they are ready.
+  els.next.disabled = false;
+  els.stepSkip.style.display = 'none';
+  let snapshot = null;
   if (step.wait) {
-    const snap = step.wait.snap ? step.wait.snap() : null;
+    live = true;
+    snapshot = step.wait.snap ? step.wait.snap() : null;
+    const snap = snapshot;
     let already = false;
     try { already = !!step.wait.done(snap); } catch (_) {}
     if (!already) {
       waiting = true;
-      els.next.textContent = 'Skip this step';
+      els.next.disabled = true;
+      els.stepSkip.style.display = '';
       const hint = document.createElement('div');
       hint.className = 'tour-wait';
       hint.innerHTML = `<span class="tour-wait-dot"></span>${step.wait.hint || 'Waiting…'}`;
       els.body.appendChild(hint);
-      startWatch(step, snap);
     }
   }
-  els.root.classList.toggle('tour-pass', waiting);
+  // The highlight has to follow its target on every step, not only the ones that wait: a control can
+  // change shape on its own while they watch.
+  startLive(step, step.wait && step.wait.snap ? snapshot : null);
+  // The guided setup asks them to use the app, so it never swallows clicks - not only on the steps
+  // that wait. A step whose goal is already met still says "click + Add Server", and locking the
+  // page behind that instruction is how the button ends up dead.
+  if (flow === 'setup') live = true;
+  els.root.classList.toggle('tour-pass', live);
   els.card.classList.toggle('tour-card-waiting', waiting);
 
   const el = targetEl(step);
@@ -445,26 +485,72 @@ function show(i, dir) {
   const follow = () => { if (!els || frames++ > 90) return; reposition(); requestAnimationFrame(follow); };
   requestAnimationFrame(follow);
   // While waiting, the person is typing into the page: taking focus would pull them out of it.
-  if (!waiting) (step.choices ? els.card : els.next).focus({ preventScroll: true });
+  if (!live) (step.choices ? els.card : els.next).focus({ preventScroll: true });
 }
 
-// ── Waiting for the person ───────────────────────────────────────
-function startWatch(step, snap) {
+// ── Tracking the page ────────────────────────────────────────────
+// Runs for every step, for as long as it is open. Two jobs.
+//
+// Keeping the highlight on its target. The page does not hold still: the app re-renders whole sections
+// (so the element the step points at is replaced by a new one), and controls change shape under their
+// own steam - Auto-Optimize relabels itself to "Finding Optimal Plan... (7s)" and grows, which used to
+// leave the highlight sitting around where the button had been. The target is looked up again every
+// tick rather than held onto, because a re-render would make any reference stale, and a ResizeObserver
+// on whatever is there now catches a control changing shape between ticks.
+//
+// And, on a step that waits, watching for them to do the thing. Doing it only unlocks Next - moving on
+// is their decision, so this never calls show(), and never re-locks Next if they carry on editing.
+function startLive(step, snap) {
   stopWatch();
   watch = setInterval(() => {
     if (!els) return stopWatch();
-    reposition();            // the app re-renders as they work, so the highlight has to keep up
+    const el = targetEl(step);
+    if (el !== tracked) {          // re-rendered, or the step follows something that just appeared
+      tracked = el;
+      if (sizeWatch) { sizeWatch.disconnect(); sizeWatch = null; }
+      if (el && typeof ResizeObserver === 'function') {
+        sizeWatch = new ResizeObserver(() => reposition());
+        sizeWatch.observe(el);
+      }
+    }
+    reposition();
+    if (!waiting || !step.wait) return;
     let done = false;
     try { done = !!step.wait.done(snap); } catch (_) { done = false; }
     if (!done) return;
-    stopWatch();
-    // A moment to see their own change land before the tour moves on.
-    setTimeout(() => { if (els && steps[index] === step) show(index + 1, 1); }, 400);
+    unlock(step);
   }, WATCH_MS);
+}
+
+// They have done what the step asked: hand them the Next button and say so.
+//
+// `wait.auto` steps move on by themselves instead. That is for a one-off action with nothing left to
+// repeat - once the server exists there is no second server to make, and leaving + Add Server lit up
+// only makes people wonder what they have missed. Steps you might well do several times over, like
+// naming guilds or filling in Day 0, never move on by themselves; they wait for Next.
+function unlock(step) {
+  waiting = false;
+  els.next.disabled = false;
+  els.stepSkip.style.display = 'none';
+  els.card.classList.remove('tour-card-waiting');
+  const auto = !!step.wait.auto;
+  const hint = els.body.querySelector('.tour-wait');
+  if (hint) {
+    hint.classList.add('tour-wait-done');
+    hint.innerHTML = `<span class="tour-wait-tick">✓</span>${step.wait.ready
+      || (auto ? 'Created — on we go.' : 'Done — take as long as you like, then press Next.')}`;
+  }
+  if (auto) {
+    stopWatch();
+    // Long enough to see the tick, short enough not to feel stuck.
+    setTimeout(() => { if (els && steps[index] === step) show(index + 1, 1); }, 650);
+  }
 }
 
 function stopWatch() {
   if (watch) { clearInterval(watch); watch = null; }
+  if (sizeWatch) { sizeWatch.disconnect(); sizeWatch = null; }
+  tracked = null;
 }
 
 function reposition() {
@@ -544,6 +630,7 @@ function endTour() {
   if (!els) return;
   stopWatch();
   waiting = false;
+  live = false;
   flow = null;
   document.removeEventListener('keydown', onKey, true);
   window.removeEventListener('resize', reposition);
