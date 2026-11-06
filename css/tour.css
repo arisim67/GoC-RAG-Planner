@@ -8,11 +8,19 @@
 }
 @media (hover: hover) { .tour-launch:hover { border-color: var(--border2); background: var(--bg4); } }
 
-.tour-root { position: fixed; inset: 0; z-index: 10000; pointer-events: none; }
+.tour-root { position: fixed; inset: 0; z-index: 10002; pointer-events: none; }
 
 /* Swallows clicks on the page while the tour is open */
 .tour-blocker { position: absolute; inset: 0; pointer-events: auto; }
 .tour-root.tour-dim .tour-blocker { background: rgba(8, 6, 14, 0.72); }
+/* ...except while a step is waiting for the person to do the thing, when the page has to be usable. */
+.tour-root.tour-pass .tour-blocker { pointer-events: none; }
+/* A dialog is z-index 200, far below the tour, so during a tour it would open behind the dimming.
+   Lift it while the tour is running, with the tour above it again so the instructions stay readable
+   over the dialog's own backdrop. The card cannot be lifted on its own - .tour-root makes a stacking
+   context, so its children cannot escape it - which is why the whole root moves. reposition() then
+   hides the spotlight while a dialog is open, since the dialog already dims the page for us. */
+body.tour-active .modal-bg.open { z-index: 10001; }
 
 /* Highlight box; its huge shadow darkens everything around it */
 .tour-spot {
@@ -43,6 +51,34 @@
 .tour-body b { color: var(--text); font-weight: 600; }
 .tour-body code { background: var(--bg3); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
 
+/* Opening card: the two ways through the tour */
+.tour-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.tour-choice {
+  display: flex; flex-direction: column; gap: 3px; width: 100%; text-align: left; cursor: pointer;
+  font-family: var(--font-body); background: var(--bg3); color: var(--text);
+  border: 1px solid var(--border); border-radius: 12px; padding: 11px 13px;
+}
+.tour-choice-label { font-weight: 600; font-size: 13px; }
+.tour-choice-hint { font-size: 11.5px; color: var(--text3); line-height: 1.45; }
+@media (hover: hover) { .tour-choice:hover { border-color: var(--accent); background: var(--bg4); } }
+.tour-choice:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* Shown while a step waits for the person to do something in the app */
+.tour-wait {
+  display: flex; align-items: center; gap: 8px; margin-top: 12px;
+  font-size: 12px; color: var(--accent2);
+}
+.tour-wait-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none;
+  animation: tour-pulse 1.4s ease-in-out infinite;
+}
+@keyframes tour-pulse { 0%, 100% { opacity: .35; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
+/* Waiting: the Skip is the quiet way out, so the primary button stops shouting. */
+.tour-card-waiting .tour-next {
+  background: var(--bg3); color: var(--text2); box-shadow: none; font-weight: 500;
+}
+@media (hover: hover) { .tour-card-waiting .tour-next:hover { background: var(--bg4); color: var(--text); } }
+
 .tour-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; gap: 8px; }
 .tour-nav { display: flex; gap: 6px; }
 .tour-skip, .tour-back, .tour-next {
@@ -61,4 +97,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tour-root.tour-anim .tour-spot, .tour-progress-fill { transition: none; }
+  .tour-wait-dot { animation: none; opacity: .8; }
 }
