@@ -1,15 +1,31 @@
 // js/tour.js
 // Interactive walkthrough of the planner. It highlights the real UI one part at a time.
 //
+// Two ways through it, offered on the opening card:
+//   "Set up my first event" - a guided setup. The steps wait while the person does the real thing in
+//     the real app (create the server, name the guilds, fill in Day 0), and move on by themselves once
+//     it is done. They finish with a server of their own, not a throwaway.
+//   "Just show me around"   - the original walkthrough: nothing is changed, every step is read-only,
+//     and a temporary "Tutorial Server" is created to point at if there is nothing else.
+//
 // - Starts by itself the first time someone opens the site after this version is deployed.
 //   It is marked as seen as soon as it starts, so it never shows on its own again.
 //   To show it to everyone once more after a big update, bump TOUR_VERSION.
 // - Can be skipped at any step (Skip button or Esc) and replayed from the 🎓 Tutorial button.
-// - If there is no server to point at, a temporary "Tutorial Server" is created for the tour
-//   and removed afterwards. An existing server is only looked at, never changed.
+//
+// A step that waits for the person is written with `wait`:
+//   wait.snap()      optional, read once when the step opens: what "before" looked like
+//   wait.done(snap)  true when they have done it; polled, and also re-measures the highlight because
+//                    the page re-renders underneath us
+//   wait.hint        shown in the card while waiting
+// While a step is waiting the page is live - clicks go through, keyboard shortcuts are off so typing
+// works, and the card does not take focus. "Skip this step" is always there for anyone who gets stuck.
+// If what the step asks for is already true when it opens (replaying the tour on a finished plan), it
+// is shown as an ordinary step instead of waiting for something that has already happened.
 
-const TOUR_VERSION = 1;
+const TOUR_VERSION = 1; 
 const SEEN_KEY = 'goc_tour_seen';
+const WATCH_MS = 250;
 
 let hooks = null;   // functions from app.js (see initTour)
 let steps = [];
@@ -17,10 +33,92 @@ let index = 0;
 let els = null;     // overlay DOM nodes while a tour is running
 let demoState = null;
 let lastFocus = null;
+let flow = null;    // 'setup' | 'features', chosen on the opening card
+let watch = null;   // interval while a step waits for the person
+let waiting = false;
 
 // ── Steps ────────────────────────────────────────────────────────
-// target: a [data-tour="..."] name, or null for a centred card.
+// target: a [data-tour="..."] name, a CSS selector starting with '#' or '.', or a function returning
+//   either (so a step can follow the person - from a button to the dialog it opens, say).
+//   null puts the card in the middle of the screen.
 // Steps whose target is not on the page are skipped automatically.
+
+// The opening card: which of the two ways through the tour they want.
+function chooserStep() {
+  const has = !!hooks.getActiveServer();
+  return {
+    target: null,
+    title: 'Welcome to the GoC / Ragnarok Planner',
+    body: `This app plans a whole Game of Claws or Ragnarok event: who holds which town on which day,
+           kept legal and with the points shared out evenly.<br><br>Where would you like to start?`,
+    choices: [
+      {
+        label: has ? '🧭 Walk me through a new event' : '🧭 Set up my first event',
+        flow: 'setup',
+        hint: 'Build a real server together, one step at a time. It stays when the tour ends.',
+      },
+      { label: '👀 Just show me around', flow: 'features', hint: 'A one-minute look at what everything does.' },
+    ],
+  };
+}
+
+// Guided setup. Each of these waits for the real thing to happen in the real app.
+function setupSteps() {
+  const srv = () => hooks.getActiveServer();
+  // What the guild list looks like now, so we can tell when they have touched it.
+  const guildSig = () => { const s = srv(); return s ? s.guilds.map(g => g.name).join('\u0000') : ''; };
+  // How many towns have someone on them on Day 0.
+  const day0 = () => { const s = srv(); return s && s.plan && s.plan[0] ? Object.values(s.plan[0]).filter(Boolean).length : 0; };
+
+  return [
+    {
+      // Follows them from the button into the dialog it opens.
+      target: () => (document.getElementById('modal-add') || {}).classList?.contains('open')
+        ? '#modal-add .modal' : '.add-tab-btn',
+      title: 'Create the server',
+      body: `Click <b>+ Add Server</b> and fill in the event: its name, whether it is <b>Ragnarok</b> or
+             <b>Game of Claws</b>, the map, and the first and last day.
+             <br><br>The mode matters most — it sets how many towns a guild may declare each day and
+             which maps you can pick from, and it cannot be changed afterwards.`,
+      wait: { done: () => !!srv(), hint: 'Waiting for you to create it…' },
+    },
+    {
+      target: 'guilds',
+      title: 'Name the guilds',
+      body: `Type each guild's real name over <b>Guild 1</b>, <b>Guild 2</b> and so on. Use
+             <b>+ Add Guild</b> or the <b>✕</b> to match however many are taking part — up to 15.
+             <br><br>Drag the <b>☰</b> handle to reorder them. When something cannot be split evenly,
+             the guilds nearer the top get the extra point, dorm day or castle day.`,
+      wait: {
+        snap: guildSig,
+        done: s0 => guildSig() !== s0,
+        hint: 'Rename a guild, or add or remove one…',
+      },
+    },
+    {
+      target: 'grid',
+      title: 'Set up Day 0',
+      body: `<b>Day 0</b> is where everyone starts, before any declares — put each guild on the towns
+             they already hold. Click a cell under Day 0 and pick the guild.
+             <br><br>The rest of the plan is built outwards from this, so it is worth getting right.
+             The <b>Adjacent Towns</b> column on the left shows what connects to what.`,
+      wait: {
+        snap: day0,
+        done: s0 => day0() > s0,
+        hint: 'Place a guild on a Day 0 town…',
+      },
+      place: 'top',
+    },
+    {
+      target: 'status',
+      title: 'The app checks as you go',
+      body: `Green means the plan is legal. Red names the day and town at fault — a guild declaring a
+             town it is not next to, too many declares in a day, or a guild losing every town it has.
+             <br><br>Nothing stops you entering it; you just get told.`,
+    },
+  ];
+}
+
 function buildSteps(srv) {
   const goc = srv && srv.mode === 'goc';
   return [
@@ -141,14 +239,36 @@ export function startTour() {
   if (els) return; // already running
   markSeen();
   lastFocus = document.activeElement;
-
-  const srv = hooks.getActiveServer();
   demoState = null;
-  if (!srv || srv.isViewOnly) {
-    demoState = { created: true, prevId: hooks.createDemoServer() };
-  }
-  steps = buildSteps(hooks.getActiveServer());
+  flow = null;
+  steps = [chooserStep()];
   buildOverlay();
+  index = 0;
+  show(0, 1);
+}
+
+// Chosen on the opening card. The walkthrough needs something to point at and borrows a temporary
+// server for it; the guided setup must not, because creating the real one is the first step.
+function pickFlow(which) {
+  flow = which;
+  if (which === 'features') {
+    const srv = hooks.getActiveServer();
+    if (!srv || srv.isViewOnly) demoState = { created: true, prevId: hooks.createDemoServer() };
+    steps = buildSteps(hooks.getActiveServer()).slice(1);   // the opening card replaced step 1
+  } else {
+    // Setup first, then the parts of the walkthrough that only make sense once a plan exists.
+    const after = ['optimize', 'stats', 'share', 'messages'];
+    const tail = buildSteps(hooks.getActiveServer()).filter(s => after.includes(s.target));
+    steps = [...setupSteps(), ...tail, {
+      target: null,
+      title: 'That is your server set up',
+      body: `It is saved in this browser and will be here when you come back — no account, nothing to
+             press. Carry on filling in the days, or let <b>⚡ Auto-Optimize</b> propose the rest.
+             <br><br>Replay this any time with <b>🎓 Tutorial</b>, or open <b>📖 User Guide</b> for the
+             full details.`,
+      next: 'Done',
+    }];
+  }
   index = 0;
   show(0, 1);
 }
@@ -193,6 +313,7 @@ function buildOverlay() {
     back: root.querySelector('.tour-back'),
     next: root.querySelector('.tour-next'),
     skip: root.querySelector('.tour-skip'),
+    nav: root.querySelector('.tour-nav'),
   };
   els.back.onclick = () => show(index - 1, -1);
   els.next.onclick = () => (index >= steps.length - 1 ? endTour() : show(index + 1, 1));
@@ -205,6 +326,18 @@ function buildOverlay() {
 
 function onKey(e) {
   if (!els) return;
+  // While a step waits, the page belongs to the person: they are typing a server name, tabbing between
+  // fields, pressing Enter in a dialog. The tour's own shortcuts would eat all of that, so it takes no
+  // keys at all except Escape, and only when they are not in the middle of typing something.
+  if (waiting) {
+    if (e.key !== 'Escape') return;
+    const t = e.target;
+    const typing = t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA');
+    const inModal = t && t.closest && t.closest('.modal-bg.open');
+    if (typing || inModal) return;    // let it close the dialog or leave the field instead
+    e.preventDefault(); e.stopPropagation(); endTour();
+    return;
+  }
   if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); endTour(); }
   else if (e.key === 'ArrowRight' || e.key === 'Enter') {
     if (e.key === 'Enter' && e.target && e.target.tagName === 'BUTTON') return; // let the focused button act
@@ -222,8 +355,13 @@ function onKey(e) {
 }
 
 function targetEl(step) {
-  if (!step.target) return null;
-  const el = document.querySelector(`[data-tour="${step.target}"]`);
+  const t = typeof step.target === 'function' ? step.target() : step.target;
+  if (!t) return null;
+  // A plain name is one of the [data-tour] anchors; anything starting with '#' or '.' is a selector,
+  // which is how a step points at a dialog that has no anchor of its own.
+  let el = null;
+  try { el = /^[#.]/.test(t) ? document.querySelector(t) : document.querySelector(`[data-tour="${t}"]`); }
+  catch (_) { return null; }
   if (!el) return null;
   const r = el.getBoundingClientRect();
   return r.width || r.height ? el : null;
@@ -236,15 +374,56 @@ function show(i, dir) {
   index = i;
   const step = steps[i];
 
-  const visible = steps.filter(s => !s.target || targetEl(s));
+  // The walkthrough hides steps whose part of the page is not there. The guided setup must not do
+  // that: almost none of the app exists on step one, and counting only what is on screen would
+  // promise a two-step tour that is really nine.
+  const visible = flow === 'setup' ? steps : steps.filter(s => !s.target || targetEl(s));
   const pos = visible.indexOf(step) + 1;
-  els.count.textContent = `${pos} of ${visible.length}`;
-  els.fill.style.width = `${(pos / visible.length) * 100}%`;
+  els.count.textContent = flow ? `${pos} of ${visible.length}` : '';
+  els.fill.style.width = flow ? `${(pos / visible.length) * 100}%` : '0';
   els.title.innerHTML = step.title;
   els.body.innerHTML = typeof step.body === 'function' ? step.body() : step.body;
   els.back.style.visibility = i === 0 ? 'hidden' : 'visible';
   els.next.textContent = step.next || (i === steps.length - 1 ? 'Done' : 'Next');
   els.skip.style.visibility = i === steps.length - 1 ? 'hidden' : 'visible';
+
+  // The opening card offers the two ways through instead of a Next button.
+  stopWatch();
+  waiting = false;
+  if (step.choices) {
+    els.nav.style.display = 'none';
+    const list = document.createElement('div');
+    list.className = 'tour-choices';
+    for (const c of step.choices) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tour-choice';
+      b.innerHTML = `<span class="tour-choice-label">${c.label}</span><span class="tour-choice-hint">${c.hint}</span>`;
+      b.onclick = () => pickFlow(c.flow);
+      list.appendChild(b);
+    }
+    els.body.appendChild(list);
+  } else {
+    els.nav.style.display = '';
+  }
+
+  // A step that waits for the person: let the page through, and watch for them doing it.
+  if (step.wait) {
+    const snap = step.wait.snap ? step.wait.snap() : null;
+    let already = false;
+    try { already = !!step.wait.done(snap); } catch (_) {}
+    if (!already) {
+      waiting = true;
+      els.next.textContent = 'Skip this step';
+      const hint = document.createElement('div');
+      hint.className = 'tour-wait';
+      hint.innerHTML = `<span class="tour-wait-dot"></span>${step.wait.hint || 'Waiting…'}`;
+      els.body.appendChild(hint);
+      startWatch(step, snap);
+    }
+  }
+  els.root.classList.toggle('tour-pass', waiting);
+  els.card.classList.toggle('tour-card-waiting', waiting);
 
   const el = targetEl(step);
   if (el) {
@@ -262,7 +441,27 @@ function show(i, dir) {
   let frames = 0;
   const follow = () => { if (!els || frames++ > 90) return; reposition(); requestAnimationFrame(follow); };
   requestAnimationFrame(follow);
-  els.next.focus({ preventScroll: true });
+  // While waiting, the person is typing into the page: taking focus would pull them out of it.
+  if (!waiting) (step.choices ? els.card : els.next).focus({ preventScroll: true });
+}
+
+// ── Waiting for the person ───────────────────────────────────────
+function startWatch(step, snap) {
+  stopWatch();
+  watch = setInterval(() => {
+    if (!els) return stopWatch();
+    reposition();            // the app re-renders as they work, so the highlight has to keep up
+    let done = false;
+    try { done = !!step.wait.done(snap); } catch (_) { done = false; }
+    if (!done) return;
+    stopWatch();
+    // A moment to see their own change land before the tour moves on.
+    setTimeout(() => { if (els && steps[index] === step) show(index + 1, 1); }, 400);
+  }, WATCH_MS);
+}
+
+function stopWatch() {
+  if (watch) { clearInterval(watch); watch = null; }
 }
 
 function reposition() {
@@ -272,6 +471,33 @@ function reposition() {
   const vw = window.innerWidth, vh = window.innerHeight;
   const card = els.card;
   const mobile = vw < 640;
+
+  // A dialog dims the page itself and is what the person is looking at, so the spotlight would only
+  // fight with it. Drop the highlight and put the card out of the dialog's way instead.
+  const modal = document.querySelector('.modal-bg.open');
+  // On a phone the card is a bottom sheet and the dialog fills the screen, so the card would sit right
+  // on top of the fields and the Create button - the very thing the step is asking them to use. There
+  // is nowhere to put it, so it stands aside until the dialog is done with. The step keeps watching.
+  card.style.display = modal && mobile ? 'none' : '';
+  if (modal) {
+    els.spot.style.display = 'none';
+    els.root.classList.remove('tour-dim');
+    card.classList.toggle('tour-card-sheet', mobile);
+    card.classList.remove('tour-card-center');
+    if (mobile) { card.style.left = card.style.top = ''; return; }
+    const m = modal.querySelector('.modal');
+    const mr = m ? m.getBoundingClientRect() : { left: vw / 2, right: vw / 2, top: 0, bottom: vh };
+    // Beside the dialog if it fits, otherwise under it, otherwise the bottom-right corner.
+    const cw = card.offsetWidth, ch = card.offsetHeight, gap = 16;
+    let x = mr.right + gap, y = Math.min(Math.max(mr.top, 16), vh - ch - 16);
+    if (x + cw > vw - 16) {
+      x = mr.left - gap - cw;
+      if (x < 16) { x = vw - cw - 24; y = Math.min(mr.bottom + gap, vh - ch - 16); }
+    }
+    card.style.left = Math.max(16, x) + 'px';
+    card.style.top = Math.max(16, y) + 'px';
+    return;
+  }
   card.classList.toggle('tour-card-sheet', mobile && !!el);
   card.classList.toggle('tour-card-center', !el);
 
@@ -313,6 +539,9 @@ function reposition() {
 
 function endTour() {
   if (!els) return;
+  stopWatch();
+  waiting = false;
+  flow = null;
   document.removeEventListener('keydown', onKey, true);
   window.removeEventListener('resize', reposition);
   window.removeEventListener('scroll', reposition, true);
