@@ -45,6 +45,19 @@ The app constantly watches your plan to ensure it is actually legal to execute i
 ## 5. Execution and Communication
 Once your plan is finalized and balanced, you need to communicate it to server leadership.
 *   **🔗 Save to Cloud (Live Sync):** Click this button to upload your plan to the database and copy a shareable link to your clipboard. Anyone who opens this link sees your exact workspace, as a view-only copy. When you make changes, click **Save to Cloud** again; the people you shared it with then click **🔄 Pull Latest Updates** (or refresh the page) to get your new version.
+*   **Link previews:** When you post a Save to Cloud link in Discord (or anywhere else that expands links), it unfolds into a card showing the plan itself rather than a generic site logo. The heading is your server's name and the line under it is the mode, map, dates and guild count, both taken straight from the plan:
+
+    > **Ragnarok Server · GoC / Ragnarok Planner**
+    > Ragnarok · Sea of Poseidon · Oct 21 – Oct 26 · 4 guilds. View-only plan: open it to see every town, day and score.
+
+    Below that sits a scoreboard of the finished plan — every guild's final score, and how many days each spent holding towns, dorms and the castle:
+
+    ![Example of a shared plan's link preview: Final Scores and Total Occupation for every guild](link-preview-example.png)
+
+    The image is drawn when you click **🔗 Save to Cloud** and uploaded alongside the plan, so it always matches the version you last saved. Save again after editing and the card updates too. A few things worth knowing:
+    *   The card shows **only** scores and occupation — never the day-by-day grid — so posting a link does not give away your route before the event.
+    *   Discord and most apps cache a link's preview for a while. If you save changes and the old card still shows, that is the cache, not a failure; the link itself always opens the current plan.
+    *   If the preview cannot be built for any reason, the plan still saves and the link still works. You simply get the site's standard card instead.
 *   **🔄 Sync from Cloud:** Pulls the saved cloud version of the current server back down to this browser — useful when you have been editing the same plan from another device. Note that it **replaces** this browser's copy of that server, so anything you have changed here since the last Save to Cloud is lost. Save first if you are unsure which side is newer.
 *   **👀 View-Only Mode (what the people you share with see):** Opening a shared link gives a locked copy that cannot be edited, with four buttons: **📋 Duplicate to Edit** makes an editable copy in a new tab called "… (My Copy)", **🔄 Pull Latest Updates** fetches your newest saved version, **📸 Screenshots** saves the images, and **📤 Export Data** downloads the plan as a `.json` backup. A duplicate is a separate plan from then on and does not receive your later updates.
 *   **📸 Screenshots:** Click this button to automatically expand the layout and take unclipped, high-resolution PNG screenshots of your Planning Grid and Stats/Declares tables. The images are bundled into a `.zip` file for quick, organized sharing on Discord. On phones and tablets a **📤 Share to Apps** button also appears, which hands the images straight to Discord or any other app in the share sheet.

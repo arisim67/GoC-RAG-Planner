@@ -99,6 +99,9 @@ function buildSteps(srv) {
       body: `<b>🔗 Save to Cloud</b> uploads the plan and copies a link. People who open it see a view-only copy
              and can <b>📋 Duplicate to Edit</b> to work on their own version; after you save again they click
              <b>🔄 Pull Latest Updates</b> for your changes.
+             <br><br>Posted in Discord, the link unfolds into a card showing every guild's final score and
+             how long each held towns, dorms and the castle — the grid itself stays private. The
+             <b>📖 User Guide</b> has a picture of one.
              <br><br><b>🔄 Sync from Cloud</b> pulls the saved version back to this browser if you have been
              editing from another device — it replaces what is here, so save first if in doubt.
              <br><br><b>📸 Screenshots</b> saves the grid and tables as images for Discord.`,
