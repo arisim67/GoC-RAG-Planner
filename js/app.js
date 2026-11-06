@@ -2,7 +2,7 @@
 // Entry point: loads saved data, renders the page, starts the tutorial, and exposes the functions
 // that the inline onclick="..." handlers in the HTML call.
 
-import { load, activeSrv } from './state.js';
+import { state, load, activeSrv } from './state.js';
 import { closeModal } from './ui.js';
 import { renderTabs, renderAll } from './render.js';
 import { createTutorialServer, removeTutorialServer, openAdd, confirmAdd, onAddModalModeChange, onAddModalStartChange, switchSrv, removeSrv, confirmDeleteSrv, ctxRename, ctxDuplicate, ctxDelete } from './servers.js';
@@ -19,6 +19,8 @@ checkUrlForSharedPlan().then(() => {
   renderAll();
   initTour({
     getActiveServer: () => activeSrv(),
+    // Lets the guided setup tell a server they just made from ones they already had.
+    getServerCount: () => state.servers.length,
     isSharedLink: () => new URLSearchParams(window.location.search).has('plan'),
     createDemoServer: createTutorialServer,
     removeDemoServer: removeTutorialServer,
