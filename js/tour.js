@@ -65,7 +65,9 @@ function buildSteps(srv) {
       title: 'Planning grid',
       body: `One row per town, one column per day. Pick the guild that holds each town on each day, starting
              with their footholds on <b>Day 0</b>. The left column lists each town's neighbours.
-             <br><br>To copy across days, long-press a cell and drag the handle in its bottom-right corner.`,
+             <br><br>To copy, select cells — long-press one, drag across a block, or shift-click a second cell —
+             then drag the handle on the block's bottom-right corner sideways across days, or down the towns.
+             The block repeats, so a two-day pattern dragged across six days lands three times.`,
       place: 'top',
     },
     {
@@ -80,7 +82,7 @@ function buildSteps(srv) {
       title: '⚡ Auto-Optimize',
       body: `Let the solver propose a full plan that follows the rules and evens out points${goc ? ', Darkwick and dorms' : ' and dorms'}.
              ${goc
-               ? 'Game of Claws takes around <b>10–15 minutes</b>: keep the tab open and visible until it finishes.'
+               ? 'Game of Claws takes around <b>1–3 minutes</b> for 10 guilds and up to about <b>10</b> for 13: keep the tab open and visible until it finishes.'
                : 'Ragnarok takes up to about a minute.'}
              <br><br>Not happy with the result? <b>↩ Undo Optimize</b> brings back your previous plan.`,
     },
@@ -94,8 +96,11 @@ function buildSteps(srv) {
     {
       target: 'share',
       title: 'Share with leadership',
-      body: `<b>🔗 Save to Cloud</b> uploads the plan and copies a link. People who open it see a view-only copy,
-             and after you save again they just refresh to get your changes.
+      body: `<b>🔗 Save to Cloud</b> uploads the plan and copies a link. People who open it see a view-only copy
+             and can <b>📋 Duplicate to Edit</b> to work on their own version; after you save again they click
+             <b>🔄 Pull Latest Updates</b> for your changes.
+             <br><br><b>🔄 Sync from Cloud</b> pulls the saved version back to this browser if you have been
+             editing from another device — it replaces what is here, so save first if in doubt.
              <br><br><b>📸 Screenshots</b> saves the grid and tables as images for Discord.`,
     },
     {

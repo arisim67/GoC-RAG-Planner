@@ -183,6 +183,34 @@ export function scarceMissCost(plan, srv, mapData, FULL, target) {
   return missCost(scarceDevs(plan, srv, mapData, FULL, target), MISS_COST_SCARCE);
 }
 
+// Build a clean-up window's model, coping with the one thing that can make a window reaching day 1
+// impossible to build at all: "every guild is on the map from day 1" is a hard rule while every guild
+// fits on the map, but a guild that joins later has nowhere to stand once the user's own day 1 is
+// locked, and that row is then left with no variables to satisfy it. Phase 1 already asks again with
+// the rule as a penalty in that case, and the clean-up passes now do the same - before this, any window
+// reaching day 1 was thrown away on a plan whose first day does not hold every guild.
+function buildWindow(work, mapData, opts) {
+  try {
+    return buildModel(work, mapData, opts);
+  } catch (e) {
+    if (opts.winStart !== 1 || opts.softDay1) throw e;
+    return buildModel(work, mapData, { ...opts, softDay1: true });
+  }
+}
+
+// A clean-up window clears the days it is about to re-solve, but the user's own placements are not the
+// optimizer's to clear: the model is handed them as locks either way, so wiping them asks it to satisfy
+// a row it has no variables left for ("Constant constraint cannot hold") and the whole window is thrown
+// out. Any window overlapping a manually planned day used to be skipped for this reason.
+function lockedOnly(d, mapData, locks) {
+  const row = {};
+  for (const k of mapData.kingdoms) {
+    const g = (locks[d] || {})[k.id];
+    if (g) row[k.id] = g;
+  }
+  return row;
+}
+
 function windowStarts(FULL, K, stride) {
   if (K >= FULL) return [1];
   const starts = [];
@@ -242,8 +270,8 @@ export async function repairScarce(srv, mapData, runSolver, phase1Plan, userOpts
       onProgress(`Clean-up · Darkwick & dorms · days ${ws}-${we} (${dev} off)`);
       try {
         const work = { ...srv, plan: JSON.parse(JSON.stringify(plan)) };
-        for (let d = ws; d <= we; d++) work.plan[d] = {};
-        const { milp, decode, warmStart } = buildModel(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'scarce', locks });
+        for (let d = ws; d <= we; d++) work.plan[d] = lockedOnly(d, mapData, locks);
+        const { milp, decode, warmStart } = buildWindow(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'scarce', locks });
         const result = await runSolver(milp.toArrays(), { timeLimit: o.repairTimeLimit, absGap: o.phase1Gap, warmStart: warmStart(plan) });
         const dec = decode(result);
         const cand = JSON.parse(JSON.stringify(plan));
@@ -258,6 +286,25 @@ export async function repairScarce(srv, mapData, runSolver, phase1Plan, userOpts
     if (!improved) break;
   }
   return plan;
+}
+
+// How Darkwick's days are grouped: one unbroken run of days is one stint, the same days scattered are
+// several. floor = the number of guilds holding it at all, which is the fewest stints any plan sharing
+// it out that way could have.
+function castleRuns(plan, mapData, FULL) {
+  const lv3 = mapData.kingdoms.find(k => k.type === 'lv3');
+  const out = { stints: 0, floor: 0, splits: [] };
+  if (!lv3) return out;
+  const days = {};
+  for (let d = 1; d <= FULL; d++) { const g = plan[d][lv3.id]; if (g) (days[g] = days[g] || []).push(d); }
+  for (const ds of Object.values(days)) {
+    out.floor++;                                     // one stint per holder is the best possible
+    let runs = 0;
+    for (let i = 0; i < ds.length; i++) if (i === 0 || ds[i] !== ds[i - 1] + 1) runs++;
+    out.stints += runs;
+    if (runs > 1) out.splits.push(ds);
+  }
+  return out;
 }
 
 // Darkwick clean-up, run when the dorms are already even but Darkwick is not - one guild holding it
@@ -287,9 +334,9 @@ export async function repairCastle(srv, mapData, runSolver, plan0, userOpts = {}
     try {
       const work = { ...srv, plan: JSON.parse(JSON.stringify(plan)) };
       for (let d = ws; d <= we; d++) for (const k of mapData.kingdoms) {
-        if (k.type !== 'lv2') work.plan[d][k.id] = '';
+        if (k.type !== 'lv2' && !(locks[d] || {})[k.id]) work.plan[d][k.id] = '';
       }
-      const { milp, decode, warmStart } = buildModel(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'castle', locks });
+      const { milp, decode, warmStart } = buildWindow(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'castle', locks });
       const result = await runSolver(milp.toArrays(), { timeLimit: o.castleTimeLimit, absGap: o.phase1Gap, warmStart: warmStart(plan) });
       const dec = decode(result);
       const cand = JSON.parse(JSON.stringify(plan));
@@ -300,6 +347,60 @@ export async function repairCastle(srv, mapData, runSolver, plan0, userOpts = {}
         hot = scarceHeat(plan, srv, mapData, FULL, target, 'lv3');
       }
     } catch (e) { console.warn(`[TwoPhase] Darkwick window ${ws}-${we} skipped: ${e.message}`); }
+  }
+  return plan;
+}
+
+// Castle stint clean-up. A guild with two castle days wants them back to back: the same points for half
+// the marching. The model already charges CASTLE_STINT_COST for every stint a guild opens, but phase 1
+// commits only a few days at a time, so a guild handed Darkwick in an early window looks free to re-use
+// in a later one - the stint it already has open is sunk cost that the later window cannot see, and a
+// split across the boundary costs it nothing.
+//
+// The dorms have to move for this, which is why it is not part of the Darkwick clean-up above. On maps
+// where Darkwick's neighbours are mostly dorms (Wetland: one Lv1 town and three dorms) the castle order
+// is dictated by who is standing on those dorms, so with the dorms pinned there is nothing to re-arrange.
+// This pass frees the dorms and Darkwick together, like the dorm clean-up, and keeps a result only when
+// it closes a stint, is legal, and is no worse on the scarce towns OR on points anywhere.
+export async function consolidateCastle(srv, mapData, runSolver, plan0, userOpts = {}) {
+  const o = { ...TWO_PHASE_DEFAULTS, ...userOpts };
+  const onProgress = o.onProgress || (() => {});
+  const FULL = numDays(srv);
+  const target = getPerfectTargets(srv, mapData);
+  const locks = JSON.parse(JSON.stringify(srv.plan));
+  let plan = plan0;
+  let runs = castleRuns(plan, mapData, FULL);
+  if (runs.stints === runs.floor) return plan;      // already as few stints as its holders allow
+  let cost = scarceMissCost(plan, srv, mapData, FULL, target);
+  const t0 = Date.now();
+  const K = Math.min(o.repairWindow, FULL);
+  // A window is only worth solving if it holds every one of a split guild's castle days - with one of
+  // them outside, re-solving the window cannot bring them together.
+  const covered = (ws) => runs.splits.filter(ds => ds[0] >= ws && ds[ds.length - 1] <= ws + K - 1).length;
+  for (const ws of windowStarts(FULL, K, 1).sort((a, b) => covered(b) - covered(a) || a - b)) {
+    if ((Date.now() - t0) / 1000 > o.castleBudget || runs.stints === runs.floor) break;
+    if (covered(ws) === 0) continue;
+    const we = ws + K - 1;
+    onProgress(`Clean-up · castle days · days ${ws}-${we} (${runs.stints - runs.floor} split)`);
+    try {
+      const work = { ...srv, plan: JSON.parse(JSON.stringify(plan)) };
+      for (let d = ws; d <= we; d++) work.plan[d] = lockedOnly(d, mapData, locks);
+      const { milp, decode, warmStart } = buildWindow(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'scarce', locks });
+      const result = await runSolver(milp.toArrays(), { timeLimit: o.repairTimeLimit, absGap: o.phase1Gap, warmStart: warmStart(plan) });
+      const dec = decode(result);
+      const cand = JSON.parse(JSON.stringify(plan));
+      for (let d = ws; d <= we; d++) cand[d] = dec[d];
+      const r2 = castleRuns(cand, mapData, FULL);
+      const c2 = scarceMissCost(cand, srv, mapData, FULL, target);
+      // Fewer stints, and no worse a share of Darkwick and the dorms. The Lv1 towns in the window get
+      // shuffled on the way - a window aims at its own slice of each guild's target, not the whole
+      // event's - so the points are not judged here; the points clean-up that runs next puts them
+      // back, and solveGocFinish checks that it did.
+      const better = r2.stints < runs.stints && c2 <= cost + 1e-9;
+      if (better && checkPlan(cand, srv, mapData, FULL, locks).length === 0) {
+        plan = cand; cost = c2; runs = r2;
+      }
+    } catch (e) { console.warn(`[TwoPhase] castle stint window ${ws}-${we} skipped: ${e.message}`); }
   }
   return plan;
 }
@@ -325,8 +426,10 @@ export async function refinePoints(srv, mapData, runSolver, plan0, userOpts = {}
       onProgress(`Clean-up · points · days ${ws}-${we} (${dev} off)`);
       try {
         const work = { ...srv, plan: JSON.parse(JSON.stringify(plan)) };
-        for (let d = ws; d <= we; d++) for (const k of mapData.kingdoms) if (k.type === 'lv1') work.plan[d][k.id] = '';
-        const { milp, decode, warmStart } = buildModel(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'lv1', locks });
+        for (let d = ws; d <= we; d++) for (const k of mapData.kingdoms) {
+          if (k.type === 'lv1' && !(locks[d] || {})[k.id]) work.plan[d][k.id] = '';
+        }
+        const { milp, decode, warmStart } = buildWindow(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'lv1', locks });
         const result = await runSolver(milp.toArrays(), { timeLimit: o.refineTimeLimit, absGap: o.phase2Gap, warmStart: warmStart(plan) });
         const dec = decode(result);
         const cand = JSON.parse(JSON.stringify(plan));
@@ -355,7 +458,21 @@ export async function solveGocFinish(srv, mapData, runSolver, phase1Plan, userOp
   if (scarceDeviation(phase2, srv, mapData, FULL, target) > 0) {
     phase2 = await repairCastle(srv, mapData, runSolver, phase2, userOpts);
   }
-  const plan = await refinePoints(srv, mapData, runSolver, phase2, userOpts);
+  // Darkwick shared out correctly can still be split across phase 1's window boundaries, which costs a
+  // guild a march for nothing. Closing that needs the dorms free, so it is its own pass.
+  const split = castleRuns(phase2, mapData, FULL);
+  const joined = await consolidateCastle(srv, mapData, runSolver, phase2, userOpts);
+  let plan = await refinePoints(srv, mapData, runSolver, joined, userOpts);
+  // Joining a stint shuffles the Lv1 towns in its window, which the points clean-up above is meant to
+  // put right. Where it could not, a guild has been left short of its target to save another a march,
+  // and that is the wrong trade: fall back to the plan that kept the split.
+  if (castleRuns(joined, mapData, FULL).stints < split.stints) {
+    const pc = pointsMissCost(plan, srv, mapData, FULL, target);
+    if (pc > 1e-9) {
+      const kept = await refinePoints(srv, mapData, runSolver, phase2, userOpts);
+      if (pointsMissCost(kept, srv, mapData, FULL, target) < pc - 1e-9) plan = kept;
+    }
+  }
   const problems = checkPlan(plan, srv, mapData, FULL, locks);
   if (problems.length) throw new Error('The optimizer could not build a legal plan this time. Please try again.');
   return plan;
