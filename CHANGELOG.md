@@ -9,6 +9,13 @@ The app is updated continuously rather than in numbered releases, so entries are
 - **Run time estimates now match reality.** The app said 10-15 minutes for every Game of Claws plan.
   It is closer to 1-3 minutes for 10 guilds and about 10 minutes for 13, and the message shown when
   you start a plan now follows the guild count.
+- **Tutorial and user guide now cover the whole app.** View-only mode and what the people you share
+  a link with can do (📋 Duplicate to Edit, 🔄 Pull Latest Updates, 📤 Export Data), 🔄 Sync from
+  Cloud — including the warning that it replaces this browser's copy of that plan — ↩ Undo Optimize,
+  Exclude Guild, the Final Scores and Total Occupation tables, 🗑 Delete Server and 📤 Share to Apps
+  were all missing. Drag-to-copy is described properly too: shift-click or drag to select as well as
+  long-press, copying down towns as well as across days, and the block repeating rather than
+  stretching.
 
 ### Fixed
 - **A guild with two castle days now holds them back to back.** The optimizer was already told to
