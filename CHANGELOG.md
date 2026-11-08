@@ -3,6 +3,19 @@
 Notable changes to the GoC / Ragnarok Planner, newest first.
 The app is updated continuously rather than in numbered releases, so entries are grouped by date.
 
+## 2026-11-08
+
+### Added
+- **Exclude Guild now works in Game of Claws, including partway through an event.** If a guild drops
+  out, tick Exclude Guild next to them and optimize: the days you have already played stay exactly as
+  they are, that guild keeps the towns it was holding, nobody else can take them, and the points still
+  to win are shared out evenly between the guilds that are left. Removing them from the roster was
+  never the right move — it erases them from the days already played.
+
+### Fixed
+- **Targets no longer count towns an excluded guild is sitting on.** Those towns cannot be won by
+  anyone, so counting them set every other guild a target a few points out of reach.
+
 ## 2026-11-06
 
 ### Changed
@@ -16,10 +29,7 @@ The app is updated continuously rather than in numbered releases, so entries are
   were all missing. Drag-to-copy is described properly too: shift-click or drag to select as well as
   long-press, copying down towns as well as across days, and the block repeating rather than
   stretching.
-- **The tutorial can now set your first event up with you.** It opens by asking whether you want to be
-  walked through creating an event or just shown around. The guided version waits while you do each
-  step for real — create the server, name the guilds, fill in Day 0 — and moves on by itself once you
-  have, so you finish with a server of your own rather than a demo. Any step can be skipped.
+- **The tutorial can now set your first event up with you.** It opens by asking whether you want to be walked through creating an event or just shown around. The guided version waits while you do each step for real — create the server, name the guilds, fill in Day 0 — and moves on by itself once you have, so you finish with a server of your own rather than a demo. Any step can be skipped.
 
 ### Fixed
 - **A guild with two castle days now holds them back to back.** The optimizer was already told to
@@ -42,8 +52,8 @@ The app is updated continuously rather than in numbered releases, so entries are
 
 ## 2026-11-04
 
-  ### Added
-  - 🔗 Save to Cloud now also stores a preview image of the plan, ready for link previews on the upcoming new site address.
+### Added
+- 🔗 Save to Cloud now also stores a preview image of the plan, ready for link previews on the upcoming new site address.
 
 ### Changed
 - Game of Claws optimizer refined for better point balancing

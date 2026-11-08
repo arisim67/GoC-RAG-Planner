@@ -61,7 +61,7 @@ export function getPerfectTargets(srv, mapData) {
   const KINGDOMS = mapData.kingdoms;
   const reach = getReachableMatrix(GUILDS, KINGDOMS, DAYS, srv);
 
-  const activeGuilds = GUILDS.filter(g => !( !isGoC && g.isExcluded ));
+  const activeGuilds = GUILDS.filter(g => !g.isExcluded);
   const N = activeGuilds.length;
   
   const sortedGuilds = [...activeGuilds].sort((a, b) => 
@@ -71,11 +71,28 @@ export function getPerfectTargets(srv, mapData) {
   const target = {};
   if (N > 0) {
     let mapLv3 = 0, mapLv2 = 0, mapPts = 0;
-    
+
+    // A guild that has left keeps the towns it was standing on, and nobody can take them, so those
+    // towns are not points anyone can still win: counting them would set everyone a target they
+    // cannot reach. Walk the days forward and keep track of which towns are shut away like that -
+    // a cell left blank carries yesterday's holder, the same rule the model freezes them by.
+    const shut = {};
+    const excludedIds = new Set(GUILDS.filter(g => g.isExcluded).map(g => g.id));
+    const held = {};
+    for (const t of KINGDOMS) held[t.id] = (srv.plan[0] || {})[t.id] || '';
+
     for (let d = 1; d <= DAYS; d++) {
+      shut[d] = {};
       for (const t of KINGDOMS) {
+        const cell = (srv.plan[d] || {})[t.id];
+        if (cell) held[t.id] = cell;              // explicitly placed, by hand or by an earlier solve
+        shut[d][t.id] = excludedIds.has(held[t.id]);
+      }
+      for (const t of KINGDOMS) {
+        if (shut[d][t.id]) continue;
         let canReach = false;
         for (let g = 0; g < GUILDS.length; g++) {
+          if (GUILDS[g].isExcluded) continue;     // a guild that has left cannot put a town in play
           if (reach[g][d][t.id]) { canReach = true; break; }
         }
         if (canReach) {
@@ -234,7 +251,7 @@ export function buildModel(srv, mapData, opts = {}) {
     return false;
   });
 
-  const activeGuilds = GUILDS.filter(g => !( !isGoC && g.isExcluded ));
+  const activeGuilds = GUILDS.filter(g => !g.isExcluded);
   const N = activeGuilds.length;
   
   const sortedGuilds = [...activeGuilds].sort((a, b) => 
@@ -245,7 +262,7 @@ export function buildModel(srv, mapData, opts = {}) {
   const own = [];
   for (let g = 0; g < GUILDS.length; g++) {
     own[g] = [];
-    const isExcludedRag = !isGoC && GUILDS[g].isExcluded;
+    const isExcluded = GUILDS[g].isExcluded;
 
     for (let d = 0; d <= LASTD; d++) {
       own[g][d] = {};
@@ -265,8 +282,12 @@ export function buildModel(srv, mapData, opts = {}) {
           if (manualLockGid) {
             own[g][d][t.id] = (manualLockGid === GUILDS[g].id) ? 1 : 0;
           } 
-          else if (isExcludedRag) {
-            own[g][d][t.id] = own[g][fromIdx][t.id];
+          else if (isExcluded) {
+            // Carry yesterday forward. Day 0 is always fixed, so this walks up through the days
+            // already played and freezes them on whatever they held on the last of those - which is
+            // what "they stopped after day 4" has to mean. fromIdx is winStart - 1, and phase 1
+            // starts at day 1, so it would reach back past every day already played.
+            own[g][d][t.id] = own[g][d - 1][t.id];
           } 
           else if (!reachFull[g][d][t.id]) {
             own[g][d][t.id] = 0;
@@ -291,7 +312,7 @@ export function buildModel(srv, mapData, opts = {}) {
   // whether there are at least as many towns in play as guilds competing for them. That test is
   // necessary but not sufficient, so the caller can also force the penalty form after a failed solve.
   const day1FitsAll = !opts.softDay1
-    && GUILDS.filter(g => isGoC || !g.isExcluded).length <= VALID_KINGDOMS.length;
+    && GUILDS.filter(g => !g.isExcluded).length <= VALID_KINGDOMS.length;
 
   // 3. CORE CONSTRAINTS
   for (let d = winStart; d <= LASTD; d++) {
@@ -303,7 +324,7 @@ export function buildModel(srv, mapData, opts = {}) {
     }
 
     for (let g = 0; g < GUILDS.length; g++) {
-      if (!isGoC && GUILDS[g].isExcluded) continue;
+      if (GUILDS[g].isExcluded) continue;
 
       const declaredTerms = [];
       const maxDecl = (isGoC && GUILDS[g].isSmall) ? 1 : baseMaxDecl;
@@ -431,7 +452,7 @@ export function buildModel(srv, mapData, opts = {}) {
   for (let i = 0; i < N; i++) {
     const guild = sortedGuilds[i];
     const g = GUILDS.findIndex(x => x.id === guild.id);
-    if (!isGoC && GUILDS[g].isExcluded) continue;
+    if (GUILDS[g].isExcluded) continue;
 
     // What this guild already banked in the fixed days of earlier windows
     const got = { lv3: 0, lv2: 0, pts: 0 };
