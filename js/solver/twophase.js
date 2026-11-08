@@ -128,7 +128,7 @@ export async function solveGocPhase2(srv, mapData, runSolver, phase1Plan, userOp
   const onProgress = o.onProgress || (() => {});
   const FULL = numDays(srv);
   const locks = JSON.parse(JSON.stringify(srv.plan));
-  const target = getPerfectTargets(srv, mapData);
+  const target = getPerfectTargets(srv, mapData, { respectLocked: true });
 
   const plan2 = { 0: { ...(srv.plan[0] || {}) } };
   for (let d = 1; d <= FULL; d++) {
@@ -248,7 +248,7 @@ export async function repairScarce(srv, mapData, runSolver, phase1Plan, userOpts
   const o = { ...TWO_PHASE_DEFAULTS, ...userOpts };
   const onProgress = o.onProgress || (() => {});
   const FULL = numDays(srv);
-  const target = getPerfectTargets(srv, mapData);
+  const target = getPerfectTargets(srv, mapData, { respectLocked: true });
   const locks = JSON.parse(JSON.stringify(srv.plan));
   let plan = phase1Plan;
   let dev = scarceDeviation(plan, srv, mapData, FULL, target);      // shown to the user
@@ -316,7 +316,7 @@ export async function repairCastle(srv, mapData, runSolver, plan0, userOpts = {}
   const o = { ...TWO_PHASE_DEFAULTS, ...userOpts };
   const onProgress = o.onProgress || (() => {});
   const FULL = numDays(srv);
-  const target = getPerfectTargets(srv, mapData);
+  const target = getPerfectTargets(srv, mapData, { respectLocked: true });
   const locks = JSON.parse(JSON.stringify(srv.plan));
   let plan = plan0;
   let dev = scarceDeviation(plan, srv, mapData, FULL, target);
@@ -366,7 +366,7 @@ export async function consolidateCastle(srv, mapData, runSolver, plan0, userOpts
   const o = { ...TWO_PHASE_DEFAULTS, ...userOpts };
   const onProgress = o.onProgress || (() => {});
   const FULL = numDays(srv);
-  const target = getPerfectTargets(srv, mapData);
+  const target = getPerfectTargets(srv, mapData, { respectLocked: true });
   const locks = JSON.parse(JSON.stringify(srv.plan));
   let plan = plan0;
   let runs = castleRuns(plan, mapData, FULL);
@@ -411,7 +411,7 @@ export async function refinePoints(srv, mapData, runSolver, plan0, userOpts = {}
   const o = { ...TWO_PHASE_DEFAULTS, ...userOpts };
   const onProgress = o.onProgress || (() => {});
   const FULL = numDays(srv);
-  const target = getPerfectTargets(srv, mapData);
+  const target = getPerfectTargets(srv, mapData, { respectLocked: true });
   const locks = JSON.parse(JSON.stringify(srv.plan));
   let plan = plan0;
   let dev = pointsDeviation(plan, srv, mapData, FULL, target);      // shown to the user
@@ -454,7 +454,7 @@ export async function solveGocFinish(srv, mapData, runSolver, phase1Plan, userOp
   // Darkwick is easier to even out once phase 2 has filled in every lv1 town: before that the plan
   // holds only the few path towns, which leaves a guild that is short of Darkwick nothing to stand on.
   // It costs seconds, and the points clean-up below puts right the lv1 towns it moves.
-  const target = getPerfectTargets(srv, mapData);
+  const target = getPerfectTargets(srv, mapData, { respectLocked: true });
   if (scarceDeviation(phase2, srv, mapData, FULL, target) > 0) {
     phase2 = await repairCastle(srv, mapData, runSolver, phase2, userOpts);
   }

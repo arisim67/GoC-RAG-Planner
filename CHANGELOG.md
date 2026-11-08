@@ -8,13 +8,15 @@ The app is updated continuously rather than in numbered releases, so entries are
 ### Added
 - **Exclude Guild now works in Game of Claws, including partway through an event.** If a guild drops
   out, tick Exclude Guild next to them and optimize: the days you have already played stay exactly as
-  they are, that guild keeps the towns it was holding, nobody else can take them, and the points still
-  to win are shared out evenly between the guilds that are left. Removing them from the roster was
-  never the right move — it erases them from the days already played.
+  they are, that guild keeps the towns it was holding, nobody else can take them, and what is left to
+  win is shared out between the guilds that remain.
 
 ### Fixed
-- **Targets no longer count towns an excluded guild is sitting on.** Those towns cannot be won by
-  anyone, so counting them set every other guild a target a few points out of reach.
+- **Darkwick and the dorms are now shared out around the days you have already played.** A guild that
+  had already held the castle twice was still being given a target of once, so the sums could not add
+  up and another guild was left with no castle day at all. Days already played are now taken as given,
+  and the dorms and points adjust around them.
+- **Targets no longer count towns an excluded guild is sitting on**, which nobody can win.
 
 ## 2026-11-06
 
