@@ -284,27 +284,27 @@ export function updGuildLv2(gid, value) {
   }
 }
 
-// ── Guild colours ──
+// ── Guild colors ──
 const hexToRgb = hex => {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
   if (!m) return null;
   const n = parseInt(m[1], 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
-// Rough perceived difference between two colours (0 = identical). Weighted RGB distance.
-const colourDistance = (a, b) => {
+// Rough perceived difference between two colors (0 = identical). Weighted RGB distance.
+const colorDistance = (a, b) => {
   const [r1, g1, b1] = a,
     [r2, g2, b2] = b;
   const rm = (r1 + r2) / 2;
   return Math.sqrt((2 + rm / 256) * (r1 - r2) ** 2 + 4 * (g1 - g2) ** 2 + (2 + (255 - rm) / 256) * (b1 - b2) ** 2);
 };
-// Relative luminance (WCAG), used to warn about colours too dark to read on the dark background.
+// Relative luminance (WCAG), used to warn about colors too dark to read on the dark background.
 const luminance = ([r, g, b]) => {
   const ch = v => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
   return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
 };
 
-// While choosing: recolour this guild's dot only (the rest of the page updates once a colour is picked).
+// While choosing: recolor this guild's dot only (the rest of the page updates once a color is picked).
 export function previewGuildColor(gid, color) {
   const dot = document.querySelector(`.guild-color[data-id="${gid}"]`);
   if (dot) dot.style.setProperty('--guild-color', color);
@@ -325,7 +325,7 @@ export function pickGuildColor(dot) {
   });
 }
 
-// A colour was picked: save it everywhere, and warn about hard-to-tell-apart choices.
+// A color was picked: save it everywhere, and warn about hard-to-tell-apart choices.
 export function updGuildColor(gid, color) {
   const s = activeSrv();
   if (!s) return;
@@ -336,16 +336,12 @@ export function updGuildColor(gid, color) {
   save();
   renderAll();
 
-  const close = s.guilds.find(o => o.id !== gid && hexToRgb(o.color) && colourDistance(rgb, hexToRgb(o.color)) < 90);
+  const close = s.guilds.find(o => o.id !== gid && hexToRgb(o.color) && colorDistance(rgb, hexToRgb(o.color)) < 90);
   if (close) {
-    showToast(
-      `That colour looks a lot like ${close.name}'s, which may be hard to tell apart in the grid.`,
-      false,
-      6000,
-    );
+    showToast(`That color looks a lot like ${close.name}'s, which may be hard to tell apart in the grid.`, false, 6000);
   } else if (luminance(rgb) < 0.12) {
     showToast(
-      'That colour is quite dark, so guild names in it may be hard to read on the dark background.',
+      'That color is quite dark, so guild names in it may be hard to read on the dark background.',
       false,
       6000,
     );

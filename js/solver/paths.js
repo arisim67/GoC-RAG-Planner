@@ -21,7 +21,7 @@ export function extractPathCells(plan, srv, mapData, FULL_DAYS, rng = null) {
       req[d] = new Set(towns.filter(k => k.type !== 'lv1').map(k => k.id)); // Darkwick + dorms: always fixed
     }
 
-    // Walk backwards: every required holding needs either to persist from yesterday, or a held neighbour yesterday.
+    // Walk backwards: every required holding needs either to persist from yesterday, or a held neighbor yesterday.
     for (let d = FULL_DAYS; d >= 1; d--) {
       const prev = held[d - 1];
       for (const x of [...req[d]]) {

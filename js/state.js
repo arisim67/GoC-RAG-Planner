@@ -4,8 +4,8 @@
 import { getMapData } from './maps/index.js';
 
 // 15 guild colors, picked to be clearly distinct from each other on the dark background
-// (every pair is at least ~11 apart in CIEDE2000 colour difference). The guild limit is
-// GUILD_COLORS.length, so no two guilds on a server ever share a colour.
+// (every pair is at least ~11 apart in CIEDE2000 color difference). The guild limit is
+// GUILD_COLORS.length, so no two guilds on a server ever share a color.
 export const GUILD_COLORS = [
   '#a08cff',
   '#6bffb4',
@@ -25,8 +25,8 @@ export const GUILD_COLORS = [
 ];
 export const MAX_GUILDS = GUILD_COLORS.length;
 
-// First palette colour not already used by a guild on this server
-// (falls back to cycling the palette only if every colour is taken).
+// First palette color not already used by a guild on this server
+// (falls back to cycling the palette only if every color is taken).
 export function nextGuildColor(guilds) {
   const used = new Set(guilds.map(g => (g.color || '').toLowerCase()));
   return GUILD_COLORS.find(c => !used.has(c)) || GUILD_COLORS[guilds.length % GUILD_COLORS.length];

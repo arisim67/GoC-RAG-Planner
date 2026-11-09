@@ -9,12 +9,12 @@ The app is updated continuously rather than in numbered releases, so entries are
 - **The planner has moved to [goc-rag-planner.pages.dev](https://goc-rag-planner.pages.dev/).** The old address (arisim67.github.io) will be turned off on January 1, 2027. Until then it shows a banner with **Move my servers**, which brings your saved servers (and whether you've seen the tutorial) to the new site without uploading them. Shared plan links made on the old address open on the new site automatically.
 - **Shared plan links now show the plan itself** in Discord and other apps: each guild's final score and total occupation.
 - Save to Cloud links made from the old address point to the new site.
-- **A cleaner look.** The server toolbar groups its buttons, with Auto-Optimize as the main action and Clear Plan set apart; buttons use line icons instead of emoji; the guild list has labelled columns (Points, Castle, Dorms, Towns); and a bar at the top jumps to each part of the page.
+- **A cleaner look.** The server toolbar groups its buttons, with Auto-Optimize as the main action and Clear Plan set apart; buttons use line icons instead of emoji; the guild list has labeled columns (Points, Castle, Dorms, Towns); and a bar at the top jumps to each part of the page.
 - The project now has automated tests that run on every update, and issue forms for bug reports and suggestions.
 - **Guild spotlight.** Click a guild above the grid (or its Final Scores card) to outline its towns across every day and fade the rest, with a summary of its points and castle, dorm and town days. Works on view-only shared plans too.
 - **Today at a glance.** While an event is running, today's column is highlighted in the grid and the Declares table, the grid opens scrolled to it, today's message card is highlighted, and **Copy Today's Message** in the toolbar copies it in one click.
 - **Undo and Redo for the grid.** Buttons above the Planning Grid, plus Ctrl+Z / Ctrl+Y (⌘Z / ⌘⇧Z on a Mac), step back and forward through changes to the plan: cells, copying across cells, Clear Day, Clear Plan, importing a day, removing a guild and Auto-Optimize. This replaces the separate Undo Optimize button; an optimize can still be undone after reloading the page, as long as the plan hasn't been changed since.
-- **Choose each guild's colour.** Click the coloured dot next to a guild's name: pick from a palette that suits the planner, or use any colour on the Custom tab. The planner warns you if a colour is very close to another guild's or too dark to read.
+- **Choose each guild's color.** Click the colored dot next to a guild's name: pick from a palette that suits the planner, or use any color on the Custom tab. The planner warns you if a color is very close to another guild's or too dark to read.
 - **What's new.** If you used the planner before, a card lists the highlights of this update the first time you visit (shown if you skip the updated tutorial).
 - **The tutorial has been updated** and shows once more for everyone.
 - **Status jumps to problems.** Click a red pill under Status, or a problem listed under it, to go straight to it: the cell in the grid, the guilds declaring too many towns, or the day a guild is wiped. It flashes so it's easy to spot.
@@ -24,6 +24,8 @@ The app is updated continuously rather than in numbered releases, so entries are
 - **Share your message template.** **Share** in the template editor copies a link to your template. Whoever opens it sees it previewed with their own plan and can save it, or paste the link under **Use a shared template**.
 - **Edit the grid from the keyboard.** Arrow keys move between cells (Shift+Arrow selects a block), typing the start of a guild's name picks it, Delete empties cells, and Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste a block of cells.
 - **Version history.** **History** in the toolbar keeps the last 10 saved copies of each server in your browser, taken every 15 minutes while you edit and just before anything big (Clear Plan, Auto-Optimize, imports, Sync from Cloud, changing mode or map, deleting a server). Restore any copy in one click, including servers you deleted.
+- **A new user guide.** It starts with a five-step Quick start and a table of contents, and every part of the planner has a screenshot with numbered markers explaining each button. Short animations show copying across the grid, keyboard editing and Spotlight. Fine detail (how Auto-Optimize works, every message placeholder) is tucked behind "More details".
+- **A friendlier first screen.** With no servers yet, the page shows a welcome panel with three steps and buttons to add a server or take the tour.
 - The user guide and tutorial now explain link previews, with an example of the card a shared plan produces.
 
 ### Fixed
@@ -106,7 +108,7 @@ The app is updated continuously rather than in numbered releases, so entries are
 ### Fixed
 - Replace Obscuary with Dionysia on Wetland Game of Claws map
 - Total Occupation table now matches the width of Final Scores and Declares & Giveaways in Screenshots
-- **Target points were too high in Game of Claws.** Darkwick can only be taken with a dorm or two level 1 towns held the day before, but the targets assumed any guild standing next to it could take it on day 1. On maps where the castle has a single level 1 neighbour (Forest, Wetland) that counted 3 points nobody could win, so a perfect plan read as 3 points short and the optimizer spread the phantom shortfall across real guilds. Targets in the grid and in the optimizer are now correct, and affected plans can solve faster.
+- **Target points were too high in Game of Claws.** Darkwick can only be taken with a dorm or two level 1 towns held the day before, but the targets assumed any guild standing next to it could take it on day 1. On maps where the castle has a single level 1 neighbor (Forest, Wetland) that counted 3 points nobody could win, so a perfect plan read as 3 points short and the optimizer spread the phantom shortfall across real guilds. Targets in the grid and in the optimizer are now correct, and affected plans can solve faster.
 - Game of Claws targets were being calculated with the Ragnarok rules, which have no castle requirement. Each mode now uses its own.
 - **Auto-Optimize no longer fails when there are more guilds than towns on the map.** "Every guild on the map from day 1" was treated as a hard rule; on a small map with many guilds it cannot be satisfied, and the whole solve failed with an error instead of returning a plan.
 - The optimizer's clean-up passes were building a starting plan for the solver and then discarding it, making them slower than intended.
@@ -123,17 +125,17 @@ The app is updated continuously rather than in numbered releases, so entries are
 - **Link previews**: sharing the site link in Discord and other apps now shows a title, description and preview image.
 
 ### Changed
-- Guild colours: a new palette of 15 clearly distinct colours (some of the old ones were near-identical). A new guild always gets a colour that isn't already in use, and a server can have up to 15 guilds.
+- Guild colors: a new palette of 15 clearly distinct colors (some of the old ones were near-identical). A new guild always gets a color that isn't already in use, and a server can have up to 15 guilds.
 - Game of Claws optimizer refined for better point balancing.
-- Project reorganised: source split into `css/`, `js/`, `js/solver/` and `vendor/`; the main script split into focused modules; new README, user guide moved to `docs/`, MIT licence added.
+- Project reorganized: source split into `css/`, `js/`, `js/solver/` and `vendor/`; the main script split into focused modules; new README, user guide moved to `docs/`, MIT license added.
 - Page styling moved out of the HTML and JavaScript into `css/style.css`. The app looks exactly the same.
 - Removed a font (Cinzel) that was loaded but never used, so the page loads slightly faster.
 
 ### Fixed
 - **Import Guild List** and **Import Daily Map Data** were failing with an error; both work again.
-- Guild List import now uses the same colours as the rest of the app (it had its own list of 10, so colours repeated).
+- Guild List import now uses the same colors as the rest of the app (it had its own list of 10, so colors repeated).
 - **Exclude Guild** in Ragnarok now behaves correctly.
-- The 📸 Screenshots button no longer loses its text colour after taking screenshots.
+- The 📸 Screenshots button no longer loses its text color after taking screenshots.
 - Removed a stray copy of `index.html` inside `js/`, which loaded as a broken page.
 
 ## 2026-11-02
@@ -178,7 +180,7 @@ The app is updated continuously rather than in numbered releases, so entries are
 
 ### Added
 - **Sync from Cloud** to pull the latest version of a shared plan.
-- Colour-coded action buttons.
+- Color-coded action buttons.
 
 ### Changed
 - User Guide link moved to the header.

@@ -1,6 +1,6 @@
 // js/preview.js
 // Draws the 1200×630 link-preview image for a shared plan: the Final Scores (each guild's points
-// in its colour) and the Total Occupation table (days holding towns, dorms and the castle).
+// in its color) and the Total Occupation table (days holding towns, dorms and the castle).
 // The plan's name, mode, map and dates are not drawn: apps show them as text above the image.
 // Uploaded with Save to Cloud so Discord and other apps can show it when the share link is posted.
 
@@ -116,7 +116,7 @@ export async function renderPlanPreview(srv) {
     // No title: Discord and other apps already show the plan's name, mode, map and dates as text
     // above the image.
 
-    // Final Scores in two columns (highest first), each guild's points in its own colour
+    // Final Scores in two columns (highest first), each guild's points in its own color
     const days = numDays(srv);
     const scores = calcScores(srv);
     const final = srv.guilds
@@ -159,12 +159,12 @@ export async function renderPlanPreview(srv) {
       ctx.fill();
       ctx.strokeStyle = C.border;
       ctx.stroke();
-      // Colour dot
+      // Color dot
       ctx.beginPath();
       ctx.arc(x + 22, mid, 6, 0, Math.PI * 2);
       ctx.fillStyle = gd.color;
       ctx.fill();
-      // Points, right-aligned in the guild's colour
+      // Points, right-aligned in the guild's color
       ctx.textAlign = 'right';
       ctx.fillStyle = gd.color;
       ctx.font = `800 ${Math.round(fs * 1.35)}px ${HEAD}`;
@@ -237,7 +237,7 @@ export async function renderPlanPreview(srv) {
         ctx.fillStyle = hexA('#352a4f', 0.5);
         ctx.fill();
       }
-      // Colour dot + name
+      // Color dot + name
       ctx.beginPath();
       ctx.arc(tx + 20, mid, 6, 0, Math.PI * 2);
       ctx.fillStyle = gd.color;

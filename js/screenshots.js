@@ -191,7 +191,7 @@ export async function takeScreenshots(e) {
           try {
             await navigator.share({ files: filesArray });
           } catch (e) {
-            console.log('Share cancelled', e);
+            console.log('Share canceled', e);
           }
         };
       }

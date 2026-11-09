@@ -16,7 +16,7 @@ function flash(els) {
   });
 }
 
-// Bring a cell into view: centred, so the sticky Town column and the section links don't cover it.
+// Bring a cell into view: centered, so the sticky Town column and the section links don't cover it.
 function bringIntoView(el) {
   const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'center', inline: 'center' });

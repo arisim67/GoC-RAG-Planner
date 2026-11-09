@@ -67,7 +67,7 @@
   border-color: var(--border2);
 }
 
-/* Guild colour dot: a button that opens the colour picker (js/color-picker.js) */
+/* Guild color dot: a button that opens the color picker (js/color-picker.js) */
 .guild-color,
 .cp-swatch,
 .cp-tab {
@@ -98,7 +98,7 @@
   cursor: default;
 }
 
-/* Colour picker pop-up */
+/* Color picker pop-up */
 .color-pop {
   position: fixed;
   z-index: 300;
@@ -189,7 +189,7 @@
     0 0 0 2px var(--bg2),
     0 0 0 4px var(--text);
 }
-/* Colours another guild already uses get a small dark dot in the middle */
+/* Colors another guild already uses get a small dark dot in the middle */
 .cp-swatch.taken::after,
 .cp-taken-key {
   content: '';

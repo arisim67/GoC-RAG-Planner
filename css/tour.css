@@ -213,7 +213,7 @@ body.tour-active .modal-bg.open {
     transform: scale(1.15);
   }
 }
-/* Done: the hint turns into a nudge towards Next, which is now theirs to press. */
+/* Done: the hint turns into a nudge toward Next, which is now theirs to press. */
 .tour-wait-done {
   color: var(--green);
 }

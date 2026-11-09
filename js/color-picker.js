@@ -1,11 +1,11 @@
 // js/color-picker.js
-// The pop-up that opens from a guild's coloured dot: a "Palette" tab of colours chosen to suit the
-// site (all readable on the dark background), and a "Custom" tab for any colour at all.
+// The pop-up that opens from a guild's colored dot: a "Palette" tab of colors chosen to suit the
+// site (all readable on the dark background), and a "Custom" tab for any color at all.
 
 import { esc } from './ui.js';
 import { GUILD_COLORS } from './state.js';
 
-// The 15 default guild colours plus tones from the site's own theme, sorted by hue.
+// The 15 default guild colors plus tones from the site's own theme, sorted by hue.
 export const PALETTE = [
   '#ff6b6b',
   '#ffadad',
@@ -32,7 +32,7 @@ export const PALETTE = [
   '#ff6bda',
   '#ff6b9d',
 ];
-// Every default colour is in the palette, so new guilds always start on a palette colour.
+// Every default color is in the palette, so new guilds always start on a palette color.
 GUILD_COLORS.forEach(c => {
   if (!PALETTE.includes(c)) PALETTE.push(c);
 });
@@ -43,7 +43,7 @@ let open = null; // the picker currently shown, if any
 
 function closePicker(restore = true) {
   if (!open) return;
-  if (restore) open.preview(open.original); // Escape / click outside: put the old colour back
+  if (restore) open.preview(open.original); // Escape / click outside: put the old color back
   open.el.remove();
   document.removeEventListener('pointerdown', open.onOutside, true);
   document.removeEventListener('keydown', open.onKey, true);
@@ -54,8 +54,8 @@ function closePicker(restore = true) {
   if (anchor && anchor.isConnected) anchor.focus();
 }
 
-// anchor: the dot that was clicked. guild: the guild being recoloured. others: the other guilds.
-// onPick(color): save the colour. onPreview(color): show it on the dot while choosing.
+// anchor: the dot that was clicked. guild: the guild being recolored. others: the other guilds.
+// onPick(color): save the color. onPreview(color): show it on the dot while choosing.
 export function openColorPicker({ anchor, guild, others, onPick, onPreview }) {
   closePicker();
   const current = (guild.color || '').toLowerCase();
@@ -70,7 +70,7 @@ export function openColorPicker({ anchor, guild, others, onPick, onPreview }) {
   const el = document.createElement('div');
   el.className = 'color-pop';
   el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-label', `Colour for ${guild.name}`);
+  el.setAttribute('aria-label', `Color for ${guild.name}`);
   el.innerHTML = `
     <div class="cp-head">
       <span class="cp-title"><span class="cp-swatch-now" style="background:${esc(current)}"></span>${esc(guild.name)}</span>
@@ -92,8 +92,8 @@ export function openColorPicker({ anchor, guild, others, onPick, onPreview }) {
     </div>
     <div class="cp-panel" data-panel="custom">
       <div class="cp-custom">
-        <label class="cp-native" style="--sw:${esc(current)}" title="Open the colour chooser">
-          <input type="color" value="${esc(current || '#a08cff')}" aria-label="Choose any colour">
+        <label class="cp-native" style="--sw:${esc(current)}" title="Open the color chooser">
+          <input type="color" value="${esc(current || '#a08cff')}" aria-label="Choose any color">
         </label>
         <div class="cp-hexwrap">
           <label class="cp-hexlabel" for="cp-hex">Hex</label>
@@ -103,7 +103,7 @@ export function openColorPicker({ anchor, guild, others, onPick, onPreview }) {
       <p class="cp-hint cp-warn" aria-live="polite"></p>
       <div class="cp-actions">
         <button type="button" class="btn-tool" data-cp="cancel">Cancel</button>
-        <button type="button" class="btn-tool btn-primary" data-cp="apply">Use colour</button>
+        <button type="button" class="btn-tool btn-primary" data-cp="apply">Use color</button>
       </div>
     </div>`;
   document.body.appendChild(el);
@@ -135,7 +135,7 @@ export function openColorPicker({ anchor, guild, others, onPick, onPreview }) {
     place();
   };
 
-  // Custom tab: the native chooser and the hex box stay in step, and the dot previews the colour.
+  // Custom tab: the native chooser and the hex box stay in step, and the dot previews the color.
   const customValue = () => {
     const m = HEX_RE.exec(hex.value.trim());
     return m ? '#' + m[1].toLowerCase() : null;
@@ -144,7 +144,7 @@ export function openColorPicker({ anchor, guild, others, onPick, onPreview }) {
     nativeBox.style.setProperty('--sw', c);
     preview(c);
     const who = takenBy.get(c);
-    warn.textContent = who ? `${who} already uses this colour.` : '';
+    warn.textContent = who ? `${who} already uses this color.` : '';
   };
   native.addEventListener('input', () => {
     hex.value = native.value;
@@ -183,7 +183,7 @@ export function openColorPicker({ anchor, guild, others, onPick, onPreview }) {
     if (act && act.dataset.cp === 'apply') return apply(customValue());
     if (act && act.dataset.cp === 'cancel') return closePicker();
   });
-  // Hovering a palette colour previews it on the dot.
+  // Hovering a palette color previews it on the dot.
   el.addEventListener('pointerover', e => {
     const sw = e.target.closest('.cp-swatch');
     if (sw) preview(sw.dataset.color);

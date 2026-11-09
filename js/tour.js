@@ -18,7 +18,7 @@
 //   wait.done(snap)  true once they have done it; polled, and also re-measures the highlight because
 //                    the page re-renders underneath us
 //   wait.hint        shown in the card until then
-//   wait.ready       shown once it is done (default: a nudge towards Next)
+//   wait.ready       shown once it is done (default: a nudge toward Next)
 //   wait.auto        move on by itself once done, instead of unlocking Next
 // Doing the thing unlocks Next; it does not move the tour on unless the step asked for that. Renaming
 // one guild is not a sign that you have finished renaming guilds, and a tour that jumps the moment you
@@ -102,7 +102,7 @@ function setupSteps() {
       body: `Click <b>+ Add Server</b> and fill in the event: its name, whether it is <b>Ragnarok</b> or
              <b>Game of Claws</b>, the map, and the first and last day.
              <br><br>The mode matters most — it sets how many towns a guild may declare each day and
-             which maps you can pick from, and it cannot be changed afterwards.`,
+             which maps you can pick from, and it cannot be changed afterward.`,
       wait: {
         // Someone replaying this already has servers, so "is there one?" would be true before they
         // started and the step would sit there telling them to click a button it had already passed.
@@ -177,8 +177,8 @@ function buildSteps(srv) {
       target: 'guilds',
       title: 'Guilds',
       body: `Type each guild's real name. Drag the <b>⋮⋮</b> handle to reorder them; the order decides who gets
-             extra points, dorm time or castle time when things can't be split evenly. Click a guild's coloured dot
-             to change its colour.
+             extra points, dorm time or castle time when things can't be split evenly. Click a guild's colored dot
+             to change its color.
              <br><br>${
                goc
                  ? '<b>Small Guild</b> limits a guild to 1 declare a day.'
@@ -196,7 +196,7 @@ function buildSteps(srv) {
       target: 'grid',
       title: 'Planning grid',
       body: `One row per town, one column per day. Pick the guild that holds each town on each day, starting
-             with their footholds on <b>Day 0</b>. The left column lists each town's neighbours.
+             with their footholds on <b>Day 0</b>. The left column lists each town's neighbors.
              <br><br>To copy, select cells — long-press one, drag across a block, or shift-click a second cell —
              then drag the handle on the block's bottom-right corner sideways across days, or down the towns.
              The block repeats, so a two-day pattern dragged across six days lands three times.
@@ -210,7 +210,7 @@ function buildSteps(srv) {
       target: 'status',
       title: 'Validation',
       body: `The app checks your plan as you go. <b>Green</b> pills mean that day is legal; <b>red</b> ones point
-             to the problem: a town taken without a neighbouring town, too many declares, or a guild losing
+             to the problem: a town taken without a neighboring town, too many declares, or a guild losing
              every town.`,
     },
     {
@@ -528,7 +528,7 @@ function show(i, dir) {
   const el = targetEl(step);
   if (el) {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // Tall sections (grid, stats) are scrolled to their top; short ones are centred.
+    // Tall sections (grid, stats) are scrolled to their top; short ones are centered.
     const tall = el.getBoundingClientRect().height > window.innerHeight * 0.6;
     el.scrollIntoView({ block: tall ? 'start' : 'center', inline: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
   }

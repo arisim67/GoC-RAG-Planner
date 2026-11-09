@@ -35,7 +35,7 @@ const ITEMS = [
   ],
   ['maximize-2', 'All 13 days on screen', 'On a desktop the whole grid fits without scrolling, with full guild names.'],
   ['chevron-down', 'Fold away sections', "Click a section's title to hide it until you need it."],
-  ['palette', 'Guild colours', 'Click the dot next to a guild to choose any colour.'],
+  ['palette', 'Guild colors', 'Click the dot next to a guild to choose any color.'],
   ['share-2', 'Share your message template', 'Share in the template editor copies a link for other planners.'],
 ];
 

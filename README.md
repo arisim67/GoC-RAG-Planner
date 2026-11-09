@@ -59,7 +59,7 @@ Commit messages are short and say what changed, in the imperative:
 ```
 ├── index.html              App page
 ├── css/                    Styles, one file per part of the page:
-│   ├── base.css            Colours, fonts, layout, buttons and form fields
+│   ├── base.css            Colors, fonts, layout, buttons and form fields
 │   ├── header.css          Header, server tabs, jump bar, footer
 │   ├── setup.css           Server settings, toolbar, guild list
 │   ├── tables.css          Planning grid, scores and stats tables
@@ -70,12 +70,12 @@ Commit messages are short and say what changed, in the imperative:
 ├── js/
 │   ├── app.js              Entry point: startup, and what each button and field does
 │   ├── actions.js          Connects buttons and fields to their functions (data-action etc.)
-│   ├── state.js            Servers, active server, guild colours, saving/loading
+│   ├── state.js            Servers, active server, guild colors, saving/loading
 │   ├── calc.js             Scores, occupation, declares, plan validation
 │   ├── render.js           Builds the page (tabs, settings, guilds, grid, stats, messages)
 │   ├── messages.js         Daily messages and the message template editor
 │   ├── icons.js            Line icons used on buttons (from Lucide)
-│   ├── color-picker.js     The guild colour pop-up (Palette and Custom tabs)
+│   ├── color-picker.js     The guild color pop-up (Palette and Custom tabs)
 │   ├── history.js          Undo and redo for changes to the plan
 │   ├── versions.js         Version history: saved copies of each server, and restoring them
 │   ├── spotlight.js        Guild spotlight: highlight one guild's towns

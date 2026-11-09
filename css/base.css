@@ -1,4 +1,4 @@
-/* css/base.css: Colours, fonts, page layout, sections, generic buttons and form fields, icons */
+/* css/base.css: Colors, fonts, page layout, sections, generic buttons and form fields, icons */
 
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
@@ -22,7 +22,7 @@
   --text2: #b1a6cc;
   --text3: #8476a3;
 
-  /* Town level colours */
+  /* Town level colors */
   --lv1: #78a9f0;
   --lv2: #b886ee;
   --lv3: #e2c883;

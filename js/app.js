@@ -108,6 +108,7 @@ const guildId = el => el.dataset.guildId || el.dataset.id;
 registerActions('click', {
   // Header, tabs and dialogs
   tutorial: () => window.startTour && window.startTour(),
+  'open-add': openAdd,
   'switch-server': el => switchSrv(el.dataset.id),
   'remove-server': el => removeSrv(el.dataset.id),
   'close-modal': el => closeModal(el.dataset.modal),

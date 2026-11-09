@@ -1,7 +1,7 @@
 // js/render.js
 // Builds the page: server tabs, settings, guilds, status, planning grid, stats and daily messages.
 
-import { state, activeSrv, numDays, save, numDisplayDays } from './state.js';
+import { state, activeSrv, numDays, save, numDisplayDays, GUILD_COLORS } from './state.js';
 import { esc, dateLabel, dateLabelShort, todayDay } from './ui.js';
 import { calcScores, calcOcc, validateAdj, validateWipes, calcDec, kPts, getEligibleGuilds } from './calc.js';
 import { openTabCtx, openAdd } from './servers.js';
@@ -130,12 +130,49 @@ function wireJumpBar(mc) {
   });
 }
 
+// ── No servers yet: a welcome panel with a little picture of a plan ──
+// The picture is a few rows of a planning grid, drawn with the guild colors (no image file).
+const WELCOME_ART = [
+  [0, 0, 1, 1, 2, 2, 0],
+  [3, 3, 3, 0, 0, 4, 4],
+  [1, 2, 2, 2, 3, 3, 1],
+  [4, 4, 0, 1, 1, 0, 2],
+  [2, 1, 4, 4, 2, 1, 3],
+];
+function renderWelcome() {
+  const art = WELCOME_ART.map(
+    row =>
+      `<div class="wa-row"><span class="wa-town"></span>${row
+        .map((g, d) => `<span class="wa-cell${d === 4 ? ' wa-today' : ''}" style="--c:${GUILD_COLORS[g]}"></span>`)
+        .join('')}</div>`,
+  ).join('');
+  return `<div class="empty-state welcome">
+    <div class="welcome-art" aria-hidden="true">
+      <div class="wa-row wa-head"><span class="wa-town"></span>${Array.from(
+        { length: 7 },
+        (_, d) => `<span class="wa-day${d === 4 ? ' wa-today' : ''}"></span>`,
+      ).join('')}</div>
+      ${art}
+    </div>
+    <h2 class="welcome-title">Plan your next Game of Claws or Ragnarok</h2>
+    <p class="welcome-sub">Work out who holds which town on which day, keep every move legal, and share the points out evenly.</p>
+    <ol class="welcome-steps">
+      <li><span class="ws-num">1</span><span><b>Add a server</b>Pick the mode, map and event dates.</span></li>
+      <li><span class="ws-num">2</span><span><b>Add your guilds</b>Type their names, or paste the whole list.</span></li>
+      <li><span class="ws-num">3</span><span><b>Plan the grid</b>Fill it in yourself or let Auto-Optimize do it, then copy each day's message for Discord.</span></li>
+    </ol>
+    <div class="welcome-actions">
+      <button type="button" class="btn-accent" data-action="open-add">${icon('plus')} Add Server</button>
+      <button type="button" class="btn" data-action="tutorial">${icon('graduation-cap')} Take the tour</button>
+    </div>
+  </div>`;
+}
+
 export function renderAll() {
   const srv = activeSrv();
   const mc = document.getElementById('main-content');
   if (!srv) {
-    mc.innerHTML =
-      '<div class="empty-state">No servers yet. Click <strong class="empty-state-cta">+ Add Server</strong> to get started.</div>';
+    mc.innerHTML = renderWelcome();
     return;
   }
   const days = numDays(srv);
@@ -315,7 +352,7 @@ function renderGuilds(srv) {
         <div class="guild-row" data-id="${g.id}">
           ${!srv.isViewOnly ? `<div class="drag-handle" title="Drag to reorder">${icon('grip-vertical')}</div>` : '<span></span>'}
           <button type="button" class="guild-color" style="--guild-color:${g.color}" data-action="guild-color" data-id="${g.id}"
-            title="${srv.isViewOnly ? '' : 'Change colour'}" aria-label="${esc(g.name)}: change colour" ${dAttr}></button>
+            title="${srv.isViewOnly ? '' : 'Change color'}" aria-label="${esc(g.name)}: change color" ${dAttr}></button>
 
           <input class="guild-name-inp" data-guild-id="${g.id}" data-guild-field="name" value="${esc(g.name)}" placeholder="Guild name" aria-label="Guild name"
             data-input="guild-name" ${dAttr}>

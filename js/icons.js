@@ -1,6 +1,6 @@
 // js/icons.js
-// Line icons from Lucide (https://lucide.dev, ISC licence), inlined so the page needs no icon font.
-// icon('zap') returns an <svg> that takes the colour of the text around it.
+// Line icons from Lucide (https://lucide.dev, ISC license), inlined so the page needs no icon font.
+// icon('zap') returns an <svg> that takes the color of the text around it.
 
 const PATHS = {
   zap: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
