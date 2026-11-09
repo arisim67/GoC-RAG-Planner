@@ -13,6 +13,19 @@ The app is updated continuously rather than in numbered releases, so entries are
 - The project now has automated tests that run on every update, and issue forms for bug reports and suggestions.
 - The user guide and tutorial now explain link previews, with an example of the card a shared plan produces.
 
+## 2026-11-09
+
+### Added
+- **Daily message templates.** Click **✏️ Template** on Daily Messages to write the messages your own way, with placeholders for the date, guild, declares, giveaways and where to place def, and a live preview that shows the message the way Discord displays it (or as the text you copy). The template is saved in your browser and used for every server.
+- **Guild names in messages:** give a guild a decorated name (emoji and all) that is used only in daily messages.
+- The tutorial's Daily Messages step mentions the template.
+
+### Changed
+- **Daily messages name one backup town.** When a guild that must place def on a town it is still declaring is giving away several towns, the "or place smallest team on…" advice now names just one: the town being declared on by the guild highest in the guild list.
+
+### Fixed
+- **Export Server now keeps Exclude Guild**, so it survives Export and Import.
+
 ## 2026-11-08
 
 ### Added
