@@ -67,6 +67,21 @@ export function dailyPlans(srv) {
   const kTypeMap = {};
   for (const k of mapData.kingdoms) kTypeMap[k.id] = k.type;
   const typeScore = { lv3: 30, lv2: 20, lv1: 10 }; // castle > dorm > town
+  const order = new Map(srv.guilds.map((g, i) => [g.id, i]));
+
+  // A guild giving away several towns places its backup team on just one: the town being declared
+  // on by the guild highest in the guild list (comparing the guilds taking the towns, not the guild
+  // giving them away). Towns nobody declares on come last; ties keep the giveaway order.
+  const backupTown = (giveaways, d) => {
+    if (giveaways.length <= 1) return giveaways[0] || '';
+    const takerRank = k => {
+      const taker = srv.guilds.find(g => (dec[g.id][d] || []).includes(k));
+      return taker ? order.get(taker.id) : Infinity;
+    };
+    return giveaways
+      .map((k, i) => ({ k, i, r: takerRank(k) }))
+      .sort((a, b) => a.r - b.r || a.i - b.i)[0].k;
+  };
 
   return Array.from({ length: days }, (_, d) => {
     const guilds = [];
@@ -98,8 +113,9 @@ export function dailyPlans(srv) {
         // Joining guilds place def on the town they're declaring (no fallback needed). Otherwise,
         // with no held towns, they may not get the declared town in time for the battle phase.
         if (!best.isHeld && !joining) {
-          defNote = giveaways.length > 0
-            ? `or place smallest team on ${giveaways.join(', ')} if not available for battle phase`
+          const backup = backupTown(giveaways, d);
+          defNote = backup
+            ? `or place smallest team on ${backup} if not available for battle phase`
             : 'or place smallest team if not available for battle phase';
         }
       } else if (hadTowns) {
