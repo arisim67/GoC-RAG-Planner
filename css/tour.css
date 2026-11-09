@@ -73,7 +73,7 @@ body.tour-active .modal-bg.open { z-index: 10001; }
   animation: tour-pulse 1.4s ease-in-out infinite;
 }
 @keyframes tour-pulse { 0%, 100% { opacity: .35; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
-/* Done: the hint turns into a nudge towards Next, which is now theirs to press. */
+/* Done: the hint turns into a nudge toward Next, which is now theirs to press. */
 .tour-wait-done { color: var(--green); }
 .tour-wait-tick { font-weight: 700; flex: none; }
 

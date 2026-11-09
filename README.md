@@ -39,7 +39,7 @@ Any static file server works (`npx serve`, the VS Code Live Server extension, et
 ├── css/                    Styles (style.css, tour.css)
 ├── js/
 │   ├── app.js              Entry point: startup, and the functions the HTML buttons call
-│   ├── state.js            Servers, active server, guild colours, saving/loading
+│   ├── state.js            Servers, active server, guild colors, saving/loading
 │   ├── calc.js             Scores, occupation, declares, plan validation
 │   ├── render.js           Builds the page (tabs, settings, guilds, grid, stats, messages)
 │   ├── messages.js         Daily messages and the message template editor

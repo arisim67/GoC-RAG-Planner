@@ -2,7 +2,7 @@
 // GoC planning in two phases, the way it is done by hand:
 //   Phase 1: decide who holds Darkwick and every dorm on which day, together with the lv1 "path" towns
 //            each guild needs to be able to reach them. Solved a few days at a time WITH LOOKAHEAD, because
-//            a Darkwick capture needs a neighbouring town held the day before.
+//            a Darkwick capture needs a neighboring town held the day before.
 //   Phase 2: Darkwick, dorms and the path towns are locked. All remaining lv1 towns are handed out over the
 //            whole event in ONE solve, to even out total points. Phase 2 is quick, so it is tried with a few
 //            different (equally valid) sets of locked paths and the most even result is kept.
@@ -358,7 +358,7 @@ export async function repairCastle(srv, mapData, runSolver, plan0, userOpts = {}
 // split across the boundary costs it nothing.
 //
 // The dorms have to move for this, which is why it is not part of the Darkwick clean-up above. On maps
-// where Darkwick's neighbours are mostly dorms (Wetland: one Lv1 town and three dorms) the castle order
+// where Darkwick's neighbors are mostly dorms (Wetland: one Lv1 town and three dorms) the castle order
 // is dictated by who is standing on those dorms, so with the dorms pinned there is nothing to re-arrange.
 // This pass frees the dorms and Darkwick together, like the dorm clean-up, and keeps a result only when
 // it closes a stint, is legal, and is no worse on the scarce towns OR on points anywhere.

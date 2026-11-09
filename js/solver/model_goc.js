@@ -21,11 +21,11 @@ function getReachableMatrix(GUILDS, KINGDOMS, DAYS, srv, fromIdx = 0) {
       reach[g][d] = {};
       const prev = reach[g][d - 1];
 
-      // Darkwick needs backing, not just a neighbour: the model only lets a guild take it with a dorm
+      // Darkwick needs backing, not just a neighbor: the model only lets a guild take it with a dorm
       // or two lv1 towns held the day before (gain <= lv2 + 0.5*lv1, see the constraint below). Without
       // that backing it cannot be taken, so its points must not be counted into anyone's target --
       // otherwise "perfect" is arithmetically out of reach and the solver spends its time chasing
-      // points nobody can win. That is what happens on a map whose only castle neighbour is a guild
+      // points nobody can win. That is what happens on a map whose only castle neighbor is a guild
       // holding a single lv1 town on day 0. Like the rest of this matrix this stays an upper bound: it
       // asks whether the supporting towns were reachable at all, not whether one guild could hold them
       // all at once, so it only ever removes targets that were impossible.

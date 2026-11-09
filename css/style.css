@@ -279,12 +279,12 @@ html.capturing input[type=number][data-guild-field] { width: 40px !important; fo
 .btn.btn-danger,.btn.btn-danger:hover{border-color:var(--red);color:var(--red);}
 #tab-ctx .ctx-item.ctx-danger{color:var(--red);}
 
-/* Server settings: inputs and coloured action buttons */
+/* Server settings: inputs and colored action buttons */
 .row .fg input.settings-input{width:130px;}
 .btn-group{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
 .settings-meta{margin-top:8px;font-size:10px;color:var(--text3);}
 .solve-badge{font-size:11px;color:var(--green);font-weight:600;background:var(--bg3);padding:4px 8px;border-radius:4px;border:1px solid var(--border);}
-/* Each button keeps its own colour on hover (only the lift changes), as before */
+/* Each button keeps its own color on hover (only the lift changes), as before */
 .btn-accent.btn-import,.btn-accent.btn-import:hover{background:#6bffb4;color:#0a1a14;box-shadow:0 4px 12px rgba(107,255,180,0.2);}
 .btn-accent.btn-export,.btn-accent.btn-export:hover{background:#ffb86b;color:#1a1105;box-shadow:0 4px 12px rgba(255,184,107,0.2);}
 .btn-accent.btn-screenshot,.btn-accent.btn-screenshot:hover{background:#ff6b9d;color:#1a050d;box-shadow:0 4px 12px rgba(255,107,157,0.2);}

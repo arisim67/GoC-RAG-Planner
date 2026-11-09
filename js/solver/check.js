@@ -16,7 +16,7 @@ export function checkPlan(plan, srv, mapData, FULL, locks = null) {
       for (const k of gained) {
         const adjacent = k.adj.some(a => plan[d - 1][a] === g.id);
         const entering = k.type === 'lv1' && prev.length === 0;
-        if (!adjacent && !entering) problems.push(`${g.name} takes ${k.id} on day ${d} without a neighbouring town`);
+        if (!adjacent && !entering) problems.push(`${g.name} takes ${k.id} on day ${d} without a neighboring town`);
         if (k.id === 'Darkwick') {
           const lv2 = prev.filter(x => x.type === 'lv2').length;
           const lv1 = prev.filter(x => x.type === 'lv1').length;

@@ -1,6 +1,6 @@
 // js/preview.js
 // Draws the 1200×630 link-preview image for a shared plan: server name, mode, map and dates,
-// the Final Scores, and a colour mini-map of the plan (towns × days). Uploaded with
+// the Final Scores, and a color mini-map of the plan (towns × days). Uploaded with
 // Save to Cloud so Discord and other apps can show it when the share link is posted.
 
 import { numDays } from './state.js';

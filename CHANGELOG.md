@@ -78,7 +78,7 @@ The app is updated continuously rather than in numbered releases, so entries are
 ### Fixed
 - Replace Obscuary with Dionysia on Wetland Game of Claws map
 - Total Occupation table now matches the width of Final Scores and Declares & Giveaways in Screenshots
-- **Target points were too high in Game of Claws.** Darkwick can only be taken with a dorm or two level 1 towns held the day before, but the targets assumed any guild standing next to it could take it on day 1. On maps where the castle has a single level 1 neighbour (Forest, Wetland) that counted 3 points nobody could win, so a perfect plan read as 3 points short and the optimizer spread the phantom shortfall across real guilds. Targets in the grid and in the optimizer are now correct, and affected plans can solve faster.
+- **Target points were too high in Game of Claws.** Darkwick can only be taken with a dorm or two level 1 towns held the day before, but the targets assumed any guild standing next to it could take it on day 1. On maps where the castle has a single level 1 neighbor (Forest, Wetland) that counted 3 points nobody could win, so a perfect plan read as 3 points short and the optimizer spread the phantom shortfall across real guilds. Targets in the grid and in the optimizer are now correct, and affected plans can solve faster.
 - Game of Claws targets were being calculated with the Ragnarok rules, which have no castle requirement. Each mode now uses its own.
 - **Auto-Optimize no longer fails when there are more guilds than towns on the map.** "Every guild on the map from day 1" was treated as a hard rule; on a small map with many guilds it cannot be satisfied, and the whole solve failed with an error instead of returning a plan.
 - The optimizer's clean-up passes were building a starting plan for the solver and then discarding it, making them slower than intended.
@@ -95,17 +95,17 @@ The app is updated continuously rather than in numbered releases, so entries are
 - **Link previews**: sharing the site link in Discord and other apps now shows a title, description and preview image.
 
 ### Changed
-- Guild colours: a new palette of 15 clearly distinct colours (some of the old ones were near-identical). A new guild always gets a colour that isn't already in use, and a server can have up to 15 guilds.
+- Guild colors: a new palette of 15 clearly distinct colors (some of the old ones were near-identical). A new guild always gets a color that isn't already in use, and a server can have up to 15 guilds.
 - Game of Claws optimizer refined for better point balancing.
-- Project reorganised: source split into `css/`, `js/`, `js/solver/` and `vendor/`; the main script split into focused modules; new README, user guide moved to `docs/`, MIT licence added.
+- Project reorganized: source split into `css/`, `js/`, `js/solver/` and `vendor/`; the main script split into focused modules; new README, user guide moved to `docs/`, MIT license added.
 - Page styling moved out of the HTML and JavaScript into `css/style.css`. The app looks exactly the same.
 - Removed a font (Cinzel) that was loaded but never used, so the page loads slightly faster.
 
 ### Fixed
 - **Import Guild List** and **Import Daily Map Data** were failing with an error; both work again.
-- Guild List import now uses the same colours as the rest of the app (it had its own list of 10, so colours repeated).
+- Guild List import now uses the same colors as the rest of the app (it had its own list of 10, so colors repeated).
 - **Exclude Guild** in Ragnarok now behaves correctly.
-- The 📸 Screenshots button no longer loses its text colour after taking screenshots.
+- The 📸 Screenshots button no longer loses its text color after taking screenshots.
 - Removed a stray copy of `index.html` inside `js/`, which loaded as a broken page.
 
 ## 2026-11-02
@@ -150,7 +150,7 @@ The app is updated continuously rather than in numbered releases, so entries are
 
 ### Added
 - **Sync from Cloud** to pull the latest version of a shared plan.
-- Colour-coded action buttons.
+- color-coded action buttons.
 
 ### Changed
 - User Guide link moved to the header.

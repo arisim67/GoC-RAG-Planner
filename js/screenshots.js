@@ -176,7 +176,7 @@ export async function takeScreenshots() {
       if (shareBtnHtml) {
         document.getElementById('ov-share-btn').onclick = async () => {
           try { await navigator.share({ files: filesArray }); }
-          catch (e) { console.log("Share cancelled", e); }
+          catch (e) { console.log("Share canceled", e); }
         };
       }
 
