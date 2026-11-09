@@ -11,6 +11,21 @@ The app is updated continuously rather than in numbered releases, so entries are
 - Save to Cloud links made from the old address point to the new site.
 - The user guide and tutorial now explain link previews, with an example of the card a shared plan produces.
 
+## 2026-11-08
+
+### Added
+- **Exclude Guild now works in Game of Claws, including partway through an event.** If a guild drops
+  out, tick Exclude Guild next to them and optimize: the days you have already played stay exactly as
+  they are, that guild keeps the towns it was holding, nobody else can take them, and what is left to
+  win is shared out between the guilds that remain.
+
+### Fixed
+- **Darkwick and the dorms are now shared out around the days you have already played.** A guild that
+  had already held the castle twice was still being given a target of once, so the sums could not add
+  up and another guild was left with no castle day at all. Days already played are now taken as given,
+  and the dorms and points adjust around them.
+- **Targets no longer count towns an excluded guild is sitting on**, which nobody can win.
+
 ## 2026-11-06
 
 ### Changed
@@ -47,8 +62,8 @@ The app is updated continuously rather than in numbered releases, so entries are
 
 ## 2026-11-04
 
-  ### Added
-  - 🔗 Save to Cloud now also stores a preview image of the plan, ready for link previews on the upcoming new site address.
+### Added
+- 🔗 Save to Cloud now also stores a preview image of the plan, ready for link previews on the upcoming new site address.
 
 ### Changed
 - Game of Claws optimizer refined for better point balancing

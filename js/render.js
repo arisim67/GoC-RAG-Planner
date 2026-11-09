@@ -197,16 +197,15 @@ function renderGuilds(srv){
           <input class="guild-name-inp" data-guild-id="${g.id}" data-guild-field="name" value="${esc(g.name)}" placeholder="Guild name"
             oninput="updGuildName('${g.id}',this.value)" ${dAttr}>
             
-          ${srv.mode === 'ragnarok' ? `
-            <input type="checkbox" id="exc_${g.id}" class="guild-small-check" ${g.isExcluded ? 'checked' : ''} 
-              onchange="updGuildExcluded('${g.id}', this.checked)" ${dAttr}>
-            <label for="exc_${g.id}" class="guild-small-label"
-             title="Exclude from map (keeps Day 0 holdings, does not declare, ignores point balancing)">Exclude Guild</label>
-          ` : `
+          ${srv.mode === 'ragnarok' ? '' : `
             <input type="checkbox" id="sm_${g.id}" class="guild-small-check" ${g.isSmall ? 'checked' : ''} 
               onchange="updGuildSmall('${g.id}', this.checked)" ${dAttr}>
             <label for="sm_${g.id}" class="guild-small-label" title="Check this if this is a smaller guild.">Small Guild</label>
           `}
+          <input type="checkbox" id="exc_${g.id}" class="guild-small-check" ${g.isExcluded ? 'checked' : ''} 
+            onchange="updGuildExcluded('${g.id}', this.checked)" ${dAttr}>
+          <label for="exc_${g.id}" class="guild-small-label"
+           title="Leave this guild out of the rest of the plan. It keeps the towns it is holding now, nobody can take them, it declares nothing more, and the points still to win are shared out between the other guilds. Days you have already played are untouched.">Exclude Guild</label>
 
           <input class="guild-num guild-num-pts" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="points" value="${esc(g.basePoints||0)}"
             onchange="updGuildPoints('${g.id}',this.value)" title="Current points" ${dAttr}>

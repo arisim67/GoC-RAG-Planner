@@ -51,7 +51,11 @@ function getReachableMatrix(GUILDS, KINGDOMS, DAYS, srv, fromIdx = 0) {
   return reach;
 }
 
-export function getPerfectTargets(srv, mapData) {
+// opts.respectLocked: take the days already played as given when sharing Darkwick and the dorms out.
+// The solver passes it; the Targets column does not, so what you are shown stays the clean-slate ideal
+// while the solver aims at what is still achievable. Only srv.plan's filled days count as played, and
+// during a solve that is exactly the days you entered by hand.
+export function getPerfectTargets(srv, mapData, opts = {}) {
   const isGoC = srv.mode === 'goc';
   const DAYS = (srv.endDate && srv.startDate) 
     ? Math.max(1, Math.round((new Date(srv.endDate) - new Date(srv.startDate)) / 86400000) + 1)
@@ -61,7 +65,7 @@ export function getPerfectTargets(srv, mapData) {
   const KINGDOMS = mapData.kingdoms;
   const reach = getReachableMatrix(GUILDS, KINGDOMS, DAYS, srv);
 
-  const activeGuilds = GUILDS.filter(g => !( !isGoC && g.isExcluded ));
+  const activeGuilds = GUILDS.filter(g => !g.isExcluded);
   const N = activeGuilds.length;
   
   const sortedGuilds = [...activeGuilds].sort((a, b) => 
@@ -71,11 +75,28 @@ export function getPerfectTargets(srv, mapData) {
   const target = {};
   if (N > 0) {
     let mapLv3 = 0, mapLv2 = 0, mapPts = 0;
-    
+
+    // A guild that has left keeps the towns it was standing on, and nobody can take them, so those
+    // towns are not points anyone can still win: counting them would set everyone a target they
+    // cannot reach. Walk the days forward and keep track of which towns are shut away like that -
+    // a cell left blank carries yesterday's holder, the same rule the model freezes them by.
+    const shut = {};
+    const excludedIds = new Set(GUILDS.filter(g => g.isExcluded).map(g => g.id));
+    const held = {};
+    for (const t of KINGDOMS) held[t.id] = (srv.plan[0] || {})[t.id] || '';
+
     for (let d = 1; d <= DAYS; d++) {
+      shut[d] = {};
       for (const t of KINGDOMS) {
+        const cell = (srv.plan[d] || {})[t.id];
+        if (cell) held[t.id] = cell;              // explicitly placed, by hand or by an earlier solve
+        shut[d][t.id] = excludedIds.has(held[t.id]);
+      }
+      for (const t of KINGDOMS) {
+        if (shut[d][t.id]) continue;
         let canReach = false;
         for (let g = 0; g < GUILDS.length; g++) {
+          if (GUILDS[g].isExcluded) continue;     // a guild that has left cannot put a town in play
           if (reach[g][d][t.id]) { canReach = true; break; }
         }
         if (canReach) {
@@ -94,14 +115,41 @@ export function getPerfectTargets(srv, mapData) {
       target[g.id] = { grandLv3: 0, grandLv2: 0, grandPts: 0 };
     });
 
-    const baseLv3 = Math.floor(grandLv3 / N);
-    const remLv3 = grandLv3 % N;
-    sortedGuilds.forEach((g, i) => {
-      const isBottom = i >= (N - remLv3);
-      target[g.id].grandLv3 = baseLv3 + (isBottom ? 1 : 0);
-    });
-    
-    for (let i = 0; i < grandLv2; i++) {
+    // What the days already played have handed out. A guild that has held Darkwick twice cannot be
+    // given a target of once: the sums then do not add up, and the solver has to leave somebody else
+    // with none at all. Seeding the split with these keeps every guild's share reachable.
+    const lockLv3 = {}, lockLv2 = {};
+    for (const g of sortedGuilds) { lockLv3[g.id] = 0; lockLv2[g.id] = 0; }
+    if (opts.respectLocked) {
+      for (let d = 1; d <= DAYS; d++) for (const t of KINGDOMS) {
+        if (shut[d] && shut[d][t.id]) continue;
+        const who = (srv.plan[d] || {})[t.id];
+        if (!who || lockLv3[who] === undefined) continue;
+        if (t.type === 'lv3') lockLv3[who]++;
+        else if (t.type === 'lv2') lockLv2[who]++;
+      }
+    }
+
+    // Hand out one at a time to whoever has least so far, later guilds winning ties. With nothing
+    // played yet that lands on exactly the old split - a flat share with the remainder going to the
+    // guilds at the bottom - and with days played it respects them instead of contradicting them.
+    const shareOut = (total, key, seed, weigh) => {
+      let placed = 0;
+      for (const g of sortedGuilds) { target[g.id][key] = seed[g.id]; placed += seed[g.id]; }
+      for (let i = placed; i < total; i++) {
+        let bestIdx = 0, best = Infinity;
+        for (let j = 0; j < N; j++) {
+          const v = weigh(sortedGuilds[j].id);
+          if (v <= best) { best = v; bestIdx = j; }
+        }
+        target[sortedGuilds[bestIdx].id][key]++;
+      }
+    };
+    shareOut(grandLv3, 'grandLv3', lockLv3, gid => target[gid].grandLv3);
+
+    for (const g of sortedGuilds) { target[g.id].grandLv2 = lockLv2[g.id]; }
+    let placedLv2 = sortedGuilds.reduce((a, g) => a + lockLv2[g.id], 0);
+    for (let i = placedLv2; i < grandLv2; i++) {
       let bestIdx = 0;
       let minVal = Infinity;
       for (let j = 0; j < N; j++) {
@@ -222,7 +270,7 @@ export function buildModel(srv, mapData, opts = {}) {
   const baseMaxDecl = isGoC ? 2 : 3;
   const pointValues = { 'lv3': 3, 'lv2': 2, 'lv1': 1 };
 
-  const target = getPerfectTargets(srv, mapData);
+  const target = getPerfectTargets(srv, mapData, { respectLocked: true });
   const reachFull = getReachableMatrix(GUILDS, KINGDOMS, FULL_DAYS, srv, fromIdx);
 
   const VALID_KINGDOMS = KINGDOMS.filter(t => {
@@ -234,7 +282,7 @@ export function buildModel(srv, mapData, opts = {}) {
     return false;
   });
 
-  const activeGuilds = GUILDS.filter(g => !( !isGoC && g.isExcluded ));
+  const activeGuilds = GUILDS.filter(g => !g.isExcluded);
   const N = activeGuilds.length;
   
   const sortedGuilds = [...activeGuilds].sort((a, b) => 
@@ -245,7 +293,7 @@ export function buildModel(srv, mapData, opts = {}) {
   const own = [];
   for (let g = 0; g < GUILDS.length; g++) {
     own[g] = [];
-    const isExcludedRag = !isGoC && GUILDS[g].isExcluded;
+    const isExcluded = GUILDS[g].isExcluded;
 
     for (let d = 0; d <= LASTD; d++) {
       own[g][d] = {};
@@ -265,8 +313,12 @@ export function buildModel(srv, mapData, opts = {}) {
           if (manualLockGid) {
             own[g][d][t.id] = (manualLockGid === GUILDS[g].id) ? 1 : 0;
           } 
-          else if (isExcludedRag) {
-            own[g][d][t.id] = own[g][fromIdx][t.id];
+          else if (isExcluded) {
+            // Carry yesterday forward. Day 0 is always fixed, so this walks up through the days
+            // already played and freezes them on whatever they held on the last of those - which is
+            // what "they stopped after day 4" has to mean. fromIdx is winStart - 1, and phase 1
+            // starts at day 1, so it would reach back past every day already played.
+            own[g][d][t.id] = own[g][d - 1][t.id];
           } 
           else if (!reachFull[g][d][t.id]) {
             own[g][d][t.id] = 0;
@@ -291,7 +343,7 @@ export function buildModel(srv, mapData, opts = {}) {
   // whether there are at least as many towns in play as guilds competing for them. That test is
   // necessary but not sufficient, so the caller can also force the penalty form after a failed solve.
   const day1FitsAll = !opts.softDay1
-    && GUILDS.filter(g => isGoC || !g.isExcluded).length <= VALID_KINGDOMS.length;
+    && GUILDS.filter(g => !g.isExcluded).length <= VALID_KINGDOMS.length;
 
   // 3. CORE CONSTRAINTS
   for (let d = winStart; d <= LASTD; d++) {
@@ -303,7 +355,7 @@ export function buildModel(srv, mapData, opts = {}) {
     }
 
     for (let g = 0; g < GUILDS.length; g++) {
-      if (!isGoC && GUILDS[g].isExcluded) continue;
+      if (GUILDS[g].isExcluded) continue;
 
       const declaredTerms = [];
       const maxDecl = (isGoC && GUILDS[g].isSmall) ? 1 : baseMaxDecl;
@@ -431,7 +483,7 @@ export function buildModel(srv, mapData, opts = {}) {
   for (let i = 0; i < N; i++) {
     const guild = sortedGuilds[i];
     const g = GUILDS.findIndex(x => x.id === guild.id);
-    if (!isGoC && GUILDS[g].isExcluded) continue;
+    if (GUILDS[g].isExcluded) continue;
 
     // What this guild already banked in the fixed days of earlier windows
     const got = { lv3: 0, lv2: 0, pts: 0 };
