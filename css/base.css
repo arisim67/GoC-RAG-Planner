@@ -69,6 +69,13 @@ body {
   margin: 0 auto;
 }
 
+/* Big screens: room for all 13 days of the grid and the Declares table without scrolling sideways */
+@media (min-width: 1680px) {
+  .main {
+    max-width: 1880px;
+  }
+}
+
 .section {
   background: var(--bg2);
   border: 1px solid var(--border);
@@ -353,6 +360,69 @@ td.cell-err {
   border-color: rgba(255, 94, 126, 0.3);
   background: var(--red-glow);
   color: var(--red);
+}
+
+/* Status: red chips and the problems listed under them jump to what's wrong (status-jump.js) */
+button.pill {
+  font-family: var(--font-body);
+}
+
+.pill-jump {
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.pill-jump:hover,
+.pill-jump:focus-visible {
+  border-color: var(--red);
+  background: rgba(255, 94, 126, 0.18);
+}
+
+.pill-jump:focus-visible,
+.status-item:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.status-item {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.status-item:hover {
+  text-decoration: underline;
+}
+
+/* What a Status jump lands on flashes a few times */
+.jump-flash {
+  animation: jump-flash 0.8s ease-in-out 3;
+}
+
+@keyframes jump-flash {
+  0%,
+  100% {
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+  }
+  50% {
+    outline: 2px solid var(--gold);
+    outline-offset: -2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jump-flash {
+    animation: none;
+    outline: 2px solid var(--gold);
+    outline-offset: -2px;
+  }
 }
 
 .pdot {

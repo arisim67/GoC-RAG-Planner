@@ -61,6 +61,8 @@ import { initActions, registerActions } from './actions.js';
 import { undo, redo, handleUndoKeys, setHistoryHooks, clearHistory } from './history.js';
 import { toggleSpotlight, handleSpotlightKeys } from './spotlight.js';
 import { openVersions, autoVersion, setVersionHooks } from './versions.js';
+import { statusJump } from './status-jump.js';
+import { initWhatsNew, whatsNewAfterTour } from './whats-new.js';
 import './grid-keys.js'; // keyboard editing for the Planning Grid
 
 load();
@@ -74,7 +76,14 @@ if (!forwardSharedLink()) {
       renderTabs();
       renderAll();
       receiveSharedTemplate();
-      initTour({
+      // Used the planner before? (Checked before the tutorial marks itself as seen.)
+      let returning = state.servers.some(s => !s.isTutorial && !s.isViewOnly);
+      try {
+        returning = returning || localStorage.getItem('goc_tour_seen') !== null;
+      } catch (_) {
+        /* ignore */
+      }
+      const tourStarting = initTour({
         getActiveServer: () => activeSrv(),
         // Lets the guided setup tell a server they just made from ones they already had.
         getServerCount: () => state.servers.length,
@@ -82,7 +91,12 @@ if (!forwardSharedLink()) {
         isSharedLink: () => new URLSearchParams(window.location.search).has('plan') || sharedTemplate || isOldSite(),
         createDemoServer: createTutorialServer,
         removeDemoServer: removeTutorialServer,
+        onEnd: whatsNewAfterTour,
       });
+      // Not on the old address (people should move first), nor over a shared template being opened.
+      if (!isOldSite() && !sharedTemplate) {
+        initWhatsNew({ returning, tourStarting, openTour: () => window.startTour() });
+      }
     });
 }
 
@@ -114,6 +128,7 @@ registerActions('click', {
   'copy-today': copyTodayMessage,
   spotlight: el => toggleSpotlight(el.dataset.id),
   versions: openVersions,
+  'status-jump': statusJump,
   'clear-plan': clearPlan,
   'duplicate-plan': duplicateCurrentPlan,
   // Import dialog

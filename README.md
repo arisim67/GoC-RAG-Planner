@@ -80,6 +80,8 @@ Commit messages are short and say what changed, in the imperative:
 │   ├── versions.js         Version history: saved copies of each server, and restoring them
 │   ├── spotlight.js        Guild spotlight: highlight one guild's towns
 │   ├── collapse.js         Folding sections down to their titles
+│   ├── status-jump.js      Status pills that jump to the problem
+│   ├── whats-new.js        The one-time What's new card for returning visitors
 │   ├── discord-md.js       Shows message text the way Discord displays it (template preview)
 │   ├── handlers.js         Edits made in the page (settings, guilds, grid cells)
 │   ├── servers.js          Server tabs: add, switch, rename, duplicate, delete

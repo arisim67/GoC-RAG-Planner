@@ -562,3 +562,73 @@
   color: var(--text3);
   padding: 12px 0;
 }
+
+/* What's new (whats-new.js) */
+.modal.modal-whatsnew {
+  max-width: 560px;
+}
+
+.modal-whatsnew h3 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.modal-whatsnew .wn-intro {
+  margin: 0 0 14px;
+  color: var(--text2);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.modal-whatsnew .wn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  max-height: min(55vh, 520px);
+  overflow-y: auto;
+}
+
+.modal-whatsnew .wn-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text2);
+}
+
+.modal-whatsnew .wn-item b {
+  color: var(--text);
+}
+
+.modal-whatsnew .wn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--bg3);
+  color: var(--accent2);
+}
+
+.modal-whatsnew .wn-icon .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.modal-whatsnew .wn-more {
+  margin: 14px 0 0;
+  font-size: 12px;
+  text-align: center;
+}
+
+.modal-whatsnew .wn-more a {
+  color: var(--accent2);
+}

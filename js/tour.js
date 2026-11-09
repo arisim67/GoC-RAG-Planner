@@ -32,10 +32,10 @@
 
 import { applyCollapse, expandSection } from './collapse.js';
 
-// Left at 1 on purpose when the guided setup was added: anyone who has already seen (or dismissed)
-// the tutorial should not be interrupted by it a second time. New visitors still get it, and anyone
-// can replay it from the 🎓 Tutorial button. Bump this only to deliberately show it to everyone again.
-const TOUR_VERSION = 1;
+// 2 for the move to the new site (November 2026), so everyone sees the updated tutorial once. Anyone
+// who skips it gets the What's new card instead (whats-new.js). Bump this only to deliberately show
+// it to everyone again.
+const TOUR_VERSION = 2;
 const SEEN_KEY = 'goc_tour_seen';
 const WATCH_MS = 250;
 
@@ -274,13 +274,17 @@ function buildSteps(srv) {
 //   hooks.createDemoServer()    → creates + shows a temporary server, returns the previously active id
 //   hooks.removeDemoServer(id)  → removes the temporary server and re-selects `id`
 //   hooks.isSharedLink()        → true when the page was opened from a shared plan link
+//   hooks.onEnd({ finished })   → (optional) the tour closed; finished = true if it reached the end
+// Returns true if the tour is about to start by itself.
 export function initTour(appHooks) {
   hooks = appHooks;
   window.startTour = () => startTour();
   if (!hasSeenTour() && !hooks.isSharedLink()) {
     // Small delay so the page (and fonts) settle before measuring positions.
     setTimeout(() => startTour(), 600);
+    return true;
   }
+  return false;
 }
 
 export function startTour() {
@@ -378,7 +382,7 @@ function buildOverlay() {
     stepSkip: root.querySelector('.tour-stepskip'),
   };
   els.back.onclick = () => show(index - 1, -1);
-  els.next.onclick = () => (index >= steps.length - 1 ? endTour() : show(index + 1, 1));
+  els.next.onclick = () => (index >= steps.length - 1 ? endTour(true) : show(index + 1, 1));
   els.skip.onclick = () => endTour();
   els.stepSkip.onclick = () => show(index + 1, 1);
   document.addEventListener('keydown', onKey, true);
@@ -725,7 +729,7 @@ function reposition() {
   card.style.top = y + 'px';
 }
 
-function endTour() {
+function endTour(finished = false) {
   if (!els) return;
   stopWatch();
   waiting = false;
@@ -742,4 +746,5 @@ function endTour() {
   applyCollapse(); // sections opened for the tour fold back the way they were
   window.scrollTo({ top: 0 });
   if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
+  if (hooks.onEnd) hooks.onEnd({ finished });
 }

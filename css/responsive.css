@@ -34,10 +34,13 @@
     padding-left: 8px;
   }
 
-  /* Make the dropdowns taller so they are easier to tap on phones */
+  /* Make the cells taller so they are easier to tap on phones */
+  .cname {
+    padding: 10px 3px;
+    font-size: 12px;
+  }
   .csel {
     font-size: 16px;
-    padding: 10px 4px;
   }
 
   /* Make the final score cards smaller to fit more on screen */
@@ -127,7 +130,7 @@ html.capturing .spot-bar,
 html.capturing .spot-summary {
   display: none !important;
 }
-html.capturing .csel {
+html.capturing .cname {
   font-size: 12px !important;
   padding: 4px 6px !important;
 }

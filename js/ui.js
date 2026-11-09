@@ -37,13 +37,23 @@ export function esc(s) {
 
 // Which plan day (1 = the start date) is today, by this device's calendar date. null if the event
 // hasn't started, is over, or has no start date.
+// The game's day changes at 1 am Eastern Standard Time, which is 06:00 UTC: the same moment for
+// everyone, wherever they are. (Fixed in UTC, so in summer time it falls at 2 am EDT.)
+const RESET_UTC_HOUR = 6;
+
+// Today's game date as 'YYYY-MM-DD': before the reset it is still yesterday.
+export function gameDate(now = Date.now()) {
+  return new Date(now - RESET_UTC_HOUR * 3600000).toISOString().slice(0, 10);
+}
+
+// The plan day (1 = the start date) that is today in the game, or null outside the event.
 export function todayDay(srv, days) {
   if (!srv || !srv.startDate) return null;
-  const [yy, mm, dd] = srv.startDate.split('-').map(Number);
-  const start = new Date(yy, mm - 1, dd);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const d = Math.round((today - start) / 86400000) + 1;
+  const utc = s => {
+    const [yy, mm, dd] = s.split('-').map(Number);
+    return Date.UTC(yy, mm - 1, dd);
+  };
+  const d = Math.round((utc(gameDate()) - utc(srv.startDate)) / 86400000) + 1;
   return d >= 1 && d <= days ? d : null;
 }
 

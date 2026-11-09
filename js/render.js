@@ -423,40 +423,60 @@ function renderStatus(srv, issues, wipes) {
     }
   }
 
-  // Combine issues and wipes for the display text
-  const issueText = [
+  // Every problem is a button that jumps to it (status-jump.js).
+  const jump = (kind, attrs, inner, cls = '') =>
+    `<button type="button" class="${cls}" data-action="status-jump" data-kind="${kind}" ${attrs}>${inner}</button>`;
+  const issueItems = [
     ...issues.map(i => {
       const g = srv.guilds.find(x => x.id === i.guild);
-      return `Day ${i.day}: ${g ? esc(g.name) : '?'} → ${i.kingdom}`;
+      return jump(
+        'cell',
+        `data-day="${i.day}" data-k="${esc(i.kingdom)}" title="Show this town in the grid"`,
+        `Day ${i.day}: ${g ? esc(g.name) : '?'} → ${esc(i.kingdom)}`,
+        'status-item',
+      );
     }),
     ...wipes.map(w => {
       const g = srv.guilds.find(x => x.id === w.guild);
-      return `Day ${w.day}: ${g ? esc(g.name) : '?'} Wiped`;
+      return jump(
+        'wipe',
+        `data-day="${w.day}" data-g="${esc(w.guild)}" title="Show this day in the grid"`,
+        `Day ${w.day}: ${g ? esc(g.name) : '?'} Wiped`,
+        'status-item',
+      );
     }),
-  ].join(' · ');
+  ];
+  const pill = (ok, label, kind, attrs, title) => {
+    const inner = `<span class="pdot" style="background:${ok ? 'var(--green)' : 'var(--red)'}"></span>${label}`;
+    return ok
+      ? `<div class="pill pill-ok">${inner}</div>`
+      : jump(kind, `${attrs} title="${title}"`, inner, 'pill pill-fail pill-jump');
+  };
 
   return `<div class="section" data-sec="status" data-tour="status">
     <div class="sec-title">Status</div>
     <div class="pills">
       ${byDay
-        .map((_, i) => {
-          const ok = byDay[i].length === 0;
-          return `<div class="pill ${ok ? 'pill-ok' : 'pill-fail'}">
-          <div class="pdot" style="background:${ok ? 'var(--green)' : 'var(--red)'}"></div>
-          D${i + 1}${!ok ? ` (${byDay[i].length})` : ''}
-        </div>`;
-        })
+        .map((list, i) =>
+          pill(
+            list.length === 0,
+            `D${i + 1}${list.length ? ` (${list.length})` : ''}`,
+            'day',
+            `data-day="${i + 1}"`,
+            'Show the problems on this day in the grid',
+          ),
+        )
         .join('')}
-      <div class="pill ${decViol.length ? 'pill-fail' : 'pill-ok'}">
-        <div class="pdot" style="background:${decViol.length ? 'var(--red)' : 'var(--green)'}"></div>
-        Valid Declares
-      </div>
-      <div class="pill ${wipes.length ? 'pill-fail' : 'pill-ok'}">
-        <div class="pdot" style="background:${wipes.length ? 'var(--red)' : 'var(--green)'}"></div>
-        ${wipes.length ? `No Map Wipes (${wipes.length})` : 'No Map Wipes'}
-      </div>
+      ${pill(!decViol.length, 'Valid Declares', 'declares', '', 'Show the guilds declaring too many towns')}
+      ${pill(
+        !wipes.length,
+        wipes.length ? `No Map Wipes (${wipes.length})` : 'No Map Wipes',
+        'wipe',
+        wipes.length ? `data-day="${wipes[0].day}" data-g="${esc(wipes[0].guild)}"` : '',
+        'Show the first wipe in the grid',
+      )}
     </div>
-    ${issueText ? `<div class="status-issues">${issueText}</div>` : ''}
+    ${issueItems.length ? `<div class="status-issues">${issueItems.join('<span class="status-sep"> · </span>')}</div>` : ''}
   </div>`;
 }
 
@@ -533,7 +553,7 @@ function renderGrid(srv, days, mapData, issues, wipes) {
                   } else if (scores.cumul[g.id]) {
                     pts = scores.cumul[g.id][d - 1] || 0;
                   }
-                  return `<div style="color:${g.color};font-size:9px;white-space:nowrap;line-height:1.4;margin-bottom:1px;">${esc(g.name.length > 8 ? g.name.slice(0, 7) + '…' : g.name)}:${pts}</div>`;
+                  return `<div class="pts-line" style="color:${g.color}">${esc(g.name)}:&nbsp;${pts}</div>`;
                 })
                 .join('')}
             </th>`;
@@ -557,7 +577,8 @@ function renderGrid(srv, days, mapData, issues, wipes) {
 
               const cls = [err ? 'cell-err' : '', d === today ? 'is-today' : ''].filter(Boolean).join(' ');
               return `<td data-k="${k.id}" data-d="${d}" data-g="${gid}" style="background:${g ? g.color + '18' : ''}; position:relative;" ${cls ? `class="${cls}"` : ''}>
-                <select class="csel" data-k="${k.id}" data-d="${d}" style="${g ? 'color:' + g.color : ''}" data-change="cell" ${dAttr}>
+                <span class="cname" aria-hidden="true"${g ? ` style="color:${g.color}"` : ''}>${g ? esc(g.name) : '—'}</span>
+                <select class="csel" data-k="${k.id}" data-d="${d}" aria-label="${esc(k.id)}, day ${d}" data-change="cell" ${dAttr}>
                   ${gOpts.map(([v, n]) => `<option value="${v}" ${v === gid ? 'selected' : ''}>${esc(n)}</option>`).join('')}
                 </select>
               </td>`;
