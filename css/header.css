@@ -1,0 +1,304 @@
+/* css/header.css: App header, server tabs and their right-click menu, jump bar, footer */
+
+.app-header {
+  padding: 16px 24px 0;
+  border-bottom: 1px solid var(--bg);
+  background: linear-gradient(180deg, #1f1930 0%, var(--bg) 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.app-title {
+  font-family: var(--font-head);
+  font-size: 20px;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  flex-wrap: wrap;
+}
+
+.app-title small {
+  font-size: 11px;
+  color: var(--text2);
+  font-family: var(--font-body);
+  letter-spacing: 0;
+  font-weight: 400;
+  text-shadow: none;
+}
+
+.tabs-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.tab-btn {
+  padding: 10px 18px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  /* Add these to disable mobile text highlighting on long-press */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.tab-btn:hover {
+  color: var(--text2);
+}
+
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom: 3px solid var(--accent);
+  text-shadow: 0 0 8px var(--accent-glow);
+}
+
+.tab-close {
+  opacity: 0.4;
+  font-size: 11px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-close:hover {
+  opacity: 1;
+  background: var(--red-glow);
+  color: var(--red);
+}
+
+.add-tab-btn {
+  padding: 8px 16px;
+  margin-bottom: 3px;
+  border: 1px dashed var(--border2);
+  background: transparent;
+  color: var(--text2);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+}
+
+.add-tab-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+
+/* Tab inline rename input */
+.tab-rename-inp {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--accent);
+  color: var(--accent2);
+  font-size: 13px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  outline: none;
+  width: 100px;
+  padding: 0 2px;
+}
+
+#tab-ctx {
+  display: none;
+  position: fixed;
+  z-index: 500;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 6px;
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+}
+
+#tab-ctx.open {
+  display: block;
+}
+
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: var(--font-body);
+  color: var(--text);
+  transition: background 0.15s;
+}
+
+.ctx-item:hover {
+  background: var(--bg3);
+}
+
+.ctx-item .ctx-icon {
+  width: 18px;
+  display: inline-flex;
+  justify-content: center;
+  color: var(--text2);
+}
+
+.ctx-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Components (formerly inline styles in index.html / js/render.js)
+   Selectors carry enough context to beat the generic rules above,
+   just as the inline styles used to.
+   ══════════════════════════════════════════════════════════════ */
+/* Header and footer */
+.app-title.app-title-grow {
+  flex: 1;
+}
+
+.header-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  font-weight: 500;
+  font-size: 12px;
+  font-family: var(--font-body);
+  letter-spacing: 0;
+  text-decoration: none;
+  text-shadow: none;
+  background: var(--bg3);
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-left: 6px;
+}
+
+.header-link .icon,
+.tour-launch .icon {
+  color: var(--text2);
+}
+
+@media (hover: hover) {
+  .header-link:hover {
+    border-color: var(--border2);
+    background: var(--bg4);
+  }
+}
+
+.save-status {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--font-body);
+  font-weight: 500;
+  margin-left: auto;
+  text-shadow: none;
+  transition: color 0.3s;
+}
+
+.empty-state {
+  color: var(--text2);
+  text-align: center;
+  padding: 60px 0;
+  font-size: 13px;
+}
+
+.empty-state .empty-state-cta {
+  color: var(--accent2);
+}
+
+.site-footer {
+  text-align: center;
+  padding: 10px 20px 30px;
+  color: var(--text3);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.site-footer .site-footer-text {
+  margin: 0;
+}
+
+.site-footer .site-footer-link {
+  color: var(--accent2);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+#tab-ctx .ctx-item.ctx-danger {
+  color: var(--red);
+}
+
+/* Jump bar: sticky quick links to each section */
+.jump-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  margin: 0 0 16px;
+  padding: 8px 10px;
+  background: rgba(25, 20, 37, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.jump-links {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.jump-links::-webkit-scrollbar {
+  display: none;
+}
+
+.jump-link {
+  flex-shrink: 0;
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 8px;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.jump-link:hover {
+  color: var(--text);
+  background: var(--bg3);
+}
+
+.jump-link.active {
+  color: var(--accent2);
+  background: var(--bg3);
+}
+
+@media (max-width: 720px) {
+  .jump-links {
+    -webkit-mask-image: linear-gradient(to right, #000 85%, transparent);
+    mask-image: linear-gradient(to right, #000 85%, transparent);
+  }
+}

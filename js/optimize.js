@@ -7,6 +7,8 @@ import { renderAll } from './render.js';
 import { getMapData } from './maps/index.js';
 import { buildModel } from './solver/model_ragnarok.js';
 import { setBtnLabel } from './icons.js';
+import { recordChange, setOptimizedBase } from './history.js';
+import { takeVersion } from './versions.js';
 
 const solverWorker = new Worker(new URL('./solver/worker.js', import.meta.url), { type: 'module' });
 
@@ -37,15 +39,6 @@ function runHighsSolver(matrixData, options) {
   });
 }
 
-export function undoOptimize() {
-  const s = activeSrv();
-  if (!s || !s.undoPlan) return;
-  s.plan = JSON.parse(JSON.stringify(s.undoPlan));
-  delete s.undoPlan;
-  save();
-  renderAll();
-}
-
 export async function autoOptimize() {
   let sec = 0;
   let optTimer;
@@ -65,8 +58,8 @@ export async function autoOptimize() {
     );
   }
 
-  const btn = document.getElementById('opt-btn'); // Use your actual button ID here
-  let originalText = 'Auto-Optimize'; // Fallback text
+  const btn = document.getElementById('opt-btn');
+  let originalText = 'Auto-Optimize'; // used if the button can't be found
 
   if (btn) {
     originalText = setBtnLabel(btn, 'Finding Optimal Plan... (0s)'); // keeps the icon
@@ -78,8 +71,9 @@ export async function autoOptimize() {
   }
 
   try {
-    // 1. Snapshot for the undo button
-    srv.undoPlan = JSON.parse(JSON.stringify(srv.plan));
+    // 1. Remember the plan as it was, so the optimize can be undone
+    takeVersion(srv, 'Before Auto-Optimize');
+    const before = JSON.parse(JSON.stringify(srv.plan));
     const mapData = getMapData(srv.mode, srv.mapKey);
 
     if (srv.mode !== 'goc') {
@@ -110,6 +104,8 @@ export async function autoOptimize() {
     }
 
     srv.lastSolveTime = sec;
+    recordChange(srv, 'Auto-Optimize', { plan: before, optimize: true });
+    setOptimizedBase(srv);
 
     save();
     renderAll();
@@ -120,14 +116,13 @@ export async function autoOptimize() {
     }
   } catch (err) {
     console.error('Optimizer crashed:', err);
-    // Replace alert() with our new in-app toast
     showToast(err.message || 'Solver encountered an error.', true);
     if (btn) {
       setBtnLabel(btn, 'Failed');
       btn.style.color = 'var(--red)';
     }
   } finally {
-    // 🚨 GUARANTEE TIMER STOPS
+    // Always stop the elapsed-time counter, whether the solve worked or not
     clearInterval(optTimer);
 
     if (btn) {

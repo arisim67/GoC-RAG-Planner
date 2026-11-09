@@ -1,0 +1,593 @@
+/* css/tables.css: Status badges, planning grid, final scores, occupation and declares tables */
+
+.score-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.score-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.02),
+    0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sc-label {
+  font-size: 11px;
+  color: var(--text);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.sc-val {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: var(--font-head);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.sc-sub {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sc-diff {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.tbl-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+table.ptbl {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+  min-width: 600px;
+}
+
+table.ptbl th {
+  background: var(--bg4);
+  color: var(--text);
+  padding: 10px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+table.ptbl tr.pts-row th {
+  background: var(--bg3);
+  position: sticky;
+  top: 76px;
+  z-index: 2;
+  font-weight: 400;
+}
+
+table.ptbl th.kname {
+  text-align: left;
+  min-width: 110px;
+  padding-left: 14px;
+}
+
+table.ptbl th.kadj {
+  text-align: left;
+  min-width: 140px;
+  padding-left: 14px;
+}
+
+table.ptbl td.kadj {
+  font-size: 10px;
+  color: var(--text2);
+  white-space: normal;
+  max-width: 150px;
+  padding-left: 14px;
+  line-height: 1.4;
+}
+
+table.ptbl th.ktype {
+  min-width: 60px;
+}
+
+table.ptbl td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  vertical-align: middle;
+}
+
+table.ptbl td.kname {
+  font-weight: 600;
+  white-space: nowrap;
+  padding-left: 14px;
+  font-size: 12px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+table.ptbl td.ktype {
+  text-align: center;
+}
+
+table.ptbl tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+table.ptbl tr:last-child td {
+  border-bottom: none;
+}
+
+/* Keep the Town column visible while scrolling across day columns */
+table.ptbl td.kname,
+table.ptbl th.kname {
+  position: sticky;
+  left: 0;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.3);
+}
+
+table.ptbl td.kname {
+  background: var(--bg2);
+  z-index: 1;
+}
+
+table.ptbl th.kname {
+  z-index: 3;
+}
+
+table.ptbl tr:hover td.kname {
+  background: var(--bg3);
+}
+
+/* Status badges */
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.badge-lv1 {
+  background: rgba(120, 169, 240, 0.15);
+  color: var(--lv1);
+  border: 1px solid rgba(120, 169, 240, 0.3);
+}
+
+.badge-lv2 {
+  background: rgba(184, 134, 238, 0.15);
+  color: var(--lv2);
+  border: 1px solid rgba(184, 134, 238, 0.3);
+}
+
+.badge-lv3 {
+  background: rgba(226, 200, 131, 0.15);
+  color: var(--lv3);
+  border: 1px solid rgba(226, 200, 131, 0.3);
+}
+
+.csel {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 6px;
+  border-radius: 6px;
+  width: 100%;
+  outline: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  text-align: center;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background 0.2s;
+}
+
+.csel:hover,
+.csel:focus {
+  background: var(--bg3);
+}
+
+.csel:focus {
+  outline: 1px solid var(--border2);
+  box-shadow: none;
+}
+
+/* The cell the keyboard is on (grid-keys.js) */
+table.ptbl td.kb-cursor .csel {
+  outline: 2px solid var(--accent2);
+  outline-offset: -2px;
+  background: var(--bg3);
+}
+
+td.cell-err .csel {
+  color: var(--text) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.dtbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.dtbl th {
+  color: var(--text);
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+}
+
+.dtbl td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  vertical-align: top;
+}
+
+.dc-ok {
+  color: var(--green);
+}
+
+.dc-warn {
+  color: var(--gold);
+}
+
+.dc-bad {
+  color: var(--red);
+}
+
+.otbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.otbl th {
+  color: var(--text);
+  padding: 8px 12px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+}
+
+.otbl td {
+  padding: 8px 12px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+@media (max-width: 700px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.solve-badge {
+  font-size: 11px;
+  color: var(--green);
+  font-weight: 600;
+  background: var(--bg3);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+/* Screenshot capture wrappers */
+.capture-wrap {
+  background: var(--bg);
+  padding: 2px;
+  border-radius: 16px;
+}
+
+.capture-wrap.capture-wrap-stats {
+  margin-top: 20px;
+}
+
+.status-issues {
+  font-size: 10px;
+  color: var(--red);
+  margin-top: 4px;
+}
+
+/* Planning grid header */
+.clear-day-wrap {
+  margin-top: 6px;
+}
+
+table.ptbl .clear-day-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+table.ptbl tr.pts-row th.pts-blank {
+  background: var(--bg, #191425);
+  border-bottom: 1px solid var(--border);
+}
+
+table.ptbl tr.pts-row th.kname.pts-label {
+  position: sticky;
+  left: 0;
+  z-index: 40;
+  background: var(--bg, #191425);
+  padding: 4px 10px;
+  font-size: 10px;
+  color: var(--text2);
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+
+table.ptbl tr.pts-row th.pts-cell {
+  padding: 4px 4px 8px;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Total occupation table */
+.otbl.otbl-fixed {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.otbl th.col-guild {
+  text-align: left;
+  padding-left: 10px;
+  width: 20%;
+}
+
+.otbl th.col-lv1 {
+  color: var(--lv1);
+  text-align: center;
+  width: 20%;
+}
+
+.otbl th.col-lv2 {
+  color: var(--lv2);
+  text-align: center;
+  width: 20%;
+}
+
+.otbl th.col-lv3 {
+  color: var(--lv3);
+  text-align: center;
+  width: 20%;
+}
+
+.otbl th.col-total {
+  text-align: center;
+  width: 20%;
+}
+
+.otbl td.occ-guild {
+  text-align: left;
+  padding-left: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.occ-guild-inner {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.occ-guild-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.otbl td.occ-lv1 {
+  color: var(--lv1);
+  text-align: center;
+}
+
+.otbl td.occ-lv2 {
+  color: var(--lv2);
+  text-align: center;
+}
+
+.otbl td.occ-lv3 {
+  color: var(--lv3);
+  text-align: center;
+}
+
+.otbl td.occ-total {
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Declares & giveaways table */
+.dtbl td.dec-guild {
+  vertical-align: middle;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dtbl .dec-guild-inner {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dec-max {
+  font-size: 9px;
+  color: var(--text3);
+  margin-left: 4px;
+}
+
+.dtbl .dec-count {
+  font-weight: 600;
+}
+
+.dec-towns {
+  font-size: 9px;
+  color: var(--text2);
+}
+
+.dec-give {
+  font-size: 9px;
+  color: var(--text3);
+}
+
+#sec-settings,
+#sec-guilds,
+#capture-grid,
+#capture-stats,
+#sec-declares,
+#sec-messages {
+  scroll-margin-top: 64px;
+}
+
+/* Undo / Redo in the Planning Grid header */
+.hist-btns {
+  display: flex;
+  gap: 6px;
+}
+.hist-btns .btn-tool:disabled .icon {
+  opacity: 0.5;
+}
+
+/* Today: highlight the current event day in the grid and the Declares table */
+table.ptbl th.is-today,
+table.dtbl th.is-today {
+  background: rgba(69, 214, 168, 0.16);
+  box-shadow:
+    inset 1px 0 0 var(--accent),
+    inset -1px 0 0 var(--accent),
+    inset 0 2px 0 var(--accent);
+}
+table.ptbl td.is-today,
+table.dtbl td.is-today {
+  box-shadow:
+    inset 1px 0 0 rgba(69, 214, 168, 0.55),
+    inset -1px 0 0 rgba(69, 214, 168, 0.55);
+}
+table.ptbl tbody tr:last-child td.is-today,
+table.dtbl tbody tr:last-child td.is-today {
+  box-shadow:
+    inset 1px 0 0 rgba(69, 214, 168, 0.55),
+    inset -1px 0 0 rgba(69, 214, 168, 0.55),
+    inset 0 -1px 0 rgba(69, 214, 168, 0.55);
+}
+.today-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0a1a14;
+  background: var(--accent);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-bottom: 3px;
+}
+/* In a column header the tag sits on its own line, so the column keeps its usual width */
+th .today-tag {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 3px;
+}
+
+/* Guild spotlight (js/spotlight.js): chips above the grid; the chosen guild's towns are outlined
+   and everything else fades back */
+.spot-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -2px 0 10px;
+}
+.spot-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-right: 4px;
+}
+.spot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+  font: 500 11px var(--font-body);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+.spot-chip:hover {
+  color: var(--text);
+  border-color: var(--text3);
+}
+.spot-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.spot-chip .spot-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--guild-color);
+}
+.spot-chip[aria-pressed='true'] {
+  color: var(--text);
+  border-color: var(--guild-color);
+  background: color-mix(in srgb, var(--guild-color) 22%, var(--bg3));
+}
+.spot-summary {
+  margin: -4px 0 10px;
+  font-size: 12px;
+  color: var(--text);
+}
+.spot-summary[hidden] {
+  display: none;
+}
+
+.spot-on table.ptbl tbody td[data-g]:not(.spot-hit),
+.spot-on table.dtbl tbody tr[data-g]:not(.spot-hit),
+.spot-on .score-card:not(.spot-hit) {
+  opacity: 0.3;
+  transition: opacity 0.15s;
+}
+.spot-on table.ptbl tbody td.spot-hit {
+  box-shadow: inset 0 0 0 2px var(--spot-color);
+}
+.score-card[data-action='spotlight'] {
+  cursor: pointer;
+}

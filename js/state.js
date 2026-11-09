@@ -90,9 +90,16 @@ export function mkSrv(name, mode, mapKey, startDate, endDate) {
   };
 }
 
+// Runs after every save (js/versions.js uses it to keep version history).
+let afterSave = null;
+export function setAfterSave(fn) {
+  afterSave = fn;
+}
+
 export function save() {
   try {
     localStorage.setItem('goc_v3', JSON.stringify({ servers: state.servers, activeId: state.activeId }));
+    if (afterSave) afterSave();
     const ss = document.getElementById('save-status');
     if (ss) {
       ss.textContent = 'Saving...';
@@ -100,7 +107,7 @@ export function save() {
       clearTimeout(window.saveTimer);
       window.saveTimer = setTimeout(() => {
         const s = activeSrv();
-        // 🚨 NEW: Only show Cloud Linked if it was explicitly published/synced
+        // Only show "Cloud Linked" once the server has been saved to or synced from the cloud
         if (s && s.cloudSynced) {
           ss.innerHTML = '☁️ <b style="color:#6baff5">Cloud Linked</b> &nbsp;·&nbsp; ✓ Saved locally';
         } else {

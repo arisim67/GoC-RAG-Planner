@@ -30,6 +30,8 @@
 // If what the step asks for is already true when it opens (replaying the tour on a finished plan), it
 // is shown as an ordinary step instead of waiting for something that has already happened.
 
+import { applyCollapse, expandSection } from './collapse.js';
+
 // Left at 1 on purpose when the guided setup was added: anyone who has already seen (or dismissed)
 // the tutorial should not be interrupted by it a second time. New visitors still get it, and anyone
 // can replay it from the 🎓 Tutorial button. Bump this only to deliberately show it to everyone again.
@@ -175,7 +177,8 @@ function buildSteps(srv) {
       target: 'guilds',
       title: 'Guilds',
       body: `Type each guild's real name. Drag the <b>⋮⋮</b> handle to reorder them; the order decides who gets
-             extra points, dorm time or castle time when things can't be split evenly.
+             extra points, dorm time or castle time when things can't be split evenly. Click a guild's coloured dot
+             to change its colour.
              <br><br>${
                goc
                  ? '<b>Small Guild</b> limits a guild to 1 declare a day.'
@@ -196,7 +199,11 @@ function buildSteps(srv) {
              with their footholds on <b>Day 0</b>. The left column lists each town's neighbours.
              <br><br>To copy, select cells — long-press one, drag across a block, or shift-click a second cell —
              then drag the handle on the block's bottom-right corner sideways across days, or down the towns.
-             The block repeats, so a two-day pattern dragged across six days lands three times.`,
+             The block repeats, so a two-day pattern dragged across six days lands three times.
+             <br><br>Prefer the keyboard? Arrow keys move between cells, typing a guild's first letters picks it,
+             and Ctrl+C / Ctrl+V copy and paste a block.
+             <br><br>Made a mistake? <b>Undo</b> and <b>Redo</b> above the grid (or Ctrl+Z / Ctrl+Y) step through your changes.
+             Click a guild under <b>Spotlight</b> to see just its towns.`,
       place: 'top',
     },
     {
@@ -215,7 +222,7 @@ function buildSteps(srv) {
                  ? 'Game of Claws takes around <b>1–3 minutes</b> for 10 guilds and up to about <b>10</b> for 13: keep the tab open and visible until it finishes.'
                  : 'Ragnarok takes up to about a minute.'
              }
-             <br><br>Not happy with the result? <b>Undo Optimize</b> brings back your previous plan.`,
+             <br><br>Not happy with the result? <b>Undo</b> above the grid brings back your previous plan, even after a reload.`,
     },
     {
       target: 'stats',
@@ -241,8 +248,9 @@ function buildSteps(srv) {
       target: 'messages',
       title: 'Daily messages',
       body: `Ready-made instructions for each day. Click a card to copy it, then paste it into Discord.
+             During an event, today's card is highlighted, and <b>Copy Today's Message</b> in the toolbar copies it in one click.
              <br><br>Want them in your own style? <b>Template</b> changes the format, and lets you give guilds
-             emoji names just for messages.`,
+             emoji names just for messages. <b>Share</b> in there copies a link to your template for other planners.`,
       place: 'top',
     },
     {
@@ -433,6 +441,7 @@ function targetEl(step) {
     return null;
   }
   if (!el) return null;
+  expandSection(el, { all: true, remember: false }); // a folded section opens while the tutorial shows it
   const r = el.getBoundingClientRect();
   return r.width || r.height ? el : null;
 }
@@ -455,7 +464,8 @@ function show(i, dir) {
   els.body.innerHTML = typeof step.body === 'function' ? step.body() : step.body;
   els.back.style.visibility = i === 0 ? 'hidden' : 'visible';
   els.next.textContent = step.next || (i === steps.length - 1 ? 'Done' : 'Next');
-  els.skip.style.visibility = i === steps.length - 1 ? 'hidden' : 'visible';
+  // Until a way through is picked, the opening card is the only step, so it would count as the last.
+  els.skip.style.visibility = i === steps.length - 1 && !step.choices ? 'hidden' : 'visible';
 
   // The opening card offers the two ways through instead of a Next button.
   stopWatch();
@@ -729,6 +739,7 @@ function endTour() {
   document.body.classList.remove('tour-active');
   if (demoState && demoState.created) hooks.removeDemoServer(demoState.prevId);
   demoState = null;
+  applyCollapse(); // sections opened for the tour fold back the way they were
   window.scrollTo({ top: 0 });
   if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
 }

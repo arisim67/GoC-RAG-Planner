@@ -4,6 +4,8 @@
 import { activeSrv, GUILD_COLORS, MAX_GUILDS, save } from './state.js';
 import { renderAll } from './render.js';
 import { getMapData } from './maps/index.js';
+import { recordChange, clearHistory } from './history.js';
+import { takeVersion } from './versions.js';
 
 export function openImport() {
   document.getElementById('modal-import').classList.add('open');
@@ -130,6 +132,7 @@ export function processImport() {
     alert('Please paste data first!');
     return;
   }
+  takeVersion(srv, 'Before importing');
 
   // Try to parse as exported JSON first
   let parsed = null;
@@ -150,7 +153,7 @@ export function processImport() {
     // Restore guilds (using the exported ID so the map plan connects properly)
     srv.guilds = imp.guilds.map((g, i) => {
       return {
-        id: g.id || 'g_' + Date.now() + '_' + i, // <-- GRABS EXPORTED ID
+        id: g.id || 'g_' + Date.now() + '_' + i, // keep the exported ID so the plan still points at this guild
         name: g.name,
         color: g.color || GUILD_COLORS[i % GUILD_COLORS.length],
         basePoints: g.basePoints || 0,
@@ -173,6 +176,7 @@ export function processImport() {
 
     // Restore plan (guild IDs will match since we preserved them by name)
     srv.plan = imp.plan || {};
+    clearHistory(srv);
 
     alert(
       `Server "${srv.name}" imported successfully! ${srv.guilds.length} guilds, ${Object.keys(srv.plan).length} days planned.`,
@@ -208,11 +212,13 @@ export function processImport() {
 
     // Wipe the existing map plan since old guild IDs no longer exist
     srv.plan = {};
+    clearHistory(srv);
 
     alert(`Replaced roster with ${uniqueNames.length} guilds! The map plan has been reset for the new roster.`);
   } else {
     // MODE: IMPORT DAILY MAP DATA
     const mapData = getMapData(srv.mode, srv.mapKey);
+    recordChange(srv, `Import day ${day}`);
     const sortedKingdoms = [...mapData.kingdoms].sort((a, b) => {
       const pts = { lv3: 3, lv2: 2, lv1: 1 };
       return pts[b.type] - pts[a.type];

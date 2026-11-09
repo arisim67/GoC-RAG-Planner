@@ -1,0 +1,423 @@
+/* css/base.css: Colours, fonts, page layout, sections, generic buttons and form fields, icons */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #191425;
+  --bg2: #241d35;
+  --bg3: #352a4f;
+  --bg4: #483a6b;
+  --border: #423563;
+  --border2: #5c4b8a;
+  --accent: #45d6a8;
+  --accent-glow: rgba(69, 214, 168, 0.2);
+  --accent2: #6bf2c7;
+  --gold: #e2c883;
+  --gold2: #f2deb0;
+  --red: #ff5e7e;
+  --red-glow: rgba(255, 94, 126, 0.15);
+  --green: #45d6a8;
+  --green-glow: rgba(69, 214, 168, 0.15);
+  --text: #f0eef5;
+  --text2: #b1a6cc;
+  --text3: #8476a3;
+
+  /* Town level colours */
+  --lv1: #78a9f0;
+  --lv2: #b886ee;
+  --lv3: #e2c883;
+
+  --font-head: 'Montserrat', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border2);
+}
+
+.main {
+  padding: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.section {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.sec-title {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sec-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
+}
+
+/* Collapsible sections (collapse.js): the arrow, and a folded section showing only its title */
+.sec-title.sec-title-fold {
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.sec-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin: -3px 0 -3px -4px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+.sec-toggle .icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s;
+}
+
+.sec-title-fold:hover .sec-toggle,
+.sec-toggle:focus-visible {
+  color: var(--gold);
+  background: var(--bg3);
+}
+
+.section.collapsed > .sec-title {
+  margin-bottom: 0;
+}
+
+.section.collapsed .sec-toggle .icon {
+  transform: rotate(-90deg);
+}
+
+/* Screenshots always show every section in full */
+html:not(.capturing) .section.collapsed > :not(.sec-title) {
+  display: none;
+}
+
+html.capturing .sec-toggle {
+  display: none;
+}
+
+html.capturing .section.collapsed > .sec-title {
+  margin-bottom: 16px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.fg {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fg label {
+  font-size: 10px;
+  color: var(--text2);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+select,
+input[type='text'],
+input[type='number'],
+input[type='date'] {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+select:focus,
+input:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+select option {
+  background: var(--bg2);
+  color: var(--text);
+}
+
+textarea {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  resize: vertical;
+  min-height: 70px;
+  outline: none;
+  transition: all 0.2s;
+  width: 100%;
+  line-height: 1.5;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  background: var(--bg3);
+  color: var(--text);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    background: var(--bg4);
+    transform: translateY(-1px);
+  }
+}
+
+.btn-accent {
+  padding: 8px 16px;
+  border: none;
+  background: var(--accent);
+  color: #0a1a14;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+@media (hover: hover) {
+  .btn-accent:hover {
+    background: var(--accent2);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px var(--accent-glow);
+  }
+}
+
+.btn-gold {
+  padding: 8px 16px;
+  border: none;
+  background: var(--gold);
+  color: #241d08;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(226, 200, 131, 0.2);
+}
+
+@media (hover: hover) {
+  .btn-gold:hover {
+    background: var(--gold2);
+    transform: translateY(-1px);
+  }
+}
+
+.diff-ok {
+  color: var(--green);
+}
+
+.diff-warn {
+  color: var(--gold);
+}
+
+.diff-bad {
+  color: var(--red);
+}
+
+.bar-track {
+  height: 6px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 10px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+td.cell-err {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--red-glow),
+    var(--red-glow) 8px,
+    rgba(255, 94, 126, 0.25) 8px,
+    rgba(255, 94, 126, 0.25) 16px
+  ) !important;
+  box-shadow: inset 0 0 0 2px var(--red) !important;
+}
+
+.pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.pill-ok {
+  border-color: rgba(69, 214, 168, 0.3);
+  background: var(--green-glow);
+  color: var(--accent2);
+}
+
+.pill-fail {
+  border-color: rgba(255, 94, 126, 0.3);
+  background: var(--red-glow);
+  color: var(--red);
+}
+
+.pdot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 4px currentColor;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.repair-info {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  background: var(--bg3);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.repair-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.repair-tbl th {
+  color: var(--text);
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  text-align: left;
+}
+
+.repair-tbl td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.repair-tbl select {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.btn.btn-danger,
+.btn.btn-danger:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* Line icons (js/icons.js) */
+.icon {
+  width: 1.15em;
+  height: 1.15em;
+  flex-shrink: 0;
+  vertical-align: -0.2em;
+}
+
+.sec-title.sec-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

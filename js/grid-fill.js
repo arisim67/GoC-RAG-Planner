@@ -3,6 +3,7 @@
 
 import { state, activeSrv, save } from './state.js';
 import { renderAll } from './render.js';
+import { recordChange } from './history.js';
 
 // ══════════════════════════════════════════════════════════════
 //  SELECT + DRAG TO FILL (SPREADSHEET COPY)
@@ -45,7 +46,7 @@ let autoRaf = 0;
 })();
 
 // ── grid helpers ──────────────────────────────────────────────
-const gridRows = () => document.querySelectorAll('table.ptbl tbody tr');
+export const gridRows = () => document.querySelectorAll('table.ptbl tbody tr');
 const kidOf = tr => tr.querySelector('td[data-k]').dataset.k;
 const mod = (n, m) => ((n % m) + m) % m;
 
@@ -53,11 +54,11 @@ function cellFromPoint(x, y) {
   const el = document.elementFromPoint(x, y);
   return el && el.closest ? el.closest('table.ptbl td[data-d]') : null;
 }
-function posOf(td) {
+export function posOf(td) {
   const tr = td.parentElement;
   return { r: Array.prototype.indexOf.call(tr.parentElement.children, tr), d: +td.dataset.d };
 }
-function rangeOf(a, b) {
+export function rangeOf(a, b) {
   return { r0: Math.min(a.r, b.r), r1: Math.max(a.r, b.r), d0: Math.min(a.d, b.d), d1: Math.max(a.d, b.d) };
 }
 const sameRange = (a, b) => a.r0 === b.r0 && a.r1 === b.r1 && a.d0 === b.d0 && a.d1 === b.d1;
@@ -109,13 +110,27 @@ function placeHandle(rng) {
   td.appendChild(h);
 }
 
-function setFillSel(rng, anchor) {
+// The selected block for the active server, or null.
+export const getFillSel = () => (fillSel && fillSel.srvId === state.activeId ? fillSel : null);
+
+export function setFillSel(rng, anchor) {
   fillSel = rng ? { srvId: state.activeId, anchor: anchor || { r: rng.r0, d: rng.d0 }, ...rng } : null;
   renderFillSel();
 }
 
+// Keyboard editing (grid-keys.js) re-applies its cursor after each paint.
+let afterPaint = () => {};
+export function setAfterPaint(fn) {
+  afterPaint = fn;
+}
+
 // Called after every renderAll() (the grid is rebuilt from scratch each time)
 export function renderFillSel() {
+  paintSel();
+  afterPaint();
+}
+
+function paintSel() {
   clearPaint();
   if (!fillSel) return;
   const srv = activeSrv();
@@ -191,6 +206,7 @@ function commitFill() {
   const h = s.r1 - s.r0 + 1,
     w = s.d1 - s.d0 + 1;
   let changed = false;
+  const before = JSON.parse(JSON.stringify(srv.plan || {}));
   for (let r = t.r0; r <= t.r1; r++) {
     const kid = kidOf(rows[r]);
     for (let d = t.d0; d <= t.d1; d++) {
@@ -205,6 +221,7 @@ function commitFill() {
   }
   setFillSel(t, { r: t.r0, d: t.d0 }); // selection grows to cover what was just filled
   if (changed) {
+    recordChange(srv, 'Copy across cells', { plan: before });
     save();
     renderAll();
   } // heavy recalculation once, on release
@@ -388,28 +405,6 @@ window.addEventListener('touchcancel', () => {
 });
 
 document.addEventListener('keydown', e => {
-  // Enter on a single selected cell opens its dropdown (keyboard alternative to the 2nd click)
-  if (
-    e.key === 'Enter' &&
-    CAN_PICKER &&
-    fillSel &&
-    fillSel.srvId === state.activeId &&
-    fillSel.r0 === fillSel.r1 &&
-    fillSel.d0 === fillSel.d1 &&
-    (document.activeElement === document.body || !document.activeElement)
-  ) {
-    const td = (gridRows()[fillSel.r0] || document.createElement('tr')).querySelector(`td[data-d="${fillSel.d0}"]`);
-    const sel = td && td.querySelector('select');
-    if (sel) {
-      e.preventDefault();
-      try {
-        sel.showPicker();
-      } catch (_) {
-        sel.focus();
-      }
-    }
-    return;
-  }
   if (e.key !== 'Escape') return;
   if (fillDrag) {
     fillDrag = null;

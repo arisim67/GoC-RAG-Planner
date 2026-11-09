@@ -1,0 +1,138 @@
+/* css/responsive.css: Phone layout and screenshot mode. Loaded last so these overrides win. */
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE OPTIMIZATIONS
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Shrink outer padding to maximize screen real estate */
+  .main {
+    padding: 10px;
+  }
+  .section {
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  /* Compress the Adjacent Towns column slightly */
+  table.ptbl th.kadj,
+  table.ptbl td.kadj {
+    min-width: 90px;
+    max-width: 100px;
+    padding-left: 8px;
+    font-size: 9px;
+  }
+
+  /* Tighten table cells and font sizes, ensuring text stays readable */
+  table.ptbl th,
+  table.ptbl td {
+    padding: 8px 4px;
+    font-size: 11px;
+  }
+  table.ptbl th.kname,
+  table.ptbl td.kname {
+    min-width: 80px;
+    padding-left: 8px;
+  }
+
+  /* Make the dropdowns taller so they are easier to tap on phones */
+  .csel {
+    font-size: 16px;
+    padding: 10px 4px;
+  }
+
+  /* Make the final score cards smaller to fit more on screen */
+  .score-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+  .sc-val {
+    font-size: 20px;
+  }
+
+  /* iOS Safari zooms the page when focusing any field under 16px */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+  .guild-row {
+    grid-template-columns: 18px 20px minmax(130px, 1fr) 120px 128px 72px 64px 64px 64px 40px;
+  }
+  .guild-color {
+    width: 20px;
+    height: 20px;
+  }
+  .cp-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
+
+  /* Header */
+  .app-header {
+    padding: 12px 12px 0;
+  }
+  .app-title {
+    font-size: 17px;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  /* Bigger touch targets */
+  .btn,
+  .btn-accent,
+  .btn-gold,
+  .add-tab-btn {
+    min-height: 40px;
+  }
+  .tab-btn {
+    padding: 12px 14px;
+  }
+  .tab-close {
+    font-size: 14px;
+    padding: 8px 10px;
+    margin: -6px -6px -6px 0;
+  }
+  .guild-remove {
+    font-size: 18px;
+    padding: 10px;
+  }
+  .guild-small-check {
+    width: 22px;
+    height: 22px;
+  }
+  .guild-flag {
+    font-size: 12px;
+    padding: 8px 0;
+  }
+  .clear-day-btn {
+    font-size: 11px !important;
+    padding: 8px 12px !important;
+  }
+  .ctx-item {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+}
+
+/* Screenshot mode: identical sizing on phone and desktop (class set by takeScreenshots) */
+/* Screenshots never show the spotlight */
+html.capturing .spot-on table.ptbl tbody td[data-g],
+html.capturing .spot-on table.dtbl tbody tr[data-g],
+html.capturing .spot-on .score-card {
+  opacity: 1 !important;
+}
+html.capturing .spot-on table.ptbl tbody td.spot-hit {
+  box-shadow: none;
+}
+html.capturing .spot-bar,
+html.capturing .spot-summary {
+  display: none !important;
+}
+html.capturing .csel {
+  font-size: 12px !important;
+  padding: 4px 6px !important;
+}
+
+html.capturing .clear-day-btn {
+  font-size: 9px !important;
+  padding: 2px 6px !important;
+}

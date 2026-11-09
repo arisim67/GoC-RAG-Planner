@@ -232,8 +232,8 @@ export function buildModel(srv, mapData) {
         if (d === 0) {
           own[g][0][t.id] = (srv.plan[0] || {})[t.id] === GUILDS[g].id ? 1 : 0;
         } else {
-          // 🚨 THE UI LOCK: If you manually place a guild on a day in the UI,
-          // the math engine freezes it permanently to help the solver.
+          // Towns already filled in on the grid are fixed: the solver keeps them as they are
+          // (this also makes the model smaller and faster to solve).
           const manualLockGid = (srv.plan[d] || {})[t.id];
 
           if (manualLockGid) {
@@ -352,7 +352,7 @@ export function buildModel(srv, mapData) {
     const isBot = i >= Math.floor(N / 2);
     const offset = i * 10;
 
-    // 🚨 THE GREEDY BALANCE PARADIGM 🚨
+    // Greedy balance:
     // The Town Reward is mathematically HIGHER than the Quota Penalty.
     // This forces the solver to aggressively capture every reachable town on the map,
     // while perfectly feeding those towns to the guilds furthest below their targets.

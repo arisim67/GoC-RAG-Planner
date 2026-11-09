@@ -3,7 +3,12 @@
 
 import { activeSrv, save, nextGuildColor, MAX_GUILDS } from './state.js';
 import { renderTabs, renderAll } from './render.js';
+import { showToast } from './ui.js';
+import { openColorPicker } from './color-picker.js';
+import { setBtnLabel } from './icons.js';
+import { recordChange, clearHistory } from './history.js';
 import { getMapList, getMapData } from './maps/index.js';
+import { takeVersion } from './versions.js';
 
 export function updName(v) {
   const s = activeSrv();
@@ -15,6 +20,7 @@ export function updName(v) {
 export function updMode(v) {
   const s = activeSrv();
   if (!s) return;
+  takeVersion(s, 'Before changing the mode');
   s.mode = v;
   const maps = getMapList(v);
   s.mapKey = maps[0].key;
@@ -28,14 +34,17 @@ export function updMode(v) {
     });
   while (s.guilds.length > n) s.guilds.pop();
   resetPlan(s);
+  clearHistory(s);
   save();
   renderAll();
 }
 export function updMap(v) {
   const s = activeSrv();
   if (!s) return;
+  takeVersion(s, 'Before changing the map');
   s.mapKey = v;
   resetPlan(s);
+  clearHistory(s);
   save();
   renderAll();
 }
@@ -72,6 +81,8 @@ function resetPlan(srv) {
 export function clearPlan() {
   const s = activeSrv();
   if (!s) return;
+  takeVersion(s, 'Before Clear Plan');
+  recordChange(s, 'Clear Plan');
   const mapData = getMapData(s.mode, s.mapKey);
   const day0 = { ...(s.plan[0] || {}) };
   s.plan = {};
@@ -82,7 +93,11 @@ export function clearPlan() {
     }
   }
   s.manualEdits = {};
+  // Leftovers from Undo Optimize (now part of Undo) and older versions of the app
   delete s.undoPlan;
+  delete s.undoBase;
+  delete s.redoPlan;
+  delete s.redoBase;
   save();
   renderAll();
 }
@@ -162,6 +177,8 @@ export function addGuild() {
 export function removeGuild(gid) {
   const s = activeSrv();
   if (!s || s.guilds.length <= 2) return;
+  const removed = s.guilds.find(g => g.id === gid);
+  recordChange(s, `Remove ${removed ? removed.name : 'guild'}`, { guilds: true });
   s.guilds = s.guilds.filter(g => g.id !== gid);
   for (let d = 0; d < 14; d++) for (const k in s.plan[d]) if (s.plan[d][k] === gid) s.plan[d][k] = '';
   save();
@@ -174,6 +191,7 @@ export function onCell(evt) {
   const kid = evt.target.dataset.k,
     day = +evt.target.dataset.d,
     gid = evt.target.value;
+  recordChange(s, `${kid} on day ${day}`);
   if (!s.plan[day]) s.plan[day] = {};
   s.plan[day][kid] = gid;
   save();
@@ -195,10 +213,25 @@ export function cpyMsg(el, d) {
     .catch(() => {});
 }
 
+// Toolbar: copy today's daily message without scrolling down to the cards.
+export function copyTodayMessage(btn) {
+  const card = document.querySelector('.msg-card.is-today');
+  if (!card) return;
+  const done = text => {
+    const before = setBtnLabel(btn, text);
+    setTimeout(() => setBtnLabel(btn, before), 2000);
+  };
+  navigator.clipboard
+    .writeText(card.dataset.msg)
+    .then(() => done('✓ Copied'))
+    .catch(() => window.prompt("Copy today's message:", card.dataset.msg));
+}
+
 export function clearDay(d) {
   const s = activeSrv();
   if (!s) return;
   const mapData = getMapData(s.mode, s.mapKey);
+  recordChange(s, `Clear Day ${d}`);
   if (!s.plan[d]) s.plan[d] = {};
   for (const k of mapData.kingdoms) s.plan[d][k.id] = '';
   // Clear manual edit locks for this day
@@ -210,6 +243,8 @@ export function clearDay(d) {
 }
 
 export function updGuildLv3(gid, value) {
+  const s = activeSrv();
+  if (!s) return;
   const g = s.guilds.find(x => x.id === gid);
   if (!g) return;
   const active = document.activeElement;
@@ -246,6 +281,74 @@ export function updGuildLv2(gid, value) {
       input.focus();
       if (selStart !== null && selEnd !== null) input.setSelectionRange(selStart, selEnd);
     }
+  }
+}
+
+// ── Guild colours ──
+const hexToRgb = hex => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
+// Rough perceived difference between two colours (0 = identical). Weighted RGB distance.
+const colourDistance = (a, b) => {
+  const [r1, g1, b1] = a,
+    [r2, g2, b2] = b;
+  const rm = (r1 + r2) / 2;
+  return Math.sqrt((2 + rm / 256) * (r1 - r2) ** 2 + 4 * (g1 - g2) ** 2 + (2 + (255 - rm) / 256) * (b1 - b2) ** 2);
+};
+// Relative luminance (WCAG), used to warn about colours too dark to read on the dark background.
+const luminance = ([r, g, b]) => {
+  const ch = v => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
+};
+
+// While choosing: recolour this guild's dot only (the rest of the page updates once a colour is picked).
+export function previewGuildColor(gid, color) {
+  const dot = document.querySelector(`.guild-color[data-id="${gid}"]`);
+  if (dot) dot.style.setProperty('--guild-color', color);
+}
+
+// Open the Palette / Custom picker for a guild's dot.
+export function pickGuildColor(dot) {
+  const s = activeSrv();
+  if (!s || s.isViewOnly) return;
+  const guild = s.guilds.find(x => x.id === dot.dataset.id);
+  if (!guild) return;
+  openColorPicker({
+    anchor: dot,
+    guild,
+    others: s.guilds.filter(x => x.id !== guild.id),
+    onPreview: c => previewGuildColor(guild.id, c),
+    onPick: c => updGuildColor(guild.id, c),
+  });
+}
+
+// A colour was picked: save it everywhere, and warn about hard-to-tell-apart choices.
+export function updGuildColor(gid, color) {
+  const s = activeSrv();
+  if (!s) return;
+  const g = s.guilds.find(x => x.id === gid);
+  const rgb = hexToRgb(color);
+  if (!g || !rgb) return;
+  g.color = color.toLowerCase();
+  save();
+  renderAll();
+
+  const close = s.guilds.find(o => o.id !== gid && hexToRgb(o.color) && colourDistance(rgb, hexToRgb(o.color)) < 90);
+  if (close) {
+    showToast(
+      `That colour looks a lot like ${close.name}'s, which may be hard to tell apart in the grid.`,
+      false,
+      6000,
+    );
+  } else if (luminance(rgb) < 0.12) {
+    showToast(
+      'That colour is quite dark, so guild names in it may be hard to read on the dark background.',
+      false,
+      6000,
+    );
   }
 }
 

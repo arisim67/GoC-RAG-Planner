@@ -34,7 +34,13 @@
     <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png" />
 
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/header.css" />
+    <link rel="stylesheet" href="css/setup.css" />
+    <link rel="stylesheet" href="css/tables.css" />
+    <link rel="stylesheet" href="css/messages.css" />
+    <link rel="stylesheet" href="css/dialogs.css" />
+    <link rel="stylesheet" href="css/responsive.css" />
     <link rel="stylesheet" href="css/tour.css" />
   </head>
   <body>
@@ -62,7 +68,7 @@
             /></svg
           ><span>User Guide</span></a
         >
-        <button type="button" class="tour-launch" onclick="startTour()">
+        <button type="button" class="tour-launch" data-action="tutorial">
           <svg
             class="icon"
             viewBox="0 0 24 24"
@@ -120,19 +126,12 @@
       </p>
     </div>
 
-    <!-- ADD IMPORT MODAL -->
+    <!-- Import dialog -->
     <div class="modal-bg" id="modal-import">
       <div class="modal modal-wide">
         <h3>Bulk Import Data</h3>
-        <div
-          id="import-dropzone"
-          class="import-dropzone"
-          ondragover="handleDragOver(event)"
-          ondragleave="handleDragLeave(event)"
-          ondrop="handleDrop(event)"
-          onclick="document.getElementById('import-file').click()"
-        >
-          <input type="file" id="import-file" accept=".json" hidden onchange="handleFileSelect(event)" />
+        <div id="import-dropzone" class="import-dropzone" data-action="pick-import-file">
+          <input type="file" id="import-file" accept=".json" hidden data-change="import-file" />
           <div class="dropzone-content">
             <div class="dropzone-icon">
               <svg
@@ -162,10 +161,7 @@
         <div class="row import-options">
           <div class="fg">
             <label>Import Mode</label>
-            <select
-              id="import-mode"
-              onchange="document.getElementById('import-day-container').style.opacity = this.value === 'guilds' ? '0.3' : '1'; document.getElementById('import-day').disabled = this.value === 'guilds';"
-            >
+            <select id="import-mode" data-change="import-mode">
               <option value="day">Import Daily Map Data</option>
               <option value="guilds">Import Guild List (Setup)</option>
             </select>
@@ -182,13 +178,13 @@
           everything — guilds, plan, settings.
         </div>
         <div class="modal-row modal-row-spaced">
-          <button class="btn" onclick="document.getElementById('modal-import').classList.remove('open')">Cancel</button>
-          <button class="btn-accent" onclick="processImport()">Import Data</button>
+          <button class="btn" data-action="close-modal" data-modal="modal-import">Cancel</button>
+          <button class="btn-accent" data-action="process-import">Import Data</button>
         </div>
       </div>
     </div>
 
-    <!-- ADD SERVER MODAL -->
+    <!-- Add Server dialog -->
     <div class="modal-bg" id="modal-add">
       <div class="modal">
         <h3>Add Server</h3>
@@ -198,7 +194,7 @@
         </div>
         <div class="fg modal-field">
           <label>Mode</label>
-          <select class="input-full" id="ns-mode" onchange="onAddModalModeChange()">
+          <select class="input-full" id="ns-mode" data-change="add-modal-mode">
             <option value="ragnarok">Ragnarok</option>
             <option value="goc">Game of Claws</option>
           </select>
@@ -210,7 +206,7 @@
         <div class="split modal-field">
           <div class="fg">
             <label>Start Date (Day 1)</label>
-            <input class="input-full" type="date" id="ns-start" onchange="onAddModalStartChange()" />
+            <input class="input-full" type="date" id="ns-start" data-change="add-modal-start" />
           </div>
           <div class="fg">
             <label>End Date</label>
@@ -218,8 +214,8 @@
           </div>
         </div>
         <div class="modal-row">
-          <button class="btn" onclick="closeModal('modal-add')">Cancel</button>
-          <button class="btn-accent" onclick="confirmAdd()">Create</button>
+          <button class="btn" data-action="close-modal" data-modal="modal-add">Cancel</button>
+          <button class="btn-accent" data-action="confirm-add">Create</button>
         </div>
       </div>
     </div>
@@ -231,15 +227,15 @@
         <p class="confirm-msg" id="confirm-delete-msg"></p>
         <p class="confirm-hint">This cannot be undone.</p>
         <div class="modal-row modal-row-center">
-          <button class="btn" onclick="closeModal('modal-confirm-delete')">Cancel</button>
-          <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDeleteSrv()">Delete</button>
+          <button class="btn" data-action="close-modal" data-modal="modal-confirm-delete">Cancel</button>
+          <button class="btn btn-danger" id="confirm-delete-btn" data-action="confirm-delete">Delete</button>
         </div>
       </div>
     </div>
 
     <!-- TAB CONTEXT MENU -->
     <div id="tab-ctx">
-      <div class="ctx-item" id="ctx-rename" onclick="ctxRename()">
+      <div class="ctx-item" id="ctx-rename" data-action="ctx-rename">
         <span class="ctx-icon"
           ><svg
             class="icon"
@@ -258,7 +254,7 @@
         ></span>
         Rename
       </div>
-      <div class="ctx-item" id="ctx-duplicate" onclick="ctxDuplicate()">
+      <div class="ctx-item" id="ctx-duplicate" data-action="ctx-duplicate">
         <span class="ctx-icon"
           ><svg
             class="icon"
@@ -276,7 +272,7 @@
         Duplicate
       </div>
       <div class="ctx-sep"></div>
-      <div class="ctx-item ctx-danger" id="ctx-delete" onclick="ctxDelete()">
+      <div class="ctx-item ctx-danger" id="ctx-delete" data-action="ctx-delete">
         <span class="ctx-icon"
           ><svg
             class="icon"

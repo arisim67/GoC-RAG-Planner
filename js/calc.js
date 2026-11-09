@@ -81,7 +81,7 @@ export function validateAdj(srv) {
     for (const [kid, gid] of Object.entries(srv.plan[d] || {})) {
       if (!gid) continue;
 
-      // 🚨 GHOST TOWN PROTECTION
+      // Skip towns that aren't on this map (e.g. left over after the map was changed)
       const kObj = mapData.kingdoms.find(x => x.id === kid);
       if (!kObj) continue;
 
@@ -130,7 +130,7 @@ export function validateAdj(srv) {
 
 export function calcDec(srv) {
   const mapData = getMapData(srv.mode, srv.mapKey);
-  const validKids = new Set(mapData.kingdoms.map(k => k.id)); // 🚨 Get list of valid towns
+  const validKids = new Set(mapData.kingdoms.map(k => k.id));
   const days = numDays(srv);
   const dec = {},
     give = {};
@@ -142,7 +142,7 @@ export function calcDec(srv) {
   for (let d = 1; d <= days; d++) {
     const prev = srv.plan[d - 1] || {};
     for (const [kid, gid] of Object.entries(srv.plan[d] || {})) {
-      if (!gid || !validKids.has(kid)) continue; // 🚨 Skip ghost towns
+      if (!gid || !validKids.has(kid)) continue; // skip towns not on this map
 
       const prevOwner = prev[kid] || '';
       if (prevOwner !== gid) {

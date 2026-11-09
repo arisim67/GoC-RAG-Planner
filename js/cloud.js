@@ -8,6 +8,7 @@ import { renderAll } from './render.js';
 import { renderPlanPreview, previewText } from './preview.js';
 import { setBtnLabel } from './icons.js';
 import { isOldSite, newSiteUrl } from './move.js';
+import { takeVersion } from './versions.js';
 
 const WORKER_URL = CLOUD_SYNC_URL; // set in js/config.js
 
@@ -32,10 +33,10 @@ export async function publishToCloud() {
     });
 
     if (response.ok) {
-      srv.cloudSynced = true; // 🚨 NEW
-      save(); // 🚨 NEW
+      srv.cloudSynced = true; // shows "Cloud Linked" in the header
+      save();
 
-      // 🚨 Fix 1: Force the creator's URL bar to update immediately
+      // Put the plan's link in the address bar right away, so a refresh reopens the shared copy
       window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + srv.id);
 
       // Built from wherever the app is opened; from the old address, links point to the new site.
@@ -95,6 +96,7 @@ export async function syncFromCloud() {
     const existingIdx = state.servers.findIndex(s => s.id === sharedSrv.id);
     if (existingIdx >= 0) {
       // Preserve the view-only lock if a viewer syncs to get your latest changes
+      takeVersion(state.servers[existingIdx], 'Before syncing from the cloud');
       sharedSrv.isViewOnly = state.servers[existingIdx].isViewOnly;
       state.servers[existingIdx] = sharedSrv;
     }
@@ -127,6 +129,7 @@ export async function checkUrlForSharedPlan() {
     const existingIdx = state.servers.findIndex(s => s.id === sharedSrv.id);
     if (existingIdx >= 0) {
       // The creator already has it in local storage, so keep it editable
+      takeVersion(state.servers[existingIdx], 'Before opening the shared link');
       sharedSrv.isViewOnly = state.servers[existingIdx].isViewOnly;
       state.servers[existingIdx] = sharedSrv;
     } else {

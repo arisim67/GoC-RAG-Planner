@@ -15,14 +15,14 @@ export async function takeScreenshots(e) {
     if (document.fonts && document.fonts.ready) {
       await document.fonts.ready;
     }
-    // Pins screenshot-only sizing (see style.css) so phone and desktop captures match
+    // Pins screenshot-only sizing (see css/responsive.css) so phone and desktop captures match
     document.documentElement.classList.add('capturing');
 
     const gridEl = document.getElementById('capture-grid');
     const statsEl = document.getElementById('capture-stats');
     const mainEl = document.getElementById('main-content');
 
-    // 🚨 FIX 1: Scroll to the top-left to prevent iOS/Android coordinate shifting bugs
+    // Scroll to the top-left first: on iOS and Android, capturing while scrolled shifts the image
     const origScrollX = window.scrollX;
     const origScrollY = window.scrollY;
     window.scrollTo(0, 0);
@@ -61,7 +61,7 @@ export async function takeScreenshots(e) {
         c.style.boxShadow = 'none';
       });
 
-      // 🚨 FIX 2: Pin the planning grid and the Total Occupation table to their natural width while
+      // Pin the planning grid and the Total Occupation table to their natural width while
       // the container is measured. (Occupation uses table-layout:fixed, and a fixed-layout table at
       // width:100% inside a shrink-to-fit box claims a near-infinite width, which breaks the capture.)
       const pinned = el.querySelectorAll('table.ptbl, table.otbl');
@@ -76,7 +76,7 @@ export async function takeScreenshots(e) {
       originalStyles.push({ el: el, prop: 'maxWidth', val: el.style.maxWidth });
       originalStyles.push({ el: el, prop: 'display', val: el.style.display });
 
-      // 🚨 FIX 3: Shrink-wrap the container exactly to the table's natural bounds
+      // Shrink-wrap the container exactly to the table's natural bounds
       el.style.display = 'inline-block';
       el.style.width = 'max-content';
       el.style.maxWidth = 'none';
@@ -120,7 +120,7 @@ export async function takeScreenshots(e) {
     const baseScale = isMobile ? 1.5 : 2;
     const fitScale = (w, h) => (isMobile ? Math.min(baseScale, Math.sqrt(16000000 / (w * h))) : baseScale);
 
-    // 🚨 FIX 4: Explicitly pass the measured bounds to the camera
+    // Pass the measured bounds to html2canvas explicitly
     const canvasGrid = await html2canvas(gridEl, {
       backgroundColor: '#191425',
       scale: fitScale(gridW, gridH),

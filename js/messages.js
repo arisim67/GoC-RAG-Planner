@@ -3,12 +3,17 @@
 // and writes it out using a message template. The template is saved once per browser and used for
 // every server. Each guild can also have an optional "name in messages" (for emoji and decorations)
 // that only appears in messages, not in the tables.
+//
+// Templates can be shared as a link: everything is packed into the part after "#tpl=", which
+// browsers never send to any server. Opening the link shows the template in the editor to try out
+// before saving it. The link (or the code after "#tpl=") can also be pasted into the editor.
 
 import { activeSrv, numDays, save } from './state.js';
 import { esc, dateLabelShort, showToast } from './ui.js';
 import { calcDec } from './calc.js';
 import { getMapData } from './maps/index.js';
 import { renderDiscord } from './discord-md.js';
+import { isOldSite, newSiteUrl } from './move.js';
 
 const TEMPLATE_KEY = 'goc_msg_template';
 
@@ -64,6 +69,59 @@ function setTemplate(t) {
   } catch (_) {
     showToast('Could not save the template in this browser.', true);
   }
+}
+
+// ── Sharing a template ────────────────────────────────────────────
+const SHARE_PREFIX = '#tpl=';
+const MAX_PART = 4000; // characters per box; real templates are far shorter
+
+const sameTemplate = (a, b) => a.header === b.header && a.guild === b.guild && a.empty === b.empty;
+
+function encodeTemplate(t) {
+  const bytes = new TextEncoder().encode(JSON.stringify({ h: t.header, g: t.guild, e: t.empty }));
+  let bin = '';
+  bytes.forEach(b => {
+    bin += String.fromCharCode(b);
+  });
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// Accepts a whole template link, or just the code after "#tpl=". Returns the template, or null.
+export function decodeTemplate(text) {
+  const str = String(text || '').trim();
+  const m = /#tpl=([A-Za-z0-9_-]+)/.exec(str) || /^([A-Za-z0-9_-]+)$/.exec(str);
+  if (!m) return null;
+  try {
+    const bin = atob(m[1].replace(/-/g, '+').replace(/_/g, '/'));
+    const d = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))));
+    const ok = v => typeof v === 'string' && v.length <= MAX_PART;
+    if (!d || !ok(d.h) || !ok(d.g) || !ok(d.e || '')) return null;
+    return { header: d.h, guild: d.g, empty: d.e || '' };
+  } catch (_) {
+    return null;
+  }
+}
+
+export function templateLink(t) {
+  const base = isOldSite() ? newSiteUrl() : location.origin + location.pathname;
+  return base + SHARE_PREFIX + encodeTemplate(t);
+}
+
+export const hasSharedTemplate = () => location.hash.startsWith(SHARE_PREFIX);
+
+// On page load: a template link opens the template in the editor, to check before saving it.
+export function receiveSharedTemplate() {
+  if (!hasSharedTemplate()) return;
+  const t = decodeTemplate(location.hash);
+  history.replaceState(null, '', location.pathname + location.search);
+  if (!t) return showToast('That message template link is broken or incomplete.', true);
+  if (sameTemplate(t, getTemplate())) return showToast('You already use this message template.', false, 4000);
+  if (!activeSrv()) {
+    setTemplate(t);
+    showToast('✓ Shared message template saved. Your daily messages will use it.', false, 5000);
+    return;
+  }
+  openTemplateEditor(t);
 }
 
 // ── What each guild does each day ─────────────────────────────────
@@ -194,6 +252,11 @@ function chips(fields) {
 }
 
 export function openMsgTemplate() {
+  openTemplateEditor();
+}
+
+// incoming: a template someone shared, shown in place of the current one until it's saved.
+function openTemplateEditor(incoming = null) {
   const srv = activeSrv();
   if (!srv) return;
   const plans = dailyPlans(srv);
@@ -202,13 +265,19 @@ export function openMsgTemplate() {
     0,
     plans.findIndex(p => p.guilds.length > 0),
   );
-  const t = getTemplate();
+  const t = incoming || getTemplate();
 
   const bg = document.createElement('div');
   bg.className = 'modal-bg open';
   bg.innerHTML = `
     <div class="modal modal-tpl" role="dialog" aria-modal="true" aria-labelledby="tpl-title">
-      <h3 id="tpl-title">Daily Message Template</h3>
+      <h3 id="tpl-title">${incoming ? 'Shared Message Template' : 'Daily Message Template'}</h3>
+      ${
+        incoming
+          ? `<p class="tpl-shared">Someone shared this template with you. Check the preview, then <b>Save</b> to use it
+        for your daily messages, or <b>Cancel</b> to keep yours.</p>`
+          : ''
+      }
       <p class="tpl-help">Used for every server in this browser. Click a <b>{placeholder}</b> to add it where the cursor is.
         Leave an empty line at the end of the guild part to space guilds apart.</p>
       <div class="tpl-cols">
@@ -223,6 +292,13 @@ export function openMsgTemplate() {
 
           <label class="tpl-label" for="tpl-empty">When there's nothing (no declares, giveaways or def)</label>
           <input id="tpl-empty" class="tpl-input" type="text" spellcheck="false">
+
+          <details class="tpl-import">
+            <summary>Use a shared template</summary>
+            <p class="tpl-help">Paste a template link (or its code) that someone shared. It fills in the boxes above; <b>Save</b> to keep it.</p>
+            <input id="tpl-code" class="tpl-input" type="text" spellcheck="false" autocomplete="off" placeholder="https://…#tpl=…">
+            <p class="tpl-code-note" aria-live="polite"></p>
+          </details>
 
           <details class="tpl-names"${srv.guilds.some(g => g.msgName) ? ' open' : ''}>
             <summary>Guild names in messages <span class="tpl-sub">(this server only, optional)</span></summary>
@@ -253,6 +329,7 @@ export function openMsgTemplate() {
       </div>
       <div class="modal-row tpl-actions">
         <button type="button" class="btn" data-a="reset">Reset to default</button>
+        <button type="button" class="btn" data-a="share" title="Copy a link to this template">Share</button>
         <span class="tpl-spacer"></span>
         <button type="button" class="btn" data-a="cancel">Cancel</button>
         <button type="button" class="btn-accent" data-a="save">Save</button>
@@ -333,6 +410,33 @@ export function openMsgTemplate() {
     update();
   });
   $('[data-a="cancel"]').addEventListener('click', close);
+
+  // Share: a link to the template as it is in the boxes now (guild names in messages stay private).
+  $('[data-a="share"]').addEventListener('click', () => {
+    const link = templateLink(current());
+    const done = () =>
+      showToast('✓ Template link copied. Anyone who opens it can try your template and save it.', false, 4000);
+    if (navigator.clipboard)
+      navigator.clipboard.writeText(link).then(done, () => window.prompt('Copy this link:', link));
+    else window.prompt('Copy this link:', link);
+  });
+
+  // Pasting a shared link or code fills in the boxes.
+  const code = $('#tpl-code'),
+    note = $('.tpl-code-note');
+  code.addEventListener('input', () => {
+    const shared = decodeTemplate(code.value);
+    note.classList.toggle('bad', !shared && !!code.value.trim());
+    if (!shared) {
+      note.textContent = code.value.trim() ? "That doesn't look like a template link." : '';
+      return;
+    }
+    header.value = shared.header;
+    guild.value = shared.guild;
+    empty.value = shared.empty;
+    note.textContent = '✓ Loaded. Check the preview, then Save to use it.';
+    update();
+  });
   $('[data-a="save"]').addEventListener('click', () => {
     setTemplate(current());
     const names = msgNames();

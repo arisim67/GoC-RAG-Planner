@@ -58,20 +58,35 @@ Commit messages are short and say what changed, in the imperative:
  
 ```
 ├── index.html              App page
-├── css/                    Styles (style.css, tour.css)
+├── css/                    Styles, one file per part of the page:
+│   ├── base.css            Colours, fonts, layout, buttons and form fields
+│   ├── header.css          Header, server tabs, jump bar, footer
+│   ├── setup.css           Server settings, toolbar, guild list
+│   ├── tables.css          Planning grid, scores and stats tables
+│   ├── messages.css        Daily messages and the template editor
+│   ├── dialogs.css         Dialogs, toasts and the "We've moved" banner
+│   ├── responsive.css      Phone layout and screenshot mode (loaded last)
+│   └── tour.css            Interactive tutorial
 ├── js/
-│   ├── app.js              Entry point: startup, and the functions the HTML buttons call
+│   ├── app.js              Entry point: startup, and what each button and field does
+│   ├── actions.js          Connects buttons and fields to their functions (data-action etc.)
 │   ├── state.js            Servers, active server, guild colours, saving/loading
 │   ├── calc.js             Scores, occupation, declares, plan validation
 │   ├── render.js           Builds the page (tabs, settings, guilds, grid, stats, messages)
 │   ├── messages.js         Daily messages and the message template editor
 │   ├── icons.js            Line icons used on buttons (from Lucide)
+│   ├── color-picker.js     The guild colour pop-up (Palette and Custom tabs)
+│   ├── history.js          Undo and redo for changes to the plan
+│   ├── versions.js         Version history: saved copies of each server, and restoring them
+│   ├── spotlight.js        Guild spotlight: highlight one guild's towns
+│   ├── collapse.js         Folding sections down to their titles
 │   ├── discord-md.js       Shows message text the way Discord displays it (template preview)
 │   ├── handlers.js         Edits made in the page (settings, guilds, grid cells)
 │   ├── servers.js          Server tabs: add, switch, rename, duplicate, delete
 │   ├── import-export.js    Import modal and Export Server
 │   ├── optimize.js         Auto-Optimize (runs the solver in a Web Worker)
 │   ├── grid-fill.js        Select cells and drag to copy across days
+│   ├── grid-keys.js        Editing the Planning Grid from the keyboard
 │   ├── screenshots.js      Screenshots
 │   ├── cloud.js            Save to Cloud / Sync and shared plan links
 │   ├── preview.js          Draws the link-preview image for a shared plan

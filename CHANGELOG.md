@@ -11,7 +11,19 @@ The app is updated continuously rather than in numbered releases, so entries are
 - Save to Cloud links made from the old address point to the new site.
 - **A cleaner look.** The server toolbar groups its buttons, with Auto-Optimize as the main action and Clear Plan set apart; buttons use line icons instead of emoji; the guild list has labelled columns (Points, Castle, Dorms, Towns); and a bar at the top jumps to each part of the page.
 - The project now has automated tests that run on every update, and issue forms for bug reports and suggestions.
+- **Guild spotlight.** Click a guild above the grid (or its Final Scores card) to outline its towns across every day and fade the rest, with a summary of its points and castle, dorm and town days. Works on view-only shared plans too.
+- **Today at a glance.** While an event is running, today's column is highlighted in the grid and the Declares table, the grid opens scrolled to it, today's message card is highlighted, and **Copy Today's Message** in the toolbar copies it in one click.
+- **Undo and Redo for the grid.** Buttons above the Planning Grid, plus Ctrl+Z / Ctrl+Y (⌘Z / ⌘⇧Z on a Mac), step back and forward through changes to the plan: cells, copying across cells, Clear Day, Clear Plan, importing a day, removing a guild and Auto-Optimize. This replaces the separate Undo Optimize button; an optimize can still be undone after reloading the page, as long as the plan hasn't been changed since.
+- **Choose each guild's colour.** Click the coloured dot next to a guild's name: pick from a palette that suits the planner, or use any colour on the Custom tab. The planner warns you if a colour is very close to another guild's or too dark to read.
+- **Fold away sections you don't need.** Click a section's title (or the arrow beside it) to fold it down to just the title, and again to open it. Folded sections are remembered in your browser for every server, open when you jump to them from the bar of section links, and are still included in Screenshots.
+- **Share your message template.** **Share** in the template editor copies a link to your template. Whoever opens it sees it previewed with their own plan and can save it, or paste the link under **Use a shared template**.
+- **Edit the grid from the keyboard.** Arrow keys move between cells (Shift+Arrow selects a block), typing the start of a guild's name picks it, Delete empties cells, and Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste a block of cells.
+- **Version history.** **History** in the toolbar keeps the last 10 saved copies of each server in your browser, taken every 15 minutes while you edit and just before anything big (Clear Plan, Auto-Optimize, imports, Sync from Cloud, changing mode or map, deleting a server). Restore any copy in one click, including servers you deleted.
 - The user guide and tutorial now explain link previews, with an example of the card a shared plan produces.
+
+### Fixed
+- On narrow screens, the bar of section links (Setup, Guilds, Grid…) no longer loses its bottom border at the top of the page.
+- **The tutorial's welcome card has a Skip tour button**, so you can close it without picking one of the two ways through.
 
 ## 2026-11-09
 
@@ -25,6 +37,7 @@ The app is updated continuously rather than in numbered releases, so entries are
 
 ### Fixed
 - **Export Server now keeps Exclude Guild**, so it survives Export and Import.
+- **Castle days already held now save.** Typing in a guild's Castle (Lv3) box did nothing (the page hit an error), so plans started mid-event ignored castle days already held.
 
 ## 2026-11-08
 

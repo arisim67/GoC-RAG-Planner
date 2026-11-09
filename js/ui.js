@@ -35,6 +35,18 @@ export function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// Which plan day (1 = the start date) is today, by this device's calendar date. null if the event
+// hasn't started, is over, or has no start date.
+export function todayDay(srv, days) {
+  if (!srv || !srv.startDate) return null;
+  const [yy, mm, dd] = srv.startDate.split('-').map(Number);
+  const start = new Date(yy, mm - 1, dd);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const d = Math.round((today - start) / 86400000) + 1;
+  return d >= 1 && d <= days ? d : null;
+}
+
 export function dateLabel(srv, d) {
   if (!srv.startDate) {
     return d === 0 ? 'Day 0' : `Day ${d}`;

@@ -5,6 +5,7 @@ import { state, getSrv, save, mkSrv, activeSrv } from './state.js';
 import { closeModal } from './ui.js';
 import { renderTabs, renderAll } from './render.js';
 import { getMapList, getMapData } from './maps/index.js';
+import { takeVersion } from './versions.js';
 
 // ── TAB CONTEXT MENU ─────────────────────────────────────────────────────────
 
@@ -188,6 +189,10 @@ export function confirmDeleteSrv() {
   const id = _deleteSrvId;
   _deleteSrvId = null;
   if (!id) return;
+  takeVersion(
+    state.servers.find(s => s.id === id),
+    'Before deleting',
+  );
   state.servers = state.servers.filter(s => s.id !== id);
   if (state.activeId === id) state.activeId = state.servers[0]?.id || null;
   save();
@@ -196,7 +201,7 @@ export function confirmDeleteSrv() {
 }
 
 // Gives viewers a way to create their own editable sandbox copy
-window.duplicateCurrentPlan = function () {
+export function duplicateCurrentPlan() {
   const src = activeSrv();
   if (!src) return;
   const copy = JSON.parse(JSON.stringify(src));
@@ -209,7 +214,7 @@ window.duplicateCurrentPlan = function () {
   save();
   renderTabs();
   renderAll();
-};
+}
 
 // Temporary server the tutorial points at when there is nothing else to show.
 // It is flagged isTutorial so load() discards it if the page is closed mid-tour.
