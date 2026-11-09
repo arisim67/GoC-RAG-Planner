@@ -354,8 +354,10 @@ textarea {
 }
 
 .guild-list {
-  display: flex;
-  flex-direction: column;
+  /* One shared column: when the list scrolls sideways, every row (and the header) is as wide as the
+     widest one, so the Points/Castle/Dorms/Towns columns stay lined up. */
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr);
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 6px; /* Adds space so the scrollbar doesn't clip the bottom row */

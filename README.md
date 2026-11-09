@@ -1,6 +1,9 @@
 # GoC / Ragnarok Planner
 
+[![Site](https://img.shields.io/website?url=https%3A%2F%2Fgoc-rag-planner.pages.dev&label=site&up_message=online)](https://goc-rag-planner.pages.dev/)
 [![CI](https://github.com/arisim67/GoC-RAG-Planner/actions/workflows/ci.yml/badge.svg)](https://github.com/arisim67/GoC-RAG-Planner/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Code style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io)
 
 A browser-based planning tool for **Tokyo Debunker** guild events: **Game of Claws (GoC)** and **Ragnarok**.
 Server leads use it to lay out who takes which town on which day, check that the plan is legal,
