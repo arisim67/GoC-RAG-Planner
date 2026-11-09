@@ -9,6 +9,8 @@ The app is updated continuously rather than in numbered releases, so entries are
 - **The planner has moved to [goc-rag-planner.pages.dev](https://goc-rag-planner.pages.dev/).** The old address (arisim67.github.io) will be turned off on January 1, 2027. Until then it shows a banner with **Move my servers**, which brings your saved servers (and whether you've seen the tutorial) to the new site without uploading them. Shared plan links made on the old address open on the new site automatically.
 - **Shared plan links now show the plan itself** in Discord and other apps: each guild's final score and total occupation.
 - Save to Cloud links made from the old address point to the new site.
+- **A cleaner look.** The server toolbar groups its buttons, with Auto-Optimize as the main action and Clear Plan set apart; buttons use line icons instead of emoji; the guild list has labelled columns (Points, Castle, Dorms, Towns); and a bar at the top jumps to each part of the page.
+- The project now has automated tests that run on every update, and issue forms for bug reports and suggestions.
 - The user guide and tutorial now explain link previews, with an example of the card a shared plan produces.
 
 ## 2026-11-08

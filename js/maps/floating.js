@@ -3,14 +3,14 @@ export const floatingMap = {
   name: 'Floating City',
   mode: 'ragnarok',
   kingdoms: [
-    { id: 'Darkwick',   type: 'lv3', adj: ['Dionysia', 'Vagastrom', 'Hotarubi', 'Obscuary'] },
-    { id: 'Vagastrom',  type: 'lv2', adj: ['B', 'C', 'G', 'Frostheim', 'Darkwick'] },
-    { id: 'Hotarubi',   type: 'lv2', adj: ['Darkwick', 'J', 'N'] },
-    { id: 'Obscuary',   type: 'lv2', adj: ['Darkwick', 'N', 'O', 'L'] },
-    { id: 'Dionysia',   type: 'lv2', adj: ['B', 'Darkwick', 'L', 'H'] },
-    { id: 'Frostheim',  type: 'lv2', adj: ['D', 'G', 'Vagastrom', 'J'] },
+    { id: 'Darkwick', type: 'lv3', adj: ['Dionysia', 'Vagastrom', 'Hotarubi', 'Obscuary'] },
+    { id: 'Vagastrom', type: 'lv2', adj: ['B', 'C', 'G', 'Frostheim', 'Darkwick'] },
+    { id: 'Hotarubi', type: 'lv2', adj: ['Darkwick', 'J', 'N'] },
+    { id: 'Obscuary', type: 'lv2', adj: ['Darkwick', 'N', 'O', 'L'] },
+    { id: 'Dionysia', type: 'lv2', adj: ['B', 'Darkwick', 'L', 'H'] },
+    { id: 'Frostheim', type: 'lv2', adj: ['D', 'G', 'Vagastrom', 'J'] },
     { id: 'Jabberwock', type: 'lv2', adj: ['M', 'N', 'R'] },
-    { id: 'Mortkranken',type: 'lv2', adj: ['K', 'L', 'O', 'Q'] },
+    { id: 'Mortkranken', type: 'lv2', adj: ['K', 'L', 'O', 'Q'] },
     { id: 'A', type: 'lv1', adj: ['E', 'F', 'B'] },
     { id: 'B', type: 'lv1', adj: ['A', 'F', 'Dionysia', 'Vagastrom', 'C'] },
     { id: 'C', type: 'lv1', adj: ['B', 'Vagastrom', 'D'] },
@@ -27,6 +27,6 @@ export const floatingMap = {
     { id: 'O', type: 'lv1', adj: ['Mortkranken', 'Obscuary', 'P'] },
     { id: 'P', type: 'lv1', adj: ['O', 'N', 'R', 'Q'] },
     { id: 'Q', type: 'lv1', adj: ['Mortkranken', 'P', 'R'] },
-    { id: 'R', type: 'lv1', adj: ['Q', 'P', 'Jabberwock'] }
-  ]
+    { id: 'R', type: 'lv1', adj: ['Q', 'P', 'Jabberwock'] },
+  ],
 };

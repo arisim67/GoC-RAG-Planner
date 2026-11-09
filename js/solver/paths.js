@@ -18,7 +18,7 @@ export function extractPathCells(plan, srv, mapData, FULL_DAYS, rng = null) {
     for (let d = 0; d <= FULL_DAYS; d++) {
       const towns = ks.filter(k => (plan[d] || {})[k.id] === guild.id);
       held[d] = new Set(towns.map(k => k.id));
-      req[d] = new Set(towns.filter(k => k.type !== 'lv1').map(k => k.id));   // Darkwick + dorms: always fixed
+      req[d] = new Set(towns.filter(k => k.type !== 'lv1').map(k => k.id)); // Darkwick + dorms: always fixed
     }
 
     // Walk backwards: every required holding needs either to persist from yesterday, or a held neighbour yesterday.
@@ -26,25 +26,39 @@ export function extractPathCells(plan, srv, mapData, FULL_DAYS, rng = null) {
       const prev = held[d - 1];
       for (const x of [...req[d]]) {
         const k = byId[x];
-        if (prev.has(x)) { req[d - 1].add(x); continue; }          // already held yesterday: keep holding it
-        if (k.type === 'lv1' && prev.size === 0) continue;         // entering the map from nothing: no path needed
+        if (prev.has(x)) {
+          req[d - 1].add(x);
+          continue;
+        } // already held yesterday: keep holding it
+        if (k.type === 'lv1' && prev.size === 0) continue; // entering the map from nothing: no path needed
         const cands = k.adj.filter(n => prev.has(n));
-        if (cands.length === 0) continue;                          // not expected in a legal plan
-        const choose = (arr) => (rng ? arr[Math.floor(rng() * arr.length)] : arr[0]);
-        const reused = cands.filter(n => req[d - 1].has(n));       // reuse a town we already need
-        const dorms = cands.filter(n => byId[n].type !== 'lv1');   // else prefer a dorm/Darkwick
-        const pick = (rng && rng() < 0.3) ? choose(cands)          // (sometimes explore another support)
-                   : reused.length ? choose(reused)
-                   : dorms.length ? choose(dorms)
-                   : choose(cands);
+        if (cands.length === 0) continue; // not expected in a legal plan
+        const choose = arr => (rng ? arr[Math.floor(rng() * arr.length)] : arr[0]);
+        const reused = cands.filter(n => req[d - 1].has(n)); // reuse a town we already need
+        const dorms = cands.filter(n => byId[n].type !== 'lv1'); // else prefer a dorm/Darkwick
+        const pick =
+          rng && rng() < 0.3
+            ? choose(cands) // (sometimes explore another support)
+            : reused.length
+              ? choose(reused)
+              : dorms.length
+                ? choose(dorms)
+                : choose(cands);
         req[d - 1].add(pick);
 
-        if (x === 'Darkwick') {                                    // needs 1 dorm, or 2 lv1 towns, held the day before
+        if (x === 'Darkwick') {
+          // needs 1 dorm, or 2 lv1 towns, held the day before
           const hasDorm = [...prev].some(n => byId[n].type === 'lv2');
           if (!hasDorm) {
             const lv1s = [...prev].filter(n => byId[n].type === 'lv1');
             let have = lv1s.filter(n => req[d - 1].has(n)).length;
-            for (const n of lv1s) { if (have >= 2) break; if (!req[d - 1].has(n)) { req[d - 1].add(n); have++; } }
+            for (const n of lv1s) {
+              if (have >= 2) break;
+              if (!req[d - 1].has(n)) {
+                req[d - 1].add(n);
+                have++;
+              }
+            }
           }
         }
       }

@@ -11,10 +11,10 @@ function getReachableMatrix(GUILDS, KINGDOMS, DAYS, srv, fromIdx = 0) {
   for (let g = 0; g < GUILDS.length; g++) {
     const gid = GUILDS[g].id;
     reach[g] = [];
-    
+
     reach[g][fromIdx] = {};
     for (const t of KINGDOMS) {
-      reach[g][fromIdx][t.id] = (startDay[t.id] === gid);
+      reach[g][fromIdx][t.id] = startDay[t.id] === gid;
     }
 
     for (let d = fromIdx + 1; d <= DAYS; d++) {
@@ -57,9 +57,12 @@ function getReachableMatrix(GUILDS, KINGDOMS, DAYS, srv, fromIdx = 0) {
 // during a solve that is exactly the days you entered by hand.
 export function getPerfectTargets(srv, mapData, opts = {}) {
   const isGoC = srv.mode === 'goc';
-  const DAYS = (srv.endDate && srv.startDate) 
-    ? Math.max(1, Math.round((new Date(srv.endDate) - new Date(srv.startDate)) / 86400000) + 1)
-    : (isGoC ? 12 : 6);
+  const DAYS =
+    srv.endDate && srv.startDate
+      ? Math.max(1, Math.round((new Date(srv.endDate) - new Date(srv.startDate)) / 86400000) + 1)
+      : isGoC
+        ? 12
+        : 6;
 
   const GUILDS = srv.guilds;
   const KINGDOMS = mapData.kingdoms;
@@ -67,14 +70,16 @@ export function getPerfectTargets(srv, mapData, opts = {}) {
 
   const activeGuilds = GUILDS.filter(g => !g.isExcluded);
   const N = activeGuilds.length;
-  
-  const sortedGuilds = [...activeGuilds].sort((a, b) => 
-    (parseInt(b.basePoints || 0, 10)) - (parseInt(a.basePoints || 0, 10))
+
+  const sortedGuilds = [...activeGuilds].sort(
+    (a, b) => parseInt(b.basePoints || 0, 10) - parseInt(a.basePoints || 0, 10),
   );
 
   const target = {};
   if (N > 0) {
-    let mapLv3 = 0, mapLv2 = 0, mapPts = 0;
+    let mapLv3 = 0,
+      mapLv2 = 0,
+      mapPts = 0;
 
     // A guild that has left keeps the towns it was standing on, and nobody can take them, so those
     // towns are not points anyone can still win: counting them would set everyone a target they
@@ -89,25 +94,38 @@ export function getPerfectTargets(srv, mapData, opts = {}) {
       shut[d] = {};
       for (const t of KINGDOMS) {
         const cell = (srv.plan[d] || {})[t.id];
-        if (cell) held[t.id] = cell;              // explicitly placed, by hand or by an earlier solve
+        if (cell) held[t.id] = cell; // explicitly placed, by hand or by an earlier solve
         shut[d][t.id] = excludedIds.has(held[t.id]);
       }
       for (const t of KINGDOMS) {
         if (shut[d][t.id]) continue;
         let canReach = false;
         for (let g = 0; g < GUILDS.length; g++) {
-          if (GUILDS[g].isExcluded) continue;     // a guild that has left cannot put a town in play
-          if (reach[g][d][t.id]) { canReach = true; break; }
+          if (GUILDS[g].isExcluded) continue; // a guild that has left cannot put a town in play
+          if (reach[g][d][t.id]) {
+            canReach = true;
+            break;
+          }
         }
         if (canReach) {
-          if (t.type === 'lv3') { mapLv3++; mapPts += 3; }
-          if (t.type === 'lv2') { mapLv2++; mapPts += 2; }
-          if (t.type === 'lv1') { mapPts += 1; }
+          if (t.type === 'lv3') {
+            mapLv3++;
+            mapPts += 3;
+          }
+          if (t.type === 'lv2') {
+            mapLv2++;
+            mapPts += 2;
+          }
+          if (t.type === 'lv1') {
+            mapPts += 1;
+          }
         }
       }
     }
 
-    let grandLv3 = mapLv3, grandLv2 = mapLv2, grandPts = mapPts;
+    let grandLv3 = mapLv3,
+      grandLv2 = mapLv2,
+      grandPts = mapPts;
     sortedGuilds.forEach(g => {
       grandLv3 += parseInt(g.baseLv3 || 0, 10);
       grandLv2 += parseInt(g.baseLv2 || 0, 10);
@@ -118,16 +136,21 @@ export function getPerfectTargets(srv, mapData, opts = {}) {
     // What the days already played have handed out. A guild that has held Darkwick twice cannot be
     // given a target of once: the sums then do not add up, and the solver has to leave somebody else
     // with none at all. Seeding the split with these keeps every guild's share reachable.
-    const lockLv3 = {}, lockLv2 = {};
-    for (const g of sortedGuilds) { lockLv3[g.id] = 0; lockLv2[g.id] = 0; }
+    const lockLv3 = {},
+      lockLv2 = {};
+    for (const g of sortedGuilds) {
+      lockLv3[g.id] = 0;
+      lockLv2[g.id] = 0;
+    }
     if (opts.respectLocked) {
-      for (let d = 1; d <= DAYS; d++) for (const t of KINGDOMS) {
-        if (shut[d] && shut[d][t.id]) continue;
-        const who = (srv.plan[d] || {})[t.id];
-        if (!who || lockLv3[who] === undefined) continue;
-        if (t.type === 'lv3') lockLv3[who]++;
-        else if (t.type === 'lv2') lockLv2[who]++;
-      }
+      for (let d = 1; d <= DAYS; d++)
+        for (const t of KINGDOMS) {
+          if (shut[d] && shut[d][t.id]) continue;
+          const who = (srv.plan[d] || {})[t.id];
+          if (!who || lockLv3[who] === undefined) continue;
+          if (t.type === 'lv3') lockLv3[who]++;
+          else if (t.type === 'lv2') lockLv2[who]++;
+        }
     }
 
     // Hand out one at a time to whoever has least so far, later guilds winning ties. With nothing
@@ -135,38 +158,50 @@ export function getPerfectTargets(srv, mapData, opts = {}) {
     // guilds at the bottom - and with days played it respects them instead of contradicting them.
     const shareOut = (total, key, seed, weigh) => {
       let placed = 0;
-      for (const g of sortedGuilds) { target[g.id][key] = seed[g.id]; placed += seed[g.id]; }
+      for (const g of sortedGuilds) {
+        target[g.id][key] = seed[g.id];
+        placed += seed[g.id];
+      }
       for (let i = placed; i < total; i++) {
-        let bestIdx = 0, best = Infinity;
+        let bestIdx = 0,
+          best = Infinity;
         for (let j = 0; j < N; j++) {
           const v = weigh(sortedGuilds[j].id);
-          if (v <= best) { best = v; bestIdx = j; }
+          if (v <= best) {
+            best = v;
+            bestIdx = j;
+          }
         }
         target[sortedGuilds[bestIdx].id][key]++;
       }
     };
     shareOut(grandLv3, 'grandLv3', lockLv3, gid => target[gid].grandLv3);
 
-    for (const g of sortedGuilds) { target[g.id].grandLv2 = lockLv2[g.id]; }
+    for (const g of sortedGuilds) {
+      target[g.id].grandLv2 = lockLv2[g.id];
+    }
     let placedLv2 = sortedGuilds.reduce((a, g) => a + lockLv2[g.id], 0);
     for (let i = placedLv2; i < grandLv2; i++) {
       let bestIdx = 0;
       let minVal = Infinity;
       for (let j = 0; j < N; j++) {
         const gid = sortedGuilds[j].id;
-        const val = (target[gid].grandLv3 * 3) + (target[gid].grandLv2 * 2);
-        if (val < minVal) { minVal = val; bestIdx = j; }
+        const val = target[gid].grandLv3 * 3 + target[gid].grandLv2 * 2;
+        if (val < minVal) {
+          minVal = val;
+          bestIdx = j;
+        }
       }
       target[sortedGuilds[bestIdx].id].grandLv2++;
     }
 
     sortedGuilds.forEach(g => {
-      target[g.id].grandPts = (target[g.id].grandLv3 * 3) + (target[g.id].grandLv2 * 2);
+      target[g.id].grandPts = target[g.id].grandLv3 * 3 + target[g.id].grandLv2 * 2;
     });
-    
-    const allocatedHTPts = (grandLv3 * 3) + (grandLv2 * 2);
+
+    const allocatedHTPts = grandLv3 * 3 + grandLv2 * 2;
     const remainingPts = grandPts - allocatedHTPts;
-    
+
     for (let i = 0; i < remainingPts; i++) {
       let bestIdx = 0;
       let minPts = Infinity;
@@ -243,32 +278,34 @@ const CASTLE_STINT_COST = 2000;
 // on a single guild. Rising weights make it share an unavoidable miss out instead.
 // Every weight stays BELOW the reward for holding the town itself, so the solver still takes every
 // reachable town rather than leaving one empty to dodge a penalty.
-const MISS_TIERS_PTS = [6000, 8000, 9500];      // points: a lv1 town is worth 10000
+const MISS_TIERS_PTS = [6000, 8000, 9500]; // points: a lv1 town is worth 10000
 const MISS_TIERS_SCARCE = [6000, 10000, 15000]; // Darkwick / dorm counts: a dorm is worth 20000
 
 export function buildModel(srv, mapData, opts = {}) {
   const milp = new MilpBuilder();
   const isGoC = srv.mode === 'goc';
-  
-  const FULL_DAYS = (srv.endDate && srv.startDate) 
-    ? Math.max(1, Math.round((new Date(srv.endDate) - new Date(srv.startDate)) / 86400000) + 1)
-    : (isGoC ? 12 : 6);
+
+  const FULL_DAYS =
+    srv.endDate && srv.startDate
+      ? Math.max(1, Math.round((new Date(srv.endDate) - new Date(srv.startDate)) / 86400000) + 1)
+      : isGoC
+        ? 12
+        : 6;
   const winStart = opts.winStart ?? 1;
-  const DAYS = opts.winEnd ?? FULL_DAYS;   // last day solved in this model
-  const fromIdx = winStart - 1;            // last fixed day
+  const DAYS = opts.winEnd ?? FULL_DAYS; // last day solved in this model
+  const fromIdx = winStart - 1; // last fixed day
   const repair = !!opts.repair;
-  const LASTD = repair ? Math.min(DAYS + 1, FULL_DAYS) : DAYS;   // last day that has constraints
+  const LASTD = repair ? Math.min(DAYS + 1, FULL_DAYS) : DAYS; // last day that has constraints
   const lockSrc = opts.locks || srv.plan;
   const phase = opts.phase || 'full';
   const pathCells = opts.pathCells || {};
   const isFixedCell = (d, t) =>
-    (phase === 'lv1' && (t.type !== 'lv1' || !!(pathCells[d] || {})[t.id])) ||
-    (phase === 'castle' && t.type === 'lv2');
+    (phase === 'lv1' && (t.type !== 'lv1' || !!(pathCells[d] || {})[t.id])) || (phase === 'castle' && t.type === 'lv2');
 
   const GUILDS = srv.guilds;
   const KINGDOMS = mapData.kingdoms;
   const baseMaxDecl = isGoC ? 2 : 3;
-  const pointValues = { 'lv3': 3, 'lv2': 2, 'lv1': 1 };
+  const pointValues = { lv3: 3, lv2: 2, lv1: 1 };
 
   const target = getPerfectTargets(srv, mapData, { respectLocked: true });
   const reachFull = getReachableMatrix(GUILDS, KINGDOMS, FULL_DAYS, srv, fromIdx);
@@ -284,9 +321,9 @@ export function buildModel(srv, mapData, opts = {}) {
 
   const activeGuilds = GUILDS.filter(g => !g.isExcluded);
   const N = activeGuilds.length;
-  
-  const sortedGuilds = [...activeGuilds].sort((a, b) => 
-    (parseInt(b.basePoints || 0, 10)) - (parseInt(a.basePoints || 0, 10))
+
+  const sortedGuilds = [...activeGuilds].sort(
+    (a, b) => parseInt(b.basePoints || 0, 10) - parseInt(a.basePoints || 0, 10),
   );
 
   // 2. VARIABLE CREATION (With UI Locking)
@@ -301,29 +338,25 @@ export function buildModel(srv, mapData, opts = {}) {
         if (d < winStart || d > DAYS || isFixedCell(d, t)) {
           // Fixed history (day 0 / earlier windows), the fixed days after a repair window,
           // or (lv1 phase) Darkwick / dorms / locked path towns
-          const holder = (d < winStart || d > DAYS || t.type !== 'lv1')
-            ? (srv.plan[d] || {})[t.id]
-            : (pathCells[d] || {})[t.id];
-          own[g][d][t.id] = (holder === GUILDS[g].id) ? 1 : 0;
+          const holder =
+            d < winStart || d > DAYS || t.type !== 'lv1' ? (srv.plan[d] || {})[t.id] : (pathCells[d] || {})[t.id];
+          own[g][d][t.id] = holder === GUILDS[g].id ? 1 : 0;
         } else {
-          // 🚨 THE UI LOCK: If you manually place a guild on a day in the UI, 
+          // 🚨 THE UI LOCK: If you manually place a guild on a day in the UI,
           // the math engine freezes it permanently to help the solver.
           const manualLockGid = (lockSrc[d] || {})[t.id];
-          
+
           if (manualLockGid) {
-            own[g][d][t.id] = (manualLockGid === GUILDS[g].id) ? 1 : 0;
-          } 
-          else if (isExcluded) {
+            own[g][d][t.id] = manualLockGid === GUILDS[g].id ? 1 : 0;
+          } else if (isExcluded) {
             // Carry yesterday forward. Day 0 is always fixed, so this walks up through the days
             // already played and freezes them on whatever they held on the last of those - which is
             // what "they stopped after day 4" has to mean. fromIdx is winStart - 1, and phase 1
             // starts at day 1, so it would reach back past every day already played.
             own[g][d][t.id] = own[g][d - 1][t.id];
-          } 
-          else if (!reachFull[g][d][t.id]) {
+          } else if (!reachFull[g][d][t.id]) {
             own[g][d][t.id] = 0;
-          } 
-          else {
+          } else {
             own[g][d][t.id] = milp.binary(`own_g${g}_d${d}_${t.id}`);
           }
         }
@@ -333,42 +366,48 @@ export function buildModel(srv, mapData, opts = {}) {
   const ownAt = (g, d, tId) => own[g][d][tId];
 
   // Kept so warmStart() below can work out what every variable is worth under a given plan.
-  const enterVar = [];        // enterVar[g][d]
-  const lateVar = [];         // lateVar[g] (day-1 presence slack, scarce/castle only)
-  const absentVar = [];       // absentVar[g][d] (holds nothing that day, lv1 / full phases only)
-  const gainVar = [];         // gainVar[g][d][townId]
-  const missSpecs = [];       // one per target: { terms, rhs, pos: [{v, cap}], neg: [...] }
+  const enterVar = []; // enterVar[g][d]
+  const lateVar = []; // lateVar[g] (day-1 presence slack, scarce/castle only)
+  const absentVar = []; // absentVar[g][d] (holds nothing that day, lv1 / full phases only)
+  const gainVar = []; // gainVar[g][d][townId]
+  const missSpecs = []; // one per target: { terms, rhs, pos: [{v, cap}], neg: [...] }
 
   // Can every guild stand somewhere on day 1 at all? One town holds one guild, so this is simply
   // whether there are at least as many towns in play as guilds competing for them. That test is
   // necessary but not sufficient, so the caller can also force the penalty form after a failed solve.
-  const day1FitsAll = !opts.softDay1
-    && GUILDS.filter(g => !g.isExcluded).length <= VALID_KINGDOMS.length;
+  const day1FitsAll = !opts.softDay1 && GUILDS.filter(g => !g.isExcluded).length <= VALID_KINGDOMS.length;
 
   // 3. CORE CONSTRAINTS
   for (let d = winStart; d <= LASTD; d++) {
     for (const t of VALID_KINGDOMS) {
       const holders = GUILDS.map((guild, g) => [1, ownAt(g, d, t.id)]);
-      milp.atMost(holders, 1); 
+      milp.atMost(holders, 1);
       const before = GUILDS.map((guild, g) => [-1, ownAt(g, d - 1, t.id)]);
-      milp.atLeast([...holders, ...before], 0); 
+      milp.atLeast([...holders, ...before], 0);
     }
 
     for (let g = 0; g < GUILDS.length; g++) {
       if (GUILDS[g].isExcluded) continue;
 
       const declaredTerms = [];
-      const maxDecl = (isGoC && GUILDS[g].isSmall) ? 1 : baseMaxDecl;
+      const maxDecl = isGoC && GUILDS[g].isSmall ? 1 : baseMaxDecl;
       // `entering` is exact: 1 iff the guild held NOTHING yesterday.
       // Disaggregated (one row per town) instead of a big-M, for a much tighter LP relaxation.
       const entering = milp.binary(`enter_g${g}_d${d}`);
       (enterVar[g] = enterVar[g] || [])[d] = entering;
       const prevVars = VALID_KINGDOMS.map(k => ownAt(g, d - 1, k.id));
-      for (const pv of prevVars) milp.atMost([ [1, entering], [1, pv] ], 1);
-      milp.atLeast([ [1, entering], ...prevVars.map(pv => [1, pv]) ], 1);
+      for (const pv of prevVars)
+        milp.atMost(
+          [
+            [1, entering],
+            [1, pv],
+          ],
+          1,
+        );
+      milp.atLeast([[1, entering], ...prevVars.map(pv => [1, pv])], 1);
 
       // No map wipes: if the guild held something yesterday (entering = 0), it must hold something today.
-      milp.atLeast([ [1, entering], ...VALID_KINGDOMS.map(k => [1, ownAt(g, d, k.id)]) ], 1);
+      milp.atLeast([[1, entering], ...VALID_KINGDOMS.map(k => [1, ownAt(g, d, k.id)])], 1);
 
       // Two-phase planning: every guild is on the map from day 1 (a guild that starts empty enters on day 1).
       // Otherwise phase 1 leaves such guilds off the map for days, and the lv1 path locked for phase 2
@@ -382,7 +421,7 @@ export function buildModel(srv, mapData, opts = {}) {
           const late = milp.continuous(`late_g${g}`, 0, 1);
           lateVar[g] = late;
           milp.addCost(late, DAY1_LATE_COST);
-          milp.atLeast([ ...onMap, [1, late] ], 1);
+          milp.atLeast([...onMap, [1, late]], 1);
         }
       }
 
@@ -393,7 +432,7 @@ export function buildModel(srv, mapData, opts = {}) {
         const absent = milp.continuous(`absent_g${g}_d${d}`, 0, 1);
         (absentVar[g] = absentVar[g] || [])[d] = absent;
         milp.addCost(absent, ABSENT_DAY_COST);
-        milp.atLeast([ ...VALID_KINGDOMS.map(k => [1, ownAt(g, d, k.id)]), [1, absent] ], 1);
+        milp.atLeast([...VALID_KINGDOMS.map(k => [1, ownAt(g, d, k.id)]), [1, absent]], 1);
       }
 
       for (const t of VALID_KINGDOMS) {
@@ -405,16 +444,38 @@ export function buildModel(srv, mapData, opts = {}) {
         const gain = milp.continuous(`gain_g${g}_d${d}_${t.id}`, 0, 1);
         ((gainVar[g] = gainVar[g] || [])[d] = gainVar[g][d] || {})[t.id] = gain;
         declaredTerms.push([1, gain]);
-        
-        milp.addCost(gain, 1); 
+
+        milp.addCost(gain, 1);
         // Prefer one unbroken castle stint over the same number of scattered castle days.
         if (isGoC && t.type === 'lv3') milp.addCost(gain, CASTLE_STINT_COST);
 
-        milp.atMost([ [1, now], [-1, before], [-1, gain] ], 0);
-        milp.atMost([ [1, gain], [-1, now] ], 0);
-        milp.atMost([ [1, gain], [1, before] ], 1);
+        milp.atMost(
+          [
+            [1, now],
+            [-1, before],
+            [-1, gain],
+          ],
+          0,
+        );
+        milp.atMost(
+          [
+            [1, gain],
+            [-1, now],
+          ],
+          0,
+        );
+        milp.atMost(
+          [
+            [1, gain],
+            [1, before],
+          ],
+          1,
+        );
 
-        const adjConstraint = [ [1, now], [-1, before] ];
+        const adjConstraint = [
+          [1, now],
+          [-1, before],
+        ];
         for (const nId of t.adj) {
           const nVar = ownAt(g, d - 1, nId);
           if (nVar !== undefined) adjConstraint.push([-1, nVar]);
@@ -427,14 +488,14 @@ export function buildModel(srv, mapData, opts = {}) {
         if (isGoC && t.id === 'Darkwick') {
           const lv2Terms = VALID_KINGDOMS.filter(k => k.type === 'lv2').map(k => [-1, ownAt(g, d - 1, k.id)]);
           const lv1Terms = VALID_KINGDOMS.filter(k => k.type === 'lv1').map(k => [-0.5, ownAt(g, d - 1, k.id)]);
-          milp.atMost([ [1, gain], ...lv2Terms, ...lv1Terms ], 0);
+          milp.atMost([[1, gain], ...lv2Terms, ...lv1Terms], 0);
         }
       }
 
       if (declaredTerms.length > 0) {
         milp.atMost(declaredTerms, maxDecl);
         // Holding nothing => at most 1 declare (the beachhead).
-        milp.atMost([ ...declaredTerms, [maxDecl - 1, entering] ], maxDecl);
+        milp.atMost([...declaredTerms, [maxDecl - 1, entering]], maxDecl);
       }
     }
   }
@@ -447,7 +508,7 @@ export function buildModel(srv, mapData, opts = {}) {
   for (let d = winStart; d <= FULL_DAYS; d++) {
     for (const t of KINGDOMS) {
       if (!GUILDS.some((_, g) => reachFull[g][d][t.id])) continue;
-      if (phase !== 'scarce' && isFixedCell(d, t)) continue;   // only FREE towns can be handed out in this phase
+      if (phase !== 'scarce' && isFixedCell(d, t)) continue; // only FREE towns can be handed out in this phase
       supply.rest[t.type]++;
       if (d <= DAYS) supply.win[t.type]++;
     }
@@ -473,7 +534,7 @@ export function buildModel(srv, mapData, opts = {}) {
   };
 
   const share = (w, r) => (r > 0 ? w / r : 0);
-  const ptsOf = (o) => 3 * o.lv3 + 2 * o.lv2 + o.lv1;
+  const ptsOf = o => 3 * o.lv3 + 2 * o.lv2 + o.lv1;
   // In repair mode the rest of the event is fixed, so the window must deliver the whole remainder.
   const shareLv3 = repair ? 1 : share(supply.win.lv3, supply.rest.lv3);
   const shareLv2 = repair ? 1 : share(supply.win.lv2, supply.rest.lv2);
@@ -488,9 +549,9 @@ export function buildModel(srv, mapData, opts = {}) {
     // What this guild already banked in the fixed days of earlier windows
     const got = { lv3: 0, lv2: 0, pts: 0 };
     for (let d = 1; d <= (repair ? FULL_DAYS : winStart - 1); d++) {
-      if (repair && d >= winStart && d <= DAYS) continue;   // the window itself is what we are choosing
+      if (repair && d >= winStart && d <= DAYS) continue; // the window itself is what we are choosing
       for (const t of KINGDOMS) {
-        if (((srv.plan[d] || {})[t.id]) === guild.id) {
+        if ((srv.plan[d] || {})[t.id] === guild.id) {
           if (t.type === 'lv3') got.lv3++;
           if (t.type === 'lv2') got.lv2++;
           got.pts += pointValues[t.type] || 0;
@@ -500,7 +561,8 @@ export function buildModel(srv, mapData, opts = {}) {
     // lv1 phase: from winStart on, Darkwick / dorms / path towns are already decided
     let fixedFuture = 0;
     if (phase === 'lv1') {
-      for (let d = winStart; d <= (repair ? DAYS : FULL_DAYS); d++) {   // repair: days after the window are counted in `got`
+      for (let d = winStart; d <= (repair ? DAYS : FULL_DAYS); d++) {
+        // repair: days after the window are counted in `got`
         for (const t of KINGDOMS) {
           const holder = t.type !== 'lv1' ? (srv.plan[d] || {})[t.id] : (pathCells[d] || {})[t.id];
           if (holder === guild.id) fixedFuture += pointValues[t.type] || 0;
@@ -515,7 +577,7 @@ export function buildModel(srv, mapData, opts = {}) {
     };
     const isBot = i >= Math.floor(N / 2);
     const offset = i * 10;
-    
+
     // 🚨 THE GREEDY BALANCE PARADIGM 🚨
     // The Town Reward is mathematically HIGHER than the Quota Penalty.
     // This forces the solver to aggressively capture every reachable town on the map,
@@ -525,8 +587,7 @@ export function buildModel(srv, mapData, opts = {}) {
     // The tiny offset only breaks ties between otherwise equal guilds, as before.
     // 'full' (everything in one solve) is not used by the two-phase pipeline and keeps the old flat
     // penalty: there the Darkwick/dorm miss and the point miss stack, and tiers could out-price a capture.
-    const tiers = (base) => (phase === 'full' ? base.slice(0, 1) : base)
-      .map(w => w + (isBot ? offset : -offset));
+    const tiers = base => (phase === 'full' ? base.slice(0, 1) : base).map(w => w + (isBot ? offset : -offset));
 
     const lv3Terms = [];
     const lv2Terms = [];
@@ -536,11 +597,11 @@ export function buildModel(srv, mapData, opts = {}) {
       for (const t of VALID_KINGDOMS) {
         if (t.type === 'lv3') lv3Terms.push([1, ownAt(g, d, t.id)]);
         if (t.type === 'lv2') lv2Terms.push([1, ownAt(g, d, t.id)]);
-        
-        if (phase === 'lv1' && isFixedCell(d, t)) continue;   // fixed, already accounted for
+
+        if (phase === 'lv1' && isFixedCell(d, t)) continue; // fixed, already accounted for
         const pts = pointValues[t.type] || 0;
         pointTerms.push([pts, ownAt(g, d, t.id)]);
-        
+
         if ((phase === 'scarce' || phase === 'castle') && t.type === 'lv1') {
           // No reward for lv1 here. A small cost per lv1 town-day instead, so the solver captures the towns it
           // needs for the path just in time rather than holding them for days (keeps phase 2 flexible).
@@ -569,13 +630,13 @@ export function buildModel(srv, mapData, opts = {}) {
   // the plan it is meant to improve on; with one it starts level and looks for something better.
   // HiGHS checks the start rather than trusting it, so a plan that does not fit this model is simply
   // ignored - it can never make the answer illegal.
-  const warmStart = (plan) => {
+  const warmStart = plan => {
     const x = new Float64Array(milp.columnCount);
     // What guild g holds at (d, tId) under `plan`: the fixed value where the model fixed the cell.
     const held = (g, d, tId) => {
       const v = own[g][d][tId];
       if (typeof v === 'number') return v;
-      return ((plan[d] || {})[tId] === GUILDS[g].id) ? 1 : 0;
+      return (plan[d] || {})[tId] === GUILDS[g].id ? 1 : 0;
     };
     for (let g = 0; g < GUILDS.length; g++) {
       for (let d = 0; d <= LASTD; d++) {
@@ -587,8 +648,8 @@ export function buildModel(srv, mapData, opts = {}) {
       for (let d = winStart; d <= LASTD; d++) {
         const ev = (enterVar[g] || [])[d];
         if (ev) x[ev.col] = VALID_KINGDOMS.some(k => held(g, d - 1, k.id)) ? 0 : 1;
-        const gv = ((gainVar[g] || [])[d]) || {};
-        for (const tId in gv) x[gv[tId].col] = (held(g, d, tId) && !held(g, d - 1, tId)) ? 1 : 0;
+        const gv = (gainVar[g] || [])[d] || {};
+        for (const tId in gv) x[gv[tId].col] = held(g, d, tId) && !held(g, d - 1, tId) ? 1 : 0;
       }
       // Day-1 presence slack: 1 exactly when the plan leaves this guild off the map on day 1, so an
       // otherwise good warm start is not rejected as inconsistent.
@@ -617,7 +678,7 @@ export function buildModel(srv, mapData, opts = {}) {
     return Array.from(x);
   };
 
-  const decode = (values) => {
+  const decode = values => {
     const plan = {};
     for (let d = 0; d < winStart; d++) plan[d] = { ...(srv.plan[d] || {}) };
     if (repair) for (let d = DAYS + 1; d <= FULL_DAYS; d++) plan[d] = { ...(srv.plan[d] || {}) };
@@ -629,7 +690,7 @@ export function buildModel(srv, mapData, opts = {}) {
           plan[d][t.id] = '';
           continue;
         }
-        
+
         const holder = GUILDS.find((guild, g) => {
           const v = ownAt(g, d, t.id);
           const val = typeof v === 'number' ? v : values[v.col];

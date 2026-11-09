@@ -5,14 +5,55 @@
 import { state, load, activeSrv } from './state.js';
 import { closeModal } from './ui.js';
 import { renderTabs, renderAll } from './render.js';
-import { createTutorialServer, removeTutorialServer, openAdd, confirmAdd, onAddModalModeChange, onAddModalStartChange, switchSrv, removeSrv, confirmDeleteSrv, ctxRename, ctxDuplicate, ctxDelete } from './servers.js';
-import { updName, updMode, updMap, updStart, updEnd, clearPlan, updGuildName, updGuildSmall, updGuildExcluded, updGuildPoints, updGuildLv3, updGuildLv2, updGuildLv1, addGuild, removeGuild, clearDay, onCell, cpyMsg } from './handlers.js';
-import { openImport, handleDragOver, handleDragLeave, handleDrop, handleFileSelect, processImport, exportServer } from './import-export.js';
+import {
+  createTutorialServer,
+  removeTutorialServer,
+  openAdd,
+  confirmAdd,
+  onAddModalModeChange,
+  onAddModalStartChange,
+  switchSrv,
+  removeSrv,
+  confirmDeleteSrv,
+  ctxRename,
+  ctxDuplicate,
+  ctxDelete,
+} from './servers.js';
+import {
+  updName,
+  updMode,
+  updMap,
+  updStart,
+  updEnd,
+  clearPlan,
+  updGuildName,
+  updGuildSmall,
+  updGuildExcluded,
+  updGuildPoints,
+  updGuildLv3,
+  updGuildLv2,
+  updGuildLv1,
+  addGuild,
+  removeGuild,
+  clearDay,
+  onCell,
+  cpyMsg,
+} from './handlers.js';
+import {
+  openImport,
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+  handleFileSelect,
+  processImport,
+  exportServer,
+} from './import-export.js';
 import { autoOptimize, undoOptimize } from './optimize.js';
 import { takeScreenshots } from './screenshots.js';
 import { checkUrlForSharedPlan, publishToCloud, syncFromCloud } from './cloud.js';
 import { initTour } from './tour.js';
 import { isOldSite, forwardSharedLink, showMovedBanner, receiveMovedServers } from './move.js';
+import { openMsgTemplate, setMessagesRerender } from './messages.js';
 
 load();
 // Old address: shared plan links go straight to the new site; everything else gets the banner.
@@ -25,8 +66,8 @@ if (!forwardSharedLink()) {
       renderAll();
       initTour({
         getActiveServer: () => activeSrv(),
-    // Lets the guided setup tell a server they just made from ones they already had.
-    getServerCount: () => state.servers.length,
+        // Lets the guided setup tell a server they just made from ones they already had.
+        getServerCount: () => state.servers.length,
         // No automatic tutorial on a shared link or on the old address (people should move first).
         isSharedLink: () => new URLSearchParams(window.location.search).has('plan') || isOldSite(),
         createDemoServer: createTutorialServer,
@@ -35,6 +76,8 @@ if (!forwardSharedLink()) {
     });
 }
 
+setMessagesRerender(renderAll);
+window.openMsgTemplate = openMsgTemplate;
 window.openAdd = openAdd;
 window.confirmAdd = confirmAdd;
 window.closeModal = closeModal;

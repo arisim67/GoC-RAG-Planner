@@ -1,5 +1,7 @@
 # GoC / Ragnarok Planner
 
+[![CI](https://github.com/arisim67/GoC-RAG-Planner/actions/workflows/ci.yml/badge.svg)](https://github.com/arisim67/GoC-RAG-Planner/actions/workflows/ci.yml)
+
 A browser-based planning tool for **Tokyo Debunker** guild events: **Game of Claws (GoC)** and **Ragnarok**.
 Server leads use it to lay out who takes which town on which day, check that the plan is legal,
 and auto-balance points, Darkwick and dorm time across guilds with a built-in MILP optimizer.
@@ -12,12 +14,13 @@ and auto-balance points, Darkwick and dorm time across guilds with a built-in MI
  
 - **Planning grid** for every town and day, with adjacency shown inline and drag-to-copy across days
 - **Live validation** of adjacency, daily declare limits (2 for GoC, 3 for Ragnarok) and map wipes
-- **⚡ Auto-Optimize**: proposes a full, legal plan that balances final points, Darkwick and dorm counts
+- **Auto-Optimize**: proposes a full, legal plan that balances final points, Darkwick and dorm counts
 - **Import / export**: paste guild lists or daily placements; back up a whole server as JSON
 - **Save to Cloud**: share a live link with server leadership
 - **Screenshots and daily messages** ready to paste into Discord
-- **Interactive tutorial** on first visit, replayable from the 🎓 Tutorial button
+- **Interactive tutorial** on first visit, replayable from the Tutorial button
 - Runs entirely in the browser and saves automatically to local storage
+
 ## Running locally
  
 There is no build step. The app uses ES modules and a Web Worker, so it must be served over HTTP;
@@ -31,6 +34,22 @@ python3 -m http.server 8000
 ```
  
 Any static file server works (`npx serve`, the VS Code Live Server extension, etc.).
+
+## Development
+
+Tests and formatting need [Node.js](https://nodejs.org) 20 or newer. There are no dependencies to install.
+
+```bash
+npm test               # run the tests in tests/
+npm run format         # format the code with Prettier
+npm run format:check   # what CI runs: fails if anything isn't formatted
+```
+
+GitHub Actions runs the tests and the format check on every push (see the badge above).
+
+Commit messages are short and say what changed, in the imperative:
+`Fix guild alignment in Declares table`, `Add message templates`. Notable changes also get a line in
+[CHANGELOG.md](CHANGELOG.md) under the date they go live.
  
 ## Project structure
  
@@ -42,12 +61,15 @@ Any static file server works (`npx serve`, the VS Code Live Server extension, et
 │   ├── state.js            Servers, active server, guild colours, saving/loading
 │   ├── calc.js             Scores, occupation, declares, plan validation
 │   ├── render.js           Builds the page (tabs, settings, guilds, grid, stats, messages)
+│   ├── messages.js         Daily messages and the message template editor
+│   ├── icons.js            Line icons used on buttons (from Lucide)
+│   ├── discord-md.js       Shows message text the way Discord displays it (template preview)
 │   ├── handlers.js         Edits made in the page (settings, guilds, grid cells)
 │   ├── servers.js          Server tabs: add, switch, rename, duplicate, delete
 │   ├── import-export.js    Import modal and Export Server
-│   ├── optimize.js         ⚡ Auto-Optimize (runs the solver in a Web Worker)
+│   ├── optimize.js         Auto-Optimize (runs the solver in a Web Worker)
 │   ├── grid-fill.js        Select cells and drag to copy across days
-│   ├── screenshots.js      📸 Screenshots
+│   ├── screenshots.js      Screenshots
 │   ├── cloud.js            Save to Cloud / Sync and shared plan links
 │   ├── preview.js          Draws the link-preview image for a shared plan
 │   ├── ui.js               Small helpers (toasts, escaping, date labels)
@@ -66,12 +88,15 @@ Any static file server works (`npx serve`, the VS Code Live Server extension, et
 ├── _routes.json            Cloudflare Pages only: runs that function for the main page only
 ├── cloud-worker/           Runs on Cloudflare, not in the browser (deployed separately)
 │   └── worker.js           Stores shared plans and serves share links with their previews
+├── tests/                  Automated tests (node --test), with example plans in tests/fixtures/
+├── .github/                CI workflow and issue templates
 ├── vendor/highs/           Vendored HiGHS solver (WebAssembly)
 ├── images/                 Favicons
 └── docs/                   User guide and screenshots
 ```
 
-At the root you'll also find `README.md`, `CHANGELOG.md`, `PRIVACY.md` and `LICENSE`.
+At the root you'll also find `README.md`, `CHANGELOG.md`, `PRIVACY.md`, `LICENSE`, and `package.json`
+(scripts for tests and formatting; the app itself has no build step or dependencies).
 
 ## How the optimizer works
 
@@ -95,7 +120,7 @@ Questions or suggestions: `arianes.` on Discord.
 
 Solver: [HiGHS](https://highs.dev) via [highs-js](https://github.com/lovasoa/highs-js) (MIT).
 Libraries: [JSZip](https://stuk.github.io/jszip/), [html2canvas](https://html2canvas.hertzen.com/),
-[SortableJS](https://sortablejs.github.io/Sortable/).
+[SortableJS](https://sortablejs.github.io/Sortable/). Icons: [Lucide](https://lucide.dev) (ISC).
 
 ## License
 

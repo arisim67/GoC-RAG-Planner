@@ -6,13 +6,14 @@ import { showToast } from './ui.js';
 import { renderAll } from './render.js';
 import { getMapData } from './maps/index.js';
 import { buildModel } from './solver/model_ragnarok.js';
+import { setBtnLabel } from './icons.js';
 
 const solverWorker = new Worker(new URL('./solver/worker.js', import.meta.url), { type: 'module' });
 
 // HiGHS log forwarding: lines are printed to the console and kept in window.highsLog.
 // In DevTools, run  copy(window.highsLog.join('\n'))  to copy the whole log.
 window.highsLog = [];
-solverWorker.addEventListener('message', (e) => {
+solverWorker.addEventListener('message', e => {
   if (e.data && e.data.status === 'log') {
     window.highsLog.push(e.data.text);
     console.log('[HiGHS]', e.data.text);
@@ -22,7 +23,7 @@ solverWorker.addEventListener('message', (e) => {
 // A helper function to turn the Worker's message events into a clean async Promise
 function runHighsSolver(matrixData, options) {
   return new Promise((resolve, reject) => {
-    const handler = (e) => {
+    const handler = e => {
       if (e.data.status === 'success') {
         solverWorker.removeEventListener('message', handler);
         resolve(e.data.result);
@@ -36,11 +37,13 @@ function runHighsSolver(matrixData, options) {
   });
 }
 
-export function undoOptimize(){
-  const s=activeSrv(); if(!s||!s.undoPlan) return;
+export function undoOptimize() {
+  const s = activeSrv();
+  if (!s || !s.undoPlan) return;
   s.plan = JSON.parse(JSON.stringify(s.undoPlan));
   delete s.undoPlan;
-  save(); renderAll();
+  save();
+  renderAll();
 }
 
 export async function autoOptimize() {
@@ -55,19 +58,22 @@ export async function autoOptimize() {
   // estimate follows the guild count instead of quoting one range that is far too long for most events.
   if (srv.mode === 'goc') {
     const est = (srv.guilds || []).length <= 11 ? 'around 1-5 minutes' : 'up to around 10 minutes';
-    showToast(`Game of Claws plans take ${est} to optimize. Please keep this browser open until it finishes.`, false, 10000);
+    showToast(
+      `Game of Claws plans take ${est} to optimize. Please keep this browser open until it finishes.`,
+      false,
+      10000,
+    );
   }
 
   const btn = document.getElementById('opt-btn'); // Use your actual button ID here
-  let originalText = 'Auto Optimize'; // Fallback text
-  
+  let originalText = 'Auto-Optimize'; // Fallback text
+
   if (btn) {
-    originalText = btn.textContent; // Capture the original text before changing it
+    originalText = setBtnLabel(btn, 'Finding Optimal Plan... (0s)'); // keeps the icon
     btn.style.pointerEvents = 'none';
-    btn.innerHTML = `Finding Optimal Plan... (0s)`;
     optTimer = setInterval(() => {
       sec++;
-      btn.innerHTML = `${currentLabel}... (${sec}s)`;
+      setBtnLabel(btn, `${currentLabel}... (${sec}s)`);
     }, 1000);
   }
 
@@ -97,32 +103,37 @@ export async function autoOptimize() {
       // GAME OF CLAWS: its own two-phase method (model_goc.js + twophase.js).
       // Phase 1 = Darkwick + dorms (+ the lv1 paths to reach them), phase 2 = lv1 towns for points.
       // Progress goes to the console only; the button keeps showing "Finding Optimal Plan... (Ns)".
-      const onProgress = (label) => console.log(`[TwoPhase] ${label}`);
+      const onProgress = label => console.log(`[TwoPhase] ${label}`);
       // Loaded on demand: if twophase.js / paths.js are missing from the site, only Auto-Optimize fails, not the whole page.
       const { solveGoc } = await import('./solver/twophase.js');
       srv.plan = await solveGoc(srv, mapData, runHighsSolver, { onProgress });
     }
 
     srv.lastSolveTime = sec;
-    
+
     save();
     renderAll();
-    
-    if (btn) { btn.textContent = '✓ Perfect Plan Found'; btn.style.color = 'var(--green)'; }
 
+    if (btn) {
+      setBtnLabel(btn, '✓ Perfect Plan Found');
+      btn.style.color = 'var(--green)';
+    }
   } catch (err) {
-    console.error("Optimizer crashed:", err);
+    console.error('Optimizer crashed:', err);
     // Replace alert() with our new in-app toast
-    showToast(err.message || "Solver encountered an error.", true);
-    if (btn) { btn.textContent = '❌ Failed'; btn.style.color = 'var(--red)'; }
+    showToast(err.message || 'Solver encountered an error.', true);
+    if (btn) {
+      setBtnLabel(btn, 'Failed');
+      btn.style.color = 'var(--red)';
+    }
   } finally {
     // 🚨 GUARANTEE TIMER STOPS
     clearInterval(optTimer);
-    
+
     if (btn) {
       setTimeout(() => {
-        btn.textContent = originalText;
-        btn.style.pointerEvents = 'auto'; // Restore clickability 
+        setBtnLabel(btn, originalText);
+        btn.style.pointerEvents = 'auto'; // Restore clickability
         btn.style.color = '';
       }, 3000);
     }

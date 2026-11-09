@@ -1,28 +1,32 @@
 // js/screenshots.js
-// 📸 Screenshots: captures the grid and stats tables with html2canvas and zips them.
+// Screenshots: captures the grid and stats tables with html2canvas and zips them.
 
 import { activeSrv } from './state.js';
+import { setBtnLabel } from './icons.js';
 
-export async function takeScreenshots() {
-  const btn = event.target;
-  const originalText = btn.textContent;
-  btn.textContent = '📸 Processing...';
-  
+export async function takeScreenshots(e) {
+  const evt = e || window.event;
+  const btn =
+    (evt && evt.target && evt.target.closest && evt.target.closest('button')) || document.createElement('button');
+  const originalText = setBtnLabel(btn, 'Processing...');
+
   try {
     // Make sure web fonts are loaded so measured widths match rendered widths
-    if (document.fonts && document.fonts.ready) { await document.fonts.ready; }
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
+    }
     // Pins screenshot-only sizing (see style.css) so phone and desktop captures match
     document.documentElement.classList.add('capturing');
 
     const gridEl = document.getElementById('capture-grid');
     const statsEl = document.getElementById('capture-stats');
     const mainEl = document.getElementById('main-content');
-    
+
     // 🚨 FIX 1: Scroll to the top-left to prevent iOS/Android coordinate shifting bugs
     const origScrollX = window.scrollX;
     const origScrollY = window.scrollY;
     window.scrollTo(0, 0);
-    
+
     const html = document.documentElement;
     const origHtmlOverflow = html.style.overflow;
     const origBodyOverflow = document.body.style.overflow;
@@ -40,7 +44,7 @@ export async function takeScreenshots() {
         originalStyles.push({ el: wrap, prop: 'overflow', val: wrap.style.overflow });
         wrap.style.overflow = 'visible';
       });
-      
+
       const stickyHeaders = el.querySelectorAll('th');
       stickyHeaders.forEach(th => {
         originalStyles.push({ el: th, prop: 'position', val: th.style.position });
@@ -71,7 +75,7 @@ export async function takeScreenshots() {
       originalStyles.push({ el: el, prop: 'width', val: el.style.width });
       originalStyles.push({ el: el, prop: 'maxWidth', val: el.style.maxWidth });
       originalStyles.push({ el: el, prop: 'display', val: el.style.display });
-      
+
       // 🚨 FIX 3: Shrink-wrap the container exactly to the table's natural bounds
       el.style.display = 'inline-block';
       el.style.width = 'max-content';
@@ -82,19 +86,24 @@ export async function takeScreenshots() {
       const occTables = el.querySelectorAll('table.otbl');
       if (occTables.length) {
         el.style.width = el.getBoundingClientRect().width + 'px';
-        occTables.forEach(table => { table.style.width = '100%'; table.style.minWidth = '0'; });
+        occTables.forEach(table => {
+          table.style.width = '100%';
+          table.style.minWidth = '0';
+        });
       }
 
       return originalStyles;
     }
 
     function restoreStyles(styles) {
-      styles.forEach(({ el, prop, val }) => { el.style[prop] = val; });
+      styles.forEach(({ el, prop, val }) => {
+        el.style[prop] = val;
+      });
     }
 
     const gridStyles = expandForCapture(gridEl);
     const statsStyles = expandForCapture(statsEl);
-    
+
     // Measure the exact, flawless pixel dimensions of the inline blocks
     const gridW = gridEl.scrollWidth;
     const gridH = gridEl.scrollHeight;
@@ -109,8 +118,8 @@ export async function takeScreenshots() {
     const isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
     // iOS Safari refuses canvases above ~16.7M pixels, so shrink the scale if a big GoC map would exceed it
     const baseScale = isMobile ? 1.5 : 2;
-    const fitScale = (w, h) => isMobile ? Math.min(baseScale, Math.sqrt(16000000 / (w * h))) : baseScale;
-    
+    const fitScale = (w, h) => (isMobile ? Math.min(baseScale, Math.sqrt(16000000 / (w * h))) : baseScale);
+
     // 🚨 FIX 4: Explicitly pass the measured bounds to the camera
     const canvasGrid = await html2canvas(gridEl, {
       backgroundColor: '#191425',
@@ -120,9 +129,9 @@ export async function takeScreenshots() {
       windowWidth: captureWindowWidth,
       windowHeight: gridH + 200,
       scrollX: 0,
-      scrollY: 0
+      scrollY: 0,
     });
-    
+
     const canvasStats = await html2canvas(statsEl, {
       backgroundColor: '#191425',
       scale: fitScale(statsW, statsH),
@@ -131,9 +140,9 @@ export async function takeScreenshots() {
       windowWidth: captureWindowWidth,
       windowHeight: statsH + 200,
       scrollX: 0,
-      scrollY: 0
+      scrollY: 0,
     });
-    
+
     // Instantly restore the UI back to normal
     restoreStyles(gridStyles);
     restoreStyles(statsStyles);
@@ -142,10 +151,10 @@ export async function takeScreenshots() {
     mainEl.style.maxWidth = origMainMaxWidth;
     document.documentElement.classList.remove('capturing');
     window.scrollTo(origScrollX, origScrollY);
-    
+
     const srv = activeSrv();
     const prefix = srv ? srv.name.replace(/[^a-z0-9]/gi, '_') : 'map';
-    
+
     const gridBlob = await new Promise(res => canvasGrid.toBlob(res, 'image/png'));
     const statsBlob = await new Promise(res => canvasStats.toBlob(res, 'image/png'));
     const gridFile = new File([gridBlob], `${prefix}_grid.png`, { type: 'image/png' });
@@ -154,11 +163,13 @@ export async function takeScreenshots() {
 
     if (isMobile) {
       const overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;padding:40px 20px;overflow-y:auto;';
+      overlay.style.cssText =
+        'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;padding:40px 20px;overflow-y:auto;';
 
-      const shareBtnHtml = (navigator.canShare && navigator.canShare({ files: filesArray }))
-        ? `<button id="ov-share-btn" style="background:var(--accent);color:#0a1a14;border:none;padding:12px 24px;border-radius:24px;font-weight:bold;font-size:16px;margin-bottom:20px;box-shadow:0 4px 12px var(--accent-glow);cursor:pointer;">📤 Share to Apps</button>`
-        : '';
+      const shareBtnHtml =
+        navigator.canShare && navigator.canShare({ files: filesArray })
+          ? `<button id="ov-share-btn" style="background:var(--accent);color:#0a1a14;border:none;padding:12px 24px;border-radius:24px;font-weight:bold;font-size:16px;margin-bottom:20px;box-shadow:0 4px 12px var(--accent-glow);cursor:pointer;">📤 Share to Apps</button>`
+          : '';
 
       overlay.innerHTML = `
         ${shareBtnHtml}
@@ -170,45 +181,49 @@ export async function takeScreenshots() {
         <img src="${URL.createObjectURL(statsBlob)}" style="width:100%;max-width:none;border-radius:8px;margin-bottom:40px;">
       `;
 
-      overlay.onclick = (e) => { if(e.target === overlay) document.body.removeChild(overlay); };
+      overlay.onclick = e => {
+        if (e.target === overlay) document.body.removeChild(overlay);
+      };
       document.body.appendChild(overlay);
 
       if (shareBtnHtml) {
         document.getElementById('ov-share-btn').onclick = async () => {
-          try { await navigator.share({ files: filesArray }); }
-          catch (e) { console.log("Share cancelled", e); }
+          try {
+            await navigator.share({ files: filesArray });
+          } catch (e) {
+            console.log('Share cancelled', e);
+          }
         };
       }
 
-      btn.textContent = '✓ Generated!';
+      setBtnLabel(btn, '✓ Generated!');
       btn.style.color = 'var(--green)';
     } else {
       const zip = new JSZip();
       const folderName = `${prefix}_snapshots`;
       const imgFolder = zip.folder(folderName);
-      
+
       imgFolder.file(`${prefix}_grid.png`, gridBlob);
       imgFolder.file(`${prefix}_stats.png`, statsBlob);
-      
+
       const zipContent = await zip.generateAsync({ type: 'blob' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(zipContent);
       link.download = `${folderName}.zip`;
       link.click();
       URL.revokeObjectURL(link.href);
-      
-      btn.textContent = '✓ Saved!';
+
+      setBtnLabel(btn, '✓ Saved!');
       btn.style.color = 'var(--green)';
     }
-    
   } catch (err) {
-    console.error("Screenshot failed:", err);
+    console.error('Screenshot failed:', err);
     document.documentElement.classList.remove('capturing');
-    btn.textContent = '❌ Error';
+    setBtnLabel(btn, 'Error');
   }
-  
+
   setTimeout(() => {
-    btn.textContent = '📸 Screenshots';
+    setBtnLabel(btn, originalText);
     btn.style.color = '';
   }, 2000);
 }

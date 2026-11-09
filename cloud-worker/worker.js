@@ -10,34 +10,40 @@
 //
 // Everything expires TTL seconds after it was last saved.
 
-const APP_URL = "https://goc-rag-planner.pages.dev/";
-const DEFAULT_IMAGE = APP_URL + "images/social-preview.png";
+const APP_URL = 'https://goc-rag-planner.pages.dev/';
+const DEFAULT_IMAGE = APP_URL + 'images/social-preview.png';
 const TTL = 2592000; // 30 days
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const VER_RE = /^[a-z0-9]{1,16}$/i;
 const MAX_IMAGE_BYTES = 1500000;
-const IMG_W = 1200, IMG_H = 630;
+const IMG_W = 1200,
+  IMG_H = 630;
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-const kv = env => env["GoC-RAG-Planner"];
+const kv = env => env['GoC-RAG-Planner'];
 
 // Escape text for use inside HTML and attribute values.
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const clip = (s, n) => (typeof s === "string" ? s.slice(0, n) : "");
+const esc = s =>
+  String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const clip = (s, n) => (typeof s === 'string' ? s.slice(0, n) : '');
 
 // Decode a PNG data URL and check it really is a 1200×630 PNG of a sensible size.
 function decodePreview(dataUrl) {
-  const prefix = "data:image/png;base64,";
-  if (typeof dataUrl !== "string" || !dataUrl.startsWith(prefix)) return null;
+  const prefix = 'data:image/png;base64,';
+  if (typeof dataUrl !== 'string' || !dataUrl.startsWith(prefix)) return null;
   const b64 = dataUrl.slice(prefix.length);
   if (b64.length > MAX_IMAGE_BYTES * 1.4) return null;
   let bin;
-  try { bin = atob(b64); } catch { return null; }
+  try {
+    bin = atob(b64);
+  } catch {
+    return null;
+  }
   if (bin.length > MAX_IMAGE_BYTES || bin.length < 33) return null;
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -79,14 +85,14 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+    if (request.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
     // ── Save a plan (and its preview image) ──
-    if (request.method === "POST") {
+    if (request.method === 'POST') {
       try {
         const data = await request.json();
         if (!data || !data.id || !ID_RE.test(String(data.id))) {
-          return new Response("Missing or invalid ID", { status: 400, headers: corsHeaders });
+          return new Response('Missing or invalid ID', { status: 400, headers: corsHeaders });
         }
         const preview = data.preview;
         const previewMeta = data.previewMeta || {};
@@ -98,35 +104,35 @@ export default {
         // A bad or missing image never fails the save; the link just uses the default card.
         const bytes = preview ? decodePreview(preview) : null;
         if (bytes) {
-          await kv(env).put("img:" + data.id, bytes, {
+          await kv(env).put('img:' + data.id, bytes, {
             expirationTtl: TTL,
             metadata: { title: clip(previewMeta.title, 200), description: clip(previewMeta.description, 300) },
           });
         }
-        return new Response("Saved", { status: 200, headers: corsHeaders });
+        return new Response('Saved', { status: 200, headers: corsHeaders });
       } catch (err) {
-        return new Response("Error saving data", { status: 500, headers: corsHeaders });
+        return new Response('Error saving data', { status: 500, headers: corsHeaders });
       }
     }
 
-    if (request.method !== "GET" && request.method !== "HEAD") {
-      return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return new Response('Method not allowed', { status: 405, headers: corsHeaders });
     }
 
     // ── Share link: preview tags for link crawlers, then on to the app ──
-    if (path.startsWith("/s/")) {
-      const id = decodeURIComponent(path.slice(3).replace(/\/$/, ""));
+    if (path.startsWith('/s/')) {
+      const id = decodeURIComponent(path.slice(3).replace(/\/$/, ''));
       if (!ID_RE.test(id)) return Response.redirect(APP_URL, 302);
-      const v = VER_RE.test(url.searchParams.get("v") || "") ? url.searchParams.get("v") : "";
+      const v = VER_RE.test(url.searchParams.get('v') || '') ? url.searchParams.get('v') : '';
 
-      let title = "Shared plan · GoC / Ragnarok Planner";
-      let description = "A plan shared from the GoC / Ragnarok Planner for Tokyo Debunker guilds.";
+      let title = 'Shared plan · GoC / Ragnarok Planner';
+      let description = 'A plan shared from the GoC / Ragnarok Planner for Tokyo Debunker guilds.';
       let image = DEFAULT_IMAGE;
 
-      const { value, metadata } = await kv(env).getWithMetadata("img:" + id, { type: "stream" });
+      const { value, metadata } = await kv(env).getWithMetadata('img:' + id, { type: 'stream' });
       if (value) {
         value.cancel(); // only the metadata is needed here
-        image = `${url.origin}/img/${id}.png${v ? "?v=" + v : ""}`;
+        image = `${url.origin}/img/${id}.png${v ? '?v=' + v : ''}`;
         if (metadata && metadata.title) title = metadata.title;
         if (metadata && metadata.description) description = metadata.description;
       } else {
@@ -136,36 +142,38 @@ export default {
           try {
             const plan = JSON.parse(raw);
             if (plan.name) title = `${clip(plan.name, 120)} · GoC / Ragnarok Planner`;
-          } catch { /* keep the defaults */ }
+          } catch {
+            /* keep the defaults */
+          }
         } else {
-          description = "This shared plan has expired or the link is incorrect.";
+          description = 'This shared plan has expired or the link is incorrect.';
         }
       }
 
       const target = `${APP_URL}?plan=${encodeURIComponent(id)}`;
       const html = sharePage({ url: url.href, title, description, image, target });
-      return new Response(request.method === "HEAD" ? null : html, {
-        headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=300" },
+      return new Response(request.method === 'HEAD' ? null : html, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300' },
       });
     }
 
     // ── Preview image ──
-    if (path.startsWith("/img/")) {
-      const id = path.slice(5).replace(/\.png$/, "");
-      const bytes = ID_RE.test(id) ? await kv(env).get("img:" + id, { type: "arrayBuffer" }) : null;
+    if (path.startsWith('/img/')) {
+      const id = path.slice(5).replace(/\.png$/, '');
+      const bytes = ID_RE.test(id) ? await kv(env).get('img:' + id, { type: 'arrayBuffer' }) : null;
       if (!bytes) return fetch(DEFAULT_IMAGE); // no image yet: show the site's card instead
-      return new Response(request.method === "HEAD" ? null : bytes, {
-        headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=86400" },
+      return new Response(request.method === 'HEAD' ? null : bytes, {
+        headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' },
       });
     }
 
     // ── Plan JSON (unchanged) ──
-    const planId = url.searchParams.get("plan");
-    if (!planId) return new Response("Missing plan ID", { status: 400, headers: corsHeaders });
+    const planId = url.searchParams.get('plan');
+    if (!planId) return new Response('Missing plan ID', { status: 400, headers: corsHeaders });
 
     const data = await kv(env).get(planId);
-    if (!data) return new Response("Plan not found", { status: 404, headers: corsHeaders });
+    if (!data) return new Response('Plan not found', { status: 404, headers: corsHeaders });
 
-    return new Response(data, { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(data, { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   },
 };

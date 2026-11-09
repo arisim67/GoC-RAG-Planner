@@ -33,7 +33,9 @@ function testTarget() {
   try {
     const u = new URL(t);
     if (u.protocol === 'https:' && TEST_HOST_RE.test(u.hostname)) return u.origin + '/';
-  } catch (_) { /* not a URL: use the main site */ }
+  } catch (_) {
+    /* not a URL: use the main site */
+  }
   return NEW_SITE_URL;
 }
 
@@ -94,14 +96,23 @@ function savedServers() {
   try {
     const d = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
     return { servers: (d.servers || []).filter(s => !s.isTutorial), activeId: d.activeId || null };
-  } catch (_) { return { servers: [], activeId: null }; }
+  } catch (_) {
+    return { servers: [], activeId: null };
+  }
 }
 
 async function moveServers() {
   const { servers, activeId } = savedServers();
-  if (!servers.length) { location.href = newSiteUrl(); return; }
+  if (!servers.length) {
+    location.href = newSiteUrl();
+    return;
+  }
   let tourSeen = null;
-  try { tourSeen = localStorage.getItem(TOUR_KEY); } catch (_) { /* ignore */ }
+  try {
+    tourSeen = localStorage.getItem(TOUR_KEY);
+  } catch (_) {
+    /* ignore */
+  }
   let data;
   try {
     data = await pack({ v: 1, servers, activeId, tourSeen });
@@ -120,17 +131,21 @@ async function moveServers() {
 // ── Old site: the banner ─────────────────────────────────────────
 export function showMovedBanner() {
   const n = savedServers().servers.length;
-  const host = newSiteUrl().replace(/^https:\/\//, '').replace(/\/$/, '');
+  const host = newSiteUrl()
+    .replace(/^https:\/\//, '')
+    .replace(/\/$/, '');
   const bar = document.createElement('div');
   bar.className = 'moved-banner';
   bar.setAttribute('role', 'region');
   bar.setAttribute('aria-label', 'The planner has moved');
   bar.innerHTML = `
     <div class="moved-text">
-      <strong>📦 The planner has moved to <a href="${esc(newSiteUrl())}">${esc(host)}</a></strong>
-      <span>${n
-        ? `Your ${n === 1 ? 'server is' : n + ' servers are'} saved in this browser for this address only. Move ${n === 1 ? 'it' : 'them'} before ${OFF_DATE}, when this address is turned off. Nothing is uploaded.`
-        : `Please update your bookmarks: this old address will be turned off on ${OFF_DATE}.`}</span>
+      <strong>The planner has moved to <a href="${esc(newSiteUrl())}">${esc(host)}</a></strong>
+      <span>${
+        n
+          ? `Your ${n === 1 ? 'server is' : n + ' servers are'} saved in this browser for this address only. Move ${n === 1 ? 'it' : 'them'} before ${OFF_DATE}, when this address is turned off. Nothing is uploaded.`
+          : `Please update your bookmarks: this old address will be turned off on ${OFF_DATE}.`
+      }</span>
     </div>
     <div class="moved-actions">
       ${n ? `<button type="button" class="btn-gold" id="btn-move-servers">Move my ${n === 1 ? 'server' : n + ' servers'} →</button>` : ''}
@@ -138,16 +153,22 @@ export function showMovedBanner() {
     </div>`;
   document.body.prepend(bar);
   const btn = bar.querySelector('#btn-move-servers');
-  if (btn) btn.addEventListener('click', async () => {
-    btn.disabled = true; btn.textContent = '⏳ Moving...';
-    await moveServers();
-    btn.disabled = false; btn.textContent = `Move my ${n === 1 ? 'server' : n + ' servers'} →`;
-  });
+  if (btn)
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = 'Moving...';
+      await moveServers();
+      btn.disabled = false;
+      btn.textContent = `Move my ${n === 1 ? 'server' : n + ' servers'} →`;
+    });
 }
 
 // ── New site: receiving servers ──────────────────────────────────
 const same = (a, b) => {
-  const strip = s => { const { cloudSynced, ...rest } = s; return JSON.stringify(rest); };
+  const strip = s => {
+    const { cloudSynced, ...rest } = s;
+    return JSON.stringify(rest);
+  };
   return strip(a) === strip(b);
 };
 
@@ -155,11 +176,16 @@ function askToImport(servers) {
   return new Promise(resolve => {
     const bg = document.createElement('div');
     bg.className = 'modal-bg open';
-    const names = servers.map(s => `<li>${esc(s.name || 'Untitled')}${s.isViewOnly ? ' <span class="move-viewonly">view-only</span>' : ''}</li>`).join('');
+    const names = servers
+      .map(
+        s =>
+          `<li>${esc(s.name || 'Untitled')}${s.isViewOnly ? ' <span class="move-viewonly">view-only</span>' : ''}</li>`,
+      )
+      .join('');
     const n = servers.length;
     bg.innerHTML = `
       <div class="modal modal-move" role="dialog" aria-modal="true" aria-labelledby="move-title">
-        <h3 id="move-title">📦 Move ${n === 1 ? 'your server' : n + ' servers'} here?</h3>
+        <h3 id="move-title">Move ${n === 1 ? 'your server' : n + ' servers'} here?</h3>
         <p class="move-msg">From the planner's old address:</p>
         <ul class="move-list">${names}</ul>
         <p class="move-hint">Servers you already have here stay as they are.</p>
@@ -169,7 +195,10 @@ function askToImport(servers) {
         </div>
       </div>`;
     document.body.appendChild(bg);
-    const done = ok => { bg.remove(); resolve(ok); };
+    const done = ok => {
+      bg.remove();
+      resolve(ok);
+    };
     bg.querySelector('[data-a="yes"]').addEventListener('click', () => done(true));
     bg.querySelector('[data-a="no"]').addEventListener('click', () => done(false));
     bg.querySelector('[data-a="yes"]').focus();
@@ -183,34 +212,55 @@ export async function receiveMovedServers() {
   // Take the data out of the address bar right away so it isn't bookmarked or shared by mistake.
   history.replaceState(null, '', location.pathname + location.search);
   let payload;
-  try { payload = await unpack(data); } catch (e) {
+  try {
+    payload = await unpack(data);
+  } catch (e) {
     console.error(e);
     showToast('Could not read the moved servers. Try Move my servers again, or use Export / Import.');
     return;
   }
   const incoming = (payload && Array.isArray(payload.servers) ? payload.servers : []).filter(s => s && s.id && s.plan);
   if (!incoming.length) return;
-  if (!(await askToImport(incoming))) { showToast('Nothing was moved. You can try again from the old address.', false, 4000); return; }
+  if (!(await askToImport(incoming))) {
+    showToast('Nothing was moved. You can try again from the old address.', false, 4000);
+    return;
+  }
 
-  let added = 0, already = 0;
+  let added = 0,
+    already = 0;
   for (const s of incoming) {
     const i = state.servers.findIndex(x => x.id === s.id);
-    if (i < 0) { state.servers.push(s); added++; }
-    else if (same(state.servers[i], s)) already++;
-    else if (state.servers[i].isViewOnly && !s.isViewOnly) { state.servers[i] = s; added++; } // your own copy beats a view-only one
+    if (i < 0) {
+      state.servers.push(s);
+      added++;
+    } else if (same(state.servers[i], s)) already++;
+    else if (state.servers[i].isViewOnly && !s.isViewOnly) {
+      state.servers[i] = s;
+      added++;
+    } // your own copy beats a view-only one
     else {
       // Both versions were edited: keep both rather than lose either.
-      state.servers.push({ ...s, id: 's' + Date.now() + '_' + Math.random().toString(36).slice(2), name: (s.name || 'Untitled') + ' (moved)', cloudSynced: false });
+      state.servers.push({
+        ...s,
+        id: 's' + Date.now() + '_' + Math.random().toString(36).slice(2),
+        name: (s.name || 'Untitled') + ' (moved)',
+        cloudSynced: false,
+      });
       added++;
     }
   }
   if (!state.servers.some(x => x.id === state.activeId)) {
-    state.activeId = state.servers.some(x => x.id === payload.activeId) ? payload.activeId : (state.servers[0] && state.servers[0].id) || null;
+    state.activeId = state.servers.some(x => x.id === payload.activeId)
+      ? payload.activeId
+      : (state.servers[0] && state.servers[0].id) || null;
   }
   // Don't replay the tutorial for someone who has already seen it on the old site.
   try {
-    if (payload.tourSeen && Number(payload.tourSeen) > Number(localStorage.getItem(TOUR_KEY) || 0)) localStorage.setItem(TOUR_KEY, payload.tourSeen);
-  } catch (_) { /* ignore */ }
+    if (payload.tourSeen && Number(payload.tourSeen) > Number(localStorage.getItem(TOUR_KEY) || 0))
+      localStorage.setItem(TOUR_KEY, payload.tourSeen);
+  } catch (_) {
+    /* ignore */
+  }
   save();
   const parts = [];
   if (added) parts.push(`Moved ${added} ${added === 1 ? 'server' : 'servers'}`);

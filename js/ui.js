@@ -16,7 +16,7 @@ export function showToast(msg, isError = true, duration = 5000) {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   `;
   document.body.appendChild(toast);
-  
+
   // Animate in
   requestAnimationFrame(() => {
     toast.style.transform = 'translateY(0)';
@@ -31,33 +31,37 @@ export function showToast(msg, isError = true, duration = 5000) {
   }, duration);
 }
 
-export function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+export function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
-export function dateLabel(srv,d){
-  if(!srv.startDate){
-    return d===0 ? 'Day 0' : `Day ${d}`;
+export function dateLabel(srv, d) {
+  if (!srv.startDate) {
+    return d === 0 ? 'Day 0' : `Day ${d}`;
   }
   // Split to avoid UTC timezone shifting issues
   const [yy, mm, dd] = srv.startDate.split('-');
   const dt = new Date(yy, mm - 1, dd);
-  dt.setDate(dt.getDate()+d-1);
-  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const dateStr = `${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}`;
-  
-  if(d===0){
+  dt.setDate(dt.getDate() + d - 1);
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dateStr = `${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}`;
+
+  if (d === 0) {
     return `Day 0<br><small style="font-size:9px;color:var(--text3)">${days[dt.getDay()]} ${dateStr}</small>`;
   }
   return `Day ${d}<br><small style="font-size:9px;color:var(--text3)">${days[dt.getDay()]} ${dateStr}</small>`;
 }
 
-export function dateLabelShort(srv,d){
-  if(!srv.startDate) return d===0 ? 'D0' : `D${d}`;
+export function dateLabelShort(srv, d) {
+  if (!srv.startDate) return d === 0 ? 'D0' : `D${d}`;
   const [yy, mm, dd] = srv.startDate.split('-');
   const dt = new Date(yy, mm - 1, dd);
-  dt.setDate(dt.getDate()+d-1);
-  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const dateStr = `${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}`;
-  return d===0 ? `D0 ${days[dt.getDay()]} ${dateStr}` : `D${d} ${days[dt.getDay()]} ${dateStr}`;
+  dt.setDate(dt.getDate() + d - 1);
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dateStr = `${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}`;
+  return d === 0 ? `D0 ${days[dt.getDay()]} ${dateStr}` : `D${d} ${days[dt.getDay()]} ${dateStr}`;
 }
 
-export function closeModal(id){document.getElementById(id).classList.remove('open');}
+export function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}

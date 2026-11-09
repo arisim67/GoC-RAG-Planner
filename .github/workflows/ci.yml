@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Tests and formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check every script parses
+        run: for f in $(git ls-files 'js/*.js' 'functions/*.js' 'cloud-worker/*.js'); do node --check "$f"; done
+      - name: Run tests
+        run: npm test
+      - name: Check formatting
+        run: npm run format:check

@@ -3,11 +3,11 @@ export const wetlandMap = {
   name: 'Wetland',
   mode: 'goc',
   kingdoms: [
-    { id: 'Darkwick',    type: 'lv3', adj: ['E', 'Mortkranken', 'Jabberwock', 'Dionysia'] },
-    { id: 'Vagastrom',   type: 'lv2', adj: ['C', 'D', 'F', 'H'] },
-    { id: 'Jabberwock',  type: 'lv2', adj: ['Sinostra', 'Darkwick'] },
-    { id: 'Dionysia',    type: 'lv2', adj: ['F', 'H', 'J', 'Darkwick'] },
-    { id: 'Sinostra',    type: 'lv2', adj: ['K', 'N', 'J', 'Jabberwock'] },
+    { id: 'Darkwick', type: 'lv3', adj: ['E', 'Mortkranken', 'Jabberwock', 'Dionysia'] },
+    { id: 'Vagastrom', type: 'lv2', adj: ['C', 'D', 'F', 'H'] },
+    { id: 'Jabberwock', type: 'lv2', adj: ['Sinostra', 'Darkwick'] },
+    { id: 'Dionysia', type: 'lv2', adj: ['F', 'H', 'J', 'Darkwick'] },
+    { id: 'Sinostra', type: 'lv2', adj: ['K', 'N', 'J', 'Jabberwock'] },
     { id: 'Mortkranken', type: 'lv2', adj: ['B', 'D', 'Darkwick'] },
     { id: 'A', type: 'lv1', adj: ['B', 'C'] },
     { id: 'B', type: 'lv1', adj: ['A', 'Mortkranken'] },
@@ -21,6 +21,6 @@ export const wetlandMap = {
     { id: 'K', type: 'lv1', adj: ['G', 'N', 'Sinostra'] },
     { id: 'L', type: 'lv1', adj: ['M', 'H'] },
     { id: 'M', type: 'lv1', adj: ['L', 'J'] },
-    { id: 'N', type: 'lv1', adj: ['K', 'Sinostra'] }
-  ]
+    { id: 'N', type: 'lv1', adj: ['K', 'Sinostra'] },
+  ],
 };

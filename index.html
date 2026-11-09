@@ -1,165 +1,306 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GoC / Ragnarok Planner — Tokyo Debunker</title>
-<meta name="description" content="Plan Game of Claws and Ragnarok for Tokyo Debunker guilds: map out towns day by day, check the rules as you go, and auto-balance points. Runs entirely in your browser.">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoC / Ragnarok Planner — Tokyo Debunker</title>
+    <meta
+      name="description"
+      content="Plan Game of Claws and Ragnarok for Tokyo Debunker guilds: map out towns day by day, check the rules as you go, and auto-balance points. Runs entirely in your browser."
+    />
 
-<!-- Link previews (Discord, Slack, iMessage, X…). Image and URLs must be absolute. -->
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="GoC / Ragnarok Planner">
-<meta property="og:title" content="GoC / Ragnarok Planner · Point planning for Tokyo Debunker guilds">
-<meta property="og:description" content="Plan Game of Claws and Ragnarok for Tokyo Debunker guilds: map out towns day by day, check the rules as you go, and auto-balance points. Runs entirely in your browser.">
-<meta property="og:url" content="https://goc-rag-planner.pages.dev/">
-<meta property="og:image" content="https://goc-rag-planner.pages.dev/images/social-preview.png">
-<meta property="og:image:width" content="1280">
-<meta property="og:image:height" content="640">
-<meta property="og:image:alt" content="GoC / Ragnarok Planner: a planning grid of towns and days, coloured by guild">
-<meta name="twitter:card" content="summary_large_image">
-<!-- Colour of the stripe on the left of Discord embeds (also tints the address bar on some phones) -->
-<meta name="theme-color" content="#e2c883">
+    <!-- Link previews (Discord, Slack, iMessage, X…). Image and URLs must be absolute. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GoC / Ragnarok Planner" />
+    <meta property="og:title" content="GoC / Ragnarok Planner · Point planning for Tokyo Debunker guilds" />
+    <meta
+      property="og:description"
+      content="Plan Game of Claws and Ragnarok for Tokyo Debunker guilds: map out towns day by day, check the rules as you go, and auto-balance points. Runs entirely in your browser."
+    />
+    <meta property="og:url" content="https://goc-rag-planner.pages.dev/" />
+    <meta property="og:image" content="https://goc-rag-planner.pages.dev/images/social-preview.png" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta
+      property="og:image:alt"
+      content="GoC / Ragnarok Planner: a planning grid of towns and days, coloured by guild"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- Colour of the stripe on the left of Discord embeds (also tints the address bar on some phones) -->
+    <meta name="theme-color" content="#e2c883" />
 
-<!-- Favicon -->
-<link rel="icon" type="image/x-icon" href="images/favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png" />
 
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/tour.css">
-</head>
-<body>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/tour.css" />
+  </head>
+  <body>
+    <div class="app-header">
+      <div class="app-title app-title-grow">
+        GoC / Ragnarok Planner
+        <a
+          class="header-link"
+          href="https://github.com/arisim67/GoC-RAG-Planner/blob/main/docs/user-guide.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          ><svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 7v14" />
+            <path
+              d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
+            /></svg
+          ><span>User Guide</span></a
+        >
+        <button type="button" class="tour-launch" onclick="startTour()">
+          <svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"
+            />
+            <path d="M22 10v6" />
+            <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /></svg
+          ><span>Tutorial</span>
+        </button>
+        <span class="save-status" id="save-status"></span>
+      </div>
+      <div class="tabs-bar" id="tabs-bar" data-tour="tabs"></div>
+    </div>
 
-<div class="app-header">
-  <div class="app-title app-title-grow">
-    GoC / Ragnarok Planner <small>made with Claude & Gemini</small>
-    <a class="header-link" href="https://github.com/arisim67/GoC-RAG-Planner/blob/main/docs/user-guide.md" target="_blank" rel="noopener noreferrer">📖 User Guide</a>
-    <button type="button" class="tour-launch" onclick="startTour()">🎓 Tutorial</button>
-    <span class="save-status" id="save-status"></span>
-  </div>
-  <div class="tabs-bar" id="tabs-bar" data-tour="tabs"></div>
-</div>
-
-<div class="main" id="main-content">
-  <div class="empty-state">
-    No servers yet. Click <strong class="empty-state-cta">+ Add Server</strong> to get started.
-  </div>
-</div>
-
-<div class="site-footer">
-  <p class="site-footer-text">Find any bugs or have any suggestions? DM <a class="site-footer-link" href="https://discord.com/users/1013812813245988865" target="_blank" rel="noopener noreferrer">arianes.</a> on Discord · <a class="site-footer-link" href="https://github.com/arisim67/GoC-RAG-Planner/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">Privacy</a></p>
-</div>
-
-<!-- ADD IMPORT MODAL -->
- <div class="modal-bg" id="modal-import">
-  <div class="modal modal-wide">
-    <h3>📥 Bulk Import Data</h3>
-    <div id="import-dropzone" class="import-dropzone"
-         ondragover="handleDragOver(event)"
-         ondragleave="handleDragLeave(event)"
-         ondrop="handleDrop(event)"
-         onclick="document.getElementById('import-file').click()">
-      <input type="file" id="import-file" accept=".json" hidden onchange="handleFileSelect(event)">
-      <div class="dropzone-content">
-        <div class="dropzone-icon">📁</div>
-        <div class="dropzone-title">Drop JSON file here</div>
-        <div class="dropzone-hint">or click to browse .json export</div>
+    <div class="main" id="main-content">
+      <div class="empty-state">
+        No servers yet. Click <strong class="empty-state-cta">+ Add Server</strong> to get started.
       </div>
     </div>
-    <textarea class="import-text" id="import-text" placeholder="Paste data from spreadsheet or type each guild on a new line here..."></textarea>
-    <div class="row import-options">
-      <div class="fg">
-        <label>Import Mode</label>
-        <select id="import-mode" onchange="document.getElementById('import-day-container').style.opacity = this.value === 'guilds' ? '0.3' : '1'; document.getElementById('import-day').disabled = this.value === 'guilds';">
-          <option value="day">Import Daily Map Data</option>
-          <option value="guilds">Import Guild List (Setup)</option>
-        </select>
-      </div>
-      <div class="fg" id="import-day-container">
-        <label>Target Day</label>
-        <input type="number" id="import-day" value="0" min="0">
-      </div>
-    </div>
-    <div class="import-help">
-      <strong>Daily Data:</strong> Pastes a column of guild names straight down the map grid.<br>
-      <strong>Guild List:</strong> Finds unique names in your pasted text and creates new guilds for them.<br>
-      <strong>Exported Server:</strong> Drop/paste a full server export JSON (from 📤 Export Server) to restore everything — guilds, plan, settings.
-    </div>
-    <div class="modal-row modal-row-spaced">
-      <button class="btn" onclick="document.getElementById('modal-import').classList.remove('open')">Cancel</button>
-      <button class="btn-accent" onclick="processImport()">Import Data</button>
-    </div>
-  </div>
-</div>
 
-<!-- ADD SERVER MODAL -->
-<div class="modal-bg" id="modal-add">
-  <div class="modal">
-    <h3>Add Server</h3>
-    <div class="fg modal-field">
-      <label>Server Name</label>
-      <input class="input-full" type="text" id="ns-name" placeholder="e.g. EA-43">
+    <div class="site-footer">
+      <p class="site-footer-text">
+        Made by ari with help from Claude &amp; Gemini · Find any bugs or have any suggestions? DM
+        <a
+          class="site-footer-link"
+          href="https://discord.com/users/1013812813245988865"
+          target="_blank"
+          rel="noopener noreferrer"
+          >arianes.</a
+        >
+        on Discord ·
+        <a
+          class="site-footer-link"
+          href="https://github.com/arisim67/GoC-RAG-Planner/blob/main/PRIVACY.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Privacy</a
+        >
+        ·
+        <a
+          class="site-footer-link"
+          href="https://github.com/arisim67/GoC-RAG-Planner"
+          target="_blank"
+          rel="noopener noreferrer"
+          >GitHub</a
+        >
+      </p>
     </div>
-    <div class="fg modal-field">
-      <label>Mode</label>
-      <select class="input-full" id="ns-mode" onchange="onAddModalModeChange()">
-        <option value="ragnarok">Ragnarok</option>
-        <option value="goc">Game of Claws</option>
-      </select>
-    </div>
-    <div class="fg modal-field">
-      <label>Map</label>
-      <select class="input-full" id="ns-map"></select>
-    </div>
-    <div class="split modal-field">
-      <div class="fg">
-        <label>Start Date (Day 1)</label>
-        <input class="input-full" type="date" id="ns-start" onchange="onAddModalStartChange()">
+
+    <!-- ADD IMPORT MODAL -->
+    <div class="modal-bg" id="modal-import">
+      <div class="modal modal-wide">
+        <h3>Bulk Import Data</h3>
+        <div
+          id="import-dropzone"
+          class="import-dropzone"
+          ondragover="handleDragOver(event)"
+          ondragleave="handleDragLeave(event)"
+          ondrop="handleDrop(event)"
+          onclick="document.getElementById('import-file').click()"
+        >
+          <input type="file" id="import-file" accept=".json" hidden onchange="handleFileSelect(event)" />
+          <div class="dropzone-content">
+            <div class="dropzone-icon">
+              <svg
+                class="icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" x2="12" y1="3" y2="15" />
+              </svg>
+            </div>
+            <div class="dropzone-title">Drop JSON file here</div>
+            <div class="dropzone-hint">or click to browse .json export</div>
+          </div>
+        </div>
+        <textarea
+          class="import-text"
+          id="import-text"
+          placeholder="Paste data from spreadsheet or type each guild on a new line here..."
+        ></textarea>
+        <div class="row import-options">
+          <div class="fg">
+            <label>Import Mode</label>
+            <select
+              id="import-mode"
+              onchange="document.getElementById('import-day-container').style.opacity = this.value === 'guilds' ? '0.3' : '1'; document.getElementById('import-day').disabled = this.value === 'guilds';"
+            >
+              <option value="day">Import Daily Map Data</option>
+              <option value="guilds">Import Guild List (Setup)</option>
+            </select>
+          </div>
+          <div class="fg" id="import-day-container">
+            <label>Target Day</label>
+            <input type="number" id="import-day" value="0" min="0" />
+          </div>
+        </div>
+        <div class="import-help">
+          <strong>Daily Data:</strong> Pastes a column of guild names straight down the map grid.<br />
+          <strong>Guild List:</strong> Finds unique names in your pasted text and creates new guilds for them.<br />
+          <strong>Exported Server:</strong> Drop/paste a full server export JSON (from Export Server) to restore
+          everything — guilds, plan, settings.
+        </div>
+        <div class="modal-row modal-row-spaced">
+          <button class="btn" onclick="document.getElementById('modal-import').classList.remove('open')">Cancel</button>
+          <button class="btn-accent" onclick="processImport()">Import Data</button>
+        </div>
       </div>
-      <div class="fg">
-        <label>End Date</label>
-        <input class="input-full" type="date" id="ns-end">
+    </div>
+
+    <!-- ADD SERVER MODAL -->
+    <div class="modal-bg" id="modal-add">
+      <div class="modal">
+        <h3>Add Server</h3>
+        <div class="fg modal-field">
+          <label>Server Name</label>
+          <input class="input-full" type="text" id="ns-name" placeholder="e.g. EA-43" />
+        </div>
+        <div class="fg modal-field">
+          <label>Mode</label>
+          <select class="input-full" id="ns-mode" onchange="onAddModalModeChange()">
+            <option value="ragnarok">Ragnarok</option>
+            <option value="goc">Game of Claws</option>
+          </select>
+        </div>
+        <div class="fg modal-field">
+          <label>Map</label>
+          <select class="input-full" id="ns-map"></select>
+        </div>
+        <div class="split modal-field">
+          <div class="fg">
+            <label>Start Date (Day 1)</label>
+            <input class="input-full" type="date" id="ns-start" onchange="onAddModalStartChange()" />
+          </div>
+          <div class="fg">
+            <label>End Date</label>
+            <input class="input-full" type="date" id="ns-end" />
+          </div>
+        </div>
+        <div class="modal-row">
+          <button class="btn" onclick="closeModal('modal-add')">Cancel</button>
+          <button class="btn-accent" onclick="confirmAdd()">Create</button>
+        </div>
       </div>
     </div>
-    <div class="modal-row">
-      <button class="btn" onclick="closeModal('modal-add')">Cancel</button>
-      <button class="btn-accent" onclick="confirmAdd()">Create</button>
+
+    <!-- CONFIRM DELETE MODAL -->
+    <div class="modal-bg" id="modal-confirm-delete">
+      <div class="modal modal-confirm">
+        <h3>Delete Server</h3>
+        <p class="confirm-msg" id="confirm-delete-msg"></p>
+        <p class="confirm-hint">This cannot be undone.</p>
+        <div class="modal-row modal-row-center">
+          <button class="btn" onclick="closeModal('modal-confirm-delete')">Cancel</button>
+          <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDeleteSrv()">Delete</button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
-<!-- CONFIRM DELETE MODAL -->
-<div class="modal-bg" id="modal-confirm-delete">
-  <div class="modal modal-confirm">
-    <h3>🗑 Delete Server</h3>
-    <p class="confirm-msg" id="confirm-delete-msg"></p>
-    <p class="confirm-hint">This cannot be undone.</p>
-    <div class="modal-row modal-row-center">
-      <button class="btn" onclick="closeModal('modal-confirm-delete')">Cancel</button>
-      <button class="btn btn-danger" id="confirm-delete-btn"
-       
-        onclick="confirmDeleteSrv()">Delete</button>
+    <!-- TAB CONTEXT MENU -->
+    <div id="tab-ctx">
+      <div class="ctx-item" id="ctx-rename" onclick="ctxRename()">
+        <span class="ctx-icon"
+          ><svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"
+            />
+            <path d="m15 5 4 4" /></svg
+        ></span>
+        Rename
+      </div>
+      <div class="ctx-item" id="ctx-duplicate" onclick="ctxDuplicate()">
+        <span class="ctx-icon"
+          ><svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg
+        ></span>
+        Duplicate
+      </div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item ctx-danger" id="ctx-delete" onclick="ctxDelete()">
+        <span class="ctx-icon"
+          ><svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 6h18" />
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+            <line x1="10" x2="10" y1="11" y2="17" />
+            <line x1="14" x2="14" y1="11" y2="17" /></svg
+        ></span>
+        Delete
+      </div>
     </div>
-  </div>
-</div>
 
-<!-- TAB CONTEXT MENU -->
-<div id="tab-ctx">
-  <div class="ctx-item" id="ctx-rename" onclick="ctxRename()">
-    <span class="ctx-icon">✏️</span> Rename
-  </div>
-  <div class="ctx-item" id="ctx-duplicate" onclick="ctxDuplicate()">
-    <span class="ctx-icon">⧉</span> Duplicate
-  </div>
-  <div class="ctx-sep"></div>
-  <div class="ctx-item ctx-danger" id="ctx-delete" onclick="ctxDelete()">
-    <span class="ctx-icon">🗑</span> Delete
-  </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js"></script>
-<script type="module" src="js/app.js"></script>
-</body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js"></script>
+    <script type="module" src="js/app.js"></script>
+  </body>
 </html>
