@@ -12,6 +12,7 @@ import { autoOptimize, undoOptimize } from './optimize.js';
 import { takeScreenshots } from './screenshots.js';
 import { checkUrlForSharedPlan, publishToCloud, syncFromCloud } from './cloud.js';
 import { initTour } from './tour.js';
+import { openMsgTemplate, setMessagesRerender } from './messages.js';
 
 load();
 checkUrlForSharedPlan().then(() => {
@@ -27,6 +28,8 @@ checkUrlForSharedPlan().then(() => {
   });
 });
 
+setMessagesRerender(renderAll);
+window.openMsgTemplate = openMsgTemplate;
 window.openAdd = openAdd;
 window.confirmAdd = confirmAdd;
 window.closeModal = closeModal;

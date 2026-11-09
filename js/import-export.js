@@ -82,7 +82,9 @@ export function exportServer(){
         baseLv3: g.baseLv3 || g.baseLv3s || 0,
         baseLv2: g.baseLv2 || g.baseLv2s || 0,
         baseLv1: g.baseLv1 || 0,
-        isSmall: g.isSmall || false
+        isSmall: g.isSmall || false,
+        isExcluded: g.isExcluded || false,
+        ...(g.msgName ? { msgName: g.msgName } : {}),
       })),
       plan: srv.plan,
       notes: srv.notes || '',
@@ -148,7 +150,9 @@ export function processImport(){
         baseLv3: g.baseLv3 || 0,
         baseLv2: g.baseLv2 || 0,
         baseLv1: g.baseLv1 || 0,
-        isSmall: g.isSmall || false
+        isSmall: g.isSmall || false,
+        isExcluded: g.isExcluded || false,
+        ...(typeof g.msgName === 'string' && g.msgName.trim() ? { msgName: g.msgName.trim() } : {}),
       };
     });
 

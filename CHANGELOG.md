@@ -3,6 +3,14 @@
 Notable changes to the GoC / Ragnarok Planner, newest first.
 The app is updated continuously rather than in numbered releases, so entries are grouped by date.
 
+## 2026-11-09
+ 
+### Added
+- **Daily message templates.** Click **✏️ Template** on Daily Messages to write the messages your own way, with placeholders for the date, guild, declares, giveaways and where to place def, and a live preview. The template is saved in your browser and used for every server.
+- **Guild names in messages:** give a guild a decorated name (emoji and all) that is used only in daily messages.
+### Fixed
+- **Export Server now keeps Exclude Guild**, so it survives Export and Import.
+
 ## 2026-11-08
 
 ### Added

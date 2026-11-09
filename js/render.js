@@ -7,6 +7,7 @@ import { calcScores, calcOcc, validateAdj, validateWipes, calcDec, kPts, getElig
 import { openTabCtx, openAdd } from './servers.js';
 import { renderFillSel } from './grid-fill.js';
 import { getMapData, getMapList } from './maps/index.js';
+import { buildMessages } from './messages.js';
 // Each mode's targets come from that mode's own model: Game of Claws has rules Ragnarok does not
 // (Darkwick needs a dorm or two lv1 towns behind it), so the GoC model is the only one that knows
 // which towns are really winnable. Reading GoC targets out of the Ragnarok model overstated them.
@@ -84,7 +85,7 @@ export function renderAll(){
       ${renderDecTable(srv,days,dec,give)}
     </div>
     
-    ${renderMsgs(srv,days,dec,give)}
+    ${renderMsgs(srv)}
   `;
   mc.querySelectorAll(scrollSel).forEach((w,i) => { w.scrollLeft = hScroll[i] || 0; });
   window.scrollTo(0, pageY);
@@ -460,84 +461,13 @@ function renderDecTable(srv,days,dec,give){
   </div>`;
 }
 
-function renderMsgs(srv,days,dec,give){
-  const mapData = getMapData(srv.mode, srv.mapKey);
-  const validKids = new Set(mapData.kingdoms.map(k=>k.id));
-  
-  const kTypeMap = {};
-  for (const k of mapData.kingdoms) kTypeMap[k.id] = k.type;
-  
-  // Base tier weights
-  const typeScore = { 'lv3': 30, 'lv2': 20, 'lv1': 10 };
+function renderMsgs(srv){
+  const msgs = buildMessages(srv);
 
-  const tDec = '- Declares';
-  const tGive = '- Giveaways';
-  const tHold = '- Place def on';
-  const tNone = 'none';
-
-  const msgs=Array.from({length:days},(_,d)=>{
-    let s=`## ${dateLabelShort(srv,d+1).replace('<br>','')}\n`;
-    
-    for(const g of srv.guilds){
-      const declares = dec[g.id][d] || [];
-      const giveaways = give[g.id][d] || [];
-
-      // Guilds with no towns going into the day (not on the map yet): if they aren't declaring,
-      // there's nothing to tell them, so leave them out; if they are, they're joining the map.
-      const hadTowns = Object.entries(srv.plan[d]||{}).some(([k,gid]) => gid===g.id && validKids.has(k));
-      if (!hadTowns && declares.length === 0) continue;
-      const joining = !hadTowns;
-
-      const held = Object.entries(srv.plan[d+1]||{})
-        .filter(([k,gid]) => gid===g.id && validKids.has(k))
-        .map(([k]) => k)
-        .filter(k => !declares.includes(k));
-        
-      let defText = tNone;
-      
-      const candidates = [];
-      for (const k of held) candidates.push({ id: k, type: kTypeMap[k], isHeld: true });
-      for (const k of declares) candidates.push({ id: k, type: kTypeMap[k], isHeld: false });
-
-      if (candidates.length > 0) {
-        candidates.sort((a, b) => {
-          const scoreA = (typeScore[a.type] || 0) + (a.isHeld ? 100 : 0);
-          const scoreB = (typeScore[b.type] || 0) + (b.isHeld ? 100 : 0);
-          return scoreB - scoreA;
-        });
-
-        const best = candidates[0];
-        if (best.isHeld || joining) {
-          // Joining guilds place def on the town they're declaring (no fallback needed)
-          defText = best.id;
-        } else {
-          // If they have no held towns, check if they are giving anything away today
-          if (giveaways.length > 0) {
-            defText = `${best.id} or place smallest team on ${giveaways.join(', ')} if not available for battle phase`;
-          } else {
-            defText = `${best.id} or place smallest team if not available for battle phase`;
-          }
-        }
-      } else if (hadTowns) {
-        // Being wiped from the map today (towns yesterday, none today): place def on the town
-        // they're losing. If they lose several, use the highest level one (castle > dorm > town).
-        const losing = Object.entries(srv.plan[d]||{})
-          .filter(([k,gid]) => gid===g.id && validKids.has(k))
-          .map(([k]) => k)
-          .sort((a, b) => (typeScore[kTypeMap[b]] || 0) - (typeScore[kTypeMap[a]] || 0));
-        if (losing.length) defText = losing[0];
-      }
-        
-      const safeName = g.name.replace(/([\\*_~`])/g, '\\$1');
-        
-      s+=`### ${safeName}\n${tDec}: ${declares.join(', ')||tNone}\n${tGive}: ${giveaways.join(', ')||tNone}\n${tHold} ${defText}\n`;
-    }
-    return s.trim();
-  });
-  
   return `<div class="section" data-tour="messages">
     <div class="sec-title sec-title-row">
       <div>Daily Messages <span class="sec-note"> — click to copy</span></div>
+      <button type="button" class="btn btn-tpl" onclick="openMsgTemplate()">✏️ Template</button>
     </div>
     
     <div class="msg-grid">
