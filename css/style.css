@@ -377,3 +377,31 @@ table.ptbl tr.pts-row th.pts-cell{padding:4px 4px 8px;vertical-align:top;border-
   .modal-tpl .tpl-preview-wrap{position:static;}
   .modal-tpl .tpl-preview{max-height:40vh;}
 }
+.modal-tpl .tpl-preview-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+.modal-tpl .tpl-preview-head .tpl-label{margin:0;}
+.modal-tpl .tpl-tabs{display:flex;background:var(--bg3);border-radius:10px;padding:2px;}
+.modal-tpl .tpl-tab{background:transparent;border:none;color:var(--text2);font:600 11px var(--font-body);padding:4px 10px;border-radius:8px;cursor:pointer;}
+.modal-tpl .tpl-tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+.modal-tpl .tpl-preview[hidden]{display:none;}
+
+/* Discord-style preview */
+.modal-tpl .tpl-preview.tpl-discord{background:#313338;border-color:#3f4147;color:#dbdee1;font:14px/1.375 "gg sans","Noto Sans","Helvetica Neue",Helvetica,Arial,sans-serif;white-space:normal;word-break:break-word;}
+.tpl-discord strong{font-weight:700;}
+.tpl-discord .dmd-h1,.tpl-discord .dmd-h2,.tpl-discord .dmd-h3{color:#f2f3f5;font-weight:700;line-height:1.375;margin:8px 0 4px;}
+.tpl-discord .dmd-h1{font-size:21px;}
+.tpl-discord .dmd-h2{font-size:17.5px;}
+.tpl-discord .dmd-h3{font-size:14px;}
+.tpl-discord > :first-child,.tpl-discord .dmd-quote > :first-child{margin-top:0;}
+.tpl-discord .dmd-sub{font-size:11.5px;color:#949ba4;}
+.tpl-discord .dmd-blank{height:1.375em;}
+.tpl-discord .dmd-list{margin:2px 0 2px 1.1em;padding:0 0 0 0.6em;}
+.tpl-discord ul.dmd-list{list-style:disc;}
+.tpl-discord ul.dmd-list ul.dmd-list{list-style:circle;}
+.tpl-discord ol.dmd-list{list-style:decimal;}
+.tpl-discord .dmd-list li{margin:1px 0;}
+.tpl-discord .dmd-quote{border-left:4px solid #4e5058;padding:0 8px 0 12px;margin:2px 0;}
+.tpl-discord .dmd-code{background:#2b2d31;border-radius:4px;padding:0 .2em;font:0.85em/1.4 Consolas,"Andale Mono WT","Andale Mono","Lucida Console",Monaco,"Courier New",monospace;}
+.tpl-discord .dmd-pre{background:#2b2d31;border:1px solid #1e1f22;border-radius:4px;padding:8px;margin:4px 0;font:0.85em/1.4 Consolas,"Lucida Console",Monaco,"Courier New",monospace;white-space:pre-wrap;color:#dbdee1;}
+.tpl-discord .dmd-spoiler{background:#1e1f22;color:transparent;border-radius:3px;cursor:pointer;}
+.tpl-discord .dmd-spoiler:hover{background:#2b2d31;color:inherit;}
+.tpl-discord .dmd-link{color:#00a8fc;}

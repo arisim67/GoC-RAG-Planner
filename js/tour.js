@@ -227,7 +227,9 @@ function buildSteps(srv) {
     {
       target: 'messages',
       title: 'Daily messages',
-      body: `Ready-made instructions for each day. Click a card to copy it, then paste it into Discord.`,
+      body: `Ready-made instructions for each day. Click a card to copy it, then paste it into Discord.
+             <br><br>Want them in your own style? <b>✏️ Template</b> changes the format, and lets you give guilds
+             emoji names just for messages.`,
       place: 'top',
     },
     {

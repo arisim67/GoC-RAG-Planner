@@ -43,6 +43,7 @@ Any static file server works (`npx serve`, the VS Code Live Server extension, et
 │   ├── calc.js             Scores, occupation, declares, plan validation
 │   ├── render.js           Builds the page (tabs, settings, guilds, grid, stats, messages)
 │   ├── messages.js         Daily messages and the message template editor
+│   ├── discord-md.js       Shows message text the way Discord displays it (template preview)
 │   ├── handlers.js         Edits made in the page (settings, guilds, grid cells)
 │   ├── servers.js          Server tabs: add, switch, rename, duplicate, delete
 │   ├── import-export.js    Import modal and Export Server

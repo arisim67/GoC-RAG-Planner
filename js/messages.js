@@ -8,6 +8,7 @@ import { activeSrv, numDays, save } from './state.js';
 import { esc, dateLabelShort, showToast } from './ui.js';
 import { calcDec } from './calc.js';
 import { getMapData } from './maps/index.js';
+import { renderDiscord } from './discord-md.js';
 
 const TEMPLATE_KEY = 'goc_msg_template';
 
@@ -171,7 +172,8 @@ export function openMsgTemplate() {
   bg.innerHTML = `
     <div class="modal modal-tpl" role="dialog" aria-modal="true" aria-labelledby="tpl-title">
       <h3 id="tpl-title">✏️ Daily Message Template</h3>
-      <p class="tpl-help">Used for every server in this browser. Click a <b>{placeholder}</b> to add it where the cursor is.</p>
+      <p class="tpl-help">Used for every server in this browser. Click a <b>{placeholder}</b> to add it where the cursor is.
+        Leave an empty line at the end of the guild part to space guilds apart.</p>
       <div class="tpl-cols">
         <div class="tpl-edit">
           <label class="tpl-label" for="tpl-header">Top of each day's message</label>
@@ -197,8 +199,15 @@ export function openMsgTemplate() {
           </details>
         </div>
         <div class="tpl-preview-wrap">
-          <div class="tpl-label">Preview: ${esc(dateLabelShort(srv, previewDay + 1))}</div>
-          <pre class="tpl-preview" id="tpl-preview"></pre>
+          <div class="tpl-preview-head">
+            <span class="tpl-label">Preview: ${esc(dateLabelShort(srv, previewDay + 1))}</span>
+            <div class="tpl-tabs" role="tablist">
+              <button type="button" role="tab" class="tpl-tab active" data-view="discord" aria-selected="true">In Discord</button>
+              <button type="button" role="tab" class="tpl-tab" data-view="text" aria-selected="false">Text to copy</button>
+            </div>
+          </div>
+          <div class="tpl-preview tpl-discord" id="tpl-discord"></div>
+          <pre class="tpl-preview" id="tpl-preview" hidden></pre>
         </div>
       </div>
       <div class="modal-row tpl-actions">
@@ -221,10 +230,20 @@ export function openMsgTemplate() {
     // Preview with the names being typed, without changing the server yet.
     const previewSrv = { ...srv, guilds: srv.guilds.map(g => ({ ...g, msgName: names[g.id] })) };
     const day = plans[previewDay] ? [{ ...plans[previewDay], guilds: plans[previewDay].guilds.map(x => ({ ...x, g: previewSrv.guilds.find(g => g.id === x.g.id) })) }] : [];
-    $('#tpl-preview').textContent = day.length ? formatMessages(previewSrv, day, current())[0] : 'No days to preview yet.';
+    const text = day.length ? formatMessages(previewSrv, day, current())[0] : 'No days to preview yet.';
+    $('#tpl-preview').textContent = text;
+    $('#tpl-discord').innerHTML = renderDiscord(text);
   };
   [header, guild, empty].forEach(el => el.addEventListener('input', update));
   bg.querySelectorAll('.tpl-msgname').forEach(el => el.addEventListener('input', update));
+
+  // Switch between how Discord shows the message and the text that gets copied.
+  bg.querySelectorAll('.tpl-tab').forEach(tab => tab.addEventListener('click', () => {
+    const view = tab.dataset.view;
+    bg.querySelectorAll('.tpl-tab').forEach(t => { t.classList.toggle('active', t === tab); t.setAttribute('aria-selected', t === tab); });
+    $('#tpl-discord').hidden = view !== 'discord';
+    $('#tpl-preview').hidden = view !== 'text';
+  }));
 
   // Placeholder chips insert at the cursor of the box above them.
   bg.querySelectorAll('.tpl-chip').forEach(chip => chip.addEventListener('click', () => {
