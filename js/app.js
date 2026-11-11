@@ -2,7 +2,9 @@
 // Entry point: loads saved data, renders the page, starts the tutorial, and connects the page's
 // buttons and fields to their functions (see js/actions.js for how data-action etc. work).
 
-import { state, load, activeSrv, setAfterSave } from './state.js';
+import { state, load, activeSrv, setAfterSave, save, numDays } from './state.js';
+
+let demoCell = null; // the broken move put in for the tutorial's Status step
 import { closeModal, showToast } from './ui.js';
 import { renderTabs, renderAll } from './render.js';
 import {
@@ -51,17 +53,28 @@ import {
   processImport,
   exportServer,
 } from './import-export.js';
-import { autoOptimize } from './optimize.js';
+import { autoOptimize, optimizeStatus } from './optimize.js';
 import { takeScreenshots } from './screenshots.js';
 import { checkUrlForSharedPlan, publishToCloud, syncFromCloud } from './cloud.js';
 import { initTour } from './tour.js';
 import { isOldSite, forwardSharedLink, showMovedBanner, receiveMovedServers } from './move.js';
 import { openMsgTemplate, setMessagesRerender, receiveSharedTemplate, hasSharedTemplate } from './messages.js';
+import { isMidEvent, validateAdj } from './calc.js';
+import { getMapData } from './maps/index.js';
 import { initActions, registerActions } from './actions.js';
-import { undo, redo, handleUndoKeys, setHistoryHooks, clearHistory } from './history.js';
+import { undo, redo, handleUndoKeys, setHistoryHooks, clearHistory, recordChange } from './history.js';
 import { toggleSpotlight, handleSpotlightKeys } from './spotlight.js';
 import { openVersions, autoVersion, setVersionHooks } from './versions.js';
 import { statusJump } from './status-jump.js';
+import {
+  setMapDay,
+  showMapDay,
+  setMapPick,
+  getMapPick,
+  startingTownLimit,
+  startingCount,
+  advanceMapPick,
+} from './map-view.js';
 import { initWhatsNew, whatsNewAfterTour } from './whats-new.js';
 import './grid-keys.js'; // keyboard editing for the Planning Grid
 
@@ -90,7 +103,48 @@ if (!forwardSharedLink()) {
         // No automatic tutorial on a shared plan or template link, or on the old address (people should move first).
         isSharedLink: () => new URLSearchParams(window.location.search).has('plan') || sharedTemplate || isOldSite(),
         createDemoServer: createTutorialServer,
+        // Puts the Map on Day 0, for the tutorial step about setting starting towns there.
+        showMapDay0: () => {
+          const s = activeSrv();
+          if (s) showMapDay(s.id, 0);
+          renderAll();
+        },
         removeDemoServer: removeTutorialServer,
+        // The guided setup's Auto-Optimize step waits for a run to start or finish.
+        optimizeStatus,
+        // The Status step needs something to point at: a guild put on a town it can't reach on Day 1.
+        makeDemoIssue: () => {
+          const s = activeSrv();
+          if (!s || s.isViewOnly || numDays(s) < 1) return false;
+          const md = getMapData(s.mode, s.mapKey);
+          const day1 = s.plan[1] || {};
+          for (const k of [...md.kingdoms].reverse()) {
+            for (const g of s.guilds) {
+              if (day1[k.id] === g.id) continue;
+              const was = day1[k.id];
+              if (!s.plan[1]) s.plan[1] = {};
+              s.plan[1][k.id] = g.id;
+              if (validateAdj(s).some(x => x.day === 1 && x.kingdom === k.id)) {
+                demoCell = { srvId: s.id, k: k.id, was, hadDay: !!day1 };
+                renderAll();
+                return true;
+              }
+              if (was === undefined) delete s.plan[1][k.id];
+              else s.plan[1][k.id] = was;
+            }
+          }
+          return false;
+        },
+        undoDemoIssue: () => {
+          const s = state.servers.find(x => demoCell && x.id === demoCell.srvId);
+          if (s && s.plan[1]) {
+            if (demoCell.was === undefined) delete s.plan[1][demoCell.k];
+            else s.plan[1][demoCell.k] = demoCell.was;
+          }
+          demoCell = null;
+          save(); // in case something else saved while it was in
+          renderAll();
+        },
         onEnd: whatsNewAfterTour,
       });
       // Not on the old address (people should move first), nor over a shared template being opened.
@@ -104,6 +158,22 @@ setMessagesRerender(renderAll);
 
 // ── What each button and field does ──────────────────────────────
 const guildId = el => el.dataset.guildId || el.dataset.id;
+
+// Towns on the map are SVG, which has no keyboard click: Enter or Space on a focused town taps it.
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  if ((e.key === 'Enter' || e.key === ' ') && t.closest && t.closest('.map-town.pickable')) {
+    e.preventDefault();
+    t.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  }
+});
+
+// One of the Points / Castle / Dorms / Towns boxes changed.
+function midValue(el, upd) {
+  const s = activeSrv();
+  if (s && !s.isViewOnly) s.showMidEvent = true;
+  upd(guildId(el), el.value);
+}
 
 registerActions('click', {
   // Header, tabs and dialogs
@@ -130,6 +200,47 @@ registerActions('click', {
   spotlight: el => toggleSpotlight(el.dataset.id),
   versions: openVersions,
   'status-jump': statusJump,
+  'map-pick': btn => {
+    setMapPick(btn);
+    renderAll();
+  },
+  // Day 0 on the map: give the tapped town to the picked guild, or clear it (tapping a town the
+  // picked guild already has also clears it).
+  'map-town': el => {
+    const srv = activeSrv();
+    if (!srv || srv.isViewOnly) return;
+    const pick = getMapPick(srv.id);
+    if (pick === undefined) {
+      showToast('Pick a guild above the map first, then tap its towns.', false, 3000);
+      return;
+    }
+    const k = el.dataset.k;
+    const cur = (srv.plan[0] || {})[k] || '';
+    const next = pick && cur !== pick ? pick : '';
+    if (cur === next) return;
+    const max = startingTownLimit(srv, next);
+    if (next && !isMidEvent(srv) && startingCount(srv, next) >= max) {
+      const g = srv.guilds.find(x => x.id === next);
+      showToast(
+        `${g ? g.name : 'That guild'} ${max ? `already has ${max} starting town${max === 1 ? '' : 's'}. Tap one of them to clear it first.` : 'doesn’t start with any towns on this map.'}`,
+        false,
+        3500,
+      );
+      return;
+    }
+    recordChange(srv, 'Starting towns on the map');
+    if (!srv.plan[0]) srv.plan[0] = {};
+    srv.plan[0][k] = next;
+    advanceMapPick(srv);
+    save();
+    renderAll();
+    const again = document.querySelector(`#sec-map .map-town[data-k="${CSS.escape(k)}"]`);
+    if (again) again.focus({ preventScroll: true });
+  },
+  'map-day': btn => {
+    setMapDay(btn);
+    renderAll();
+  },
   'clear-plan': clearPlan,
   'duplicate-plan': duplicateCurrentPlan,
   // Import dialog
@@ -154,10 +265,19 @@ registerActions('change', {
   'server-end': el => updEnd(el.value),
   'guild-small': el => updGuildSmall(el.dataset.id, el.checked),
   'guild-excluded': el => updGuildExcluded(el.dataset.id, el.checked),
-  'guild-points': el => updGuildPoints(guildId(el), el.value),
-  'guild-lv3': el => updGuildLv3(guildId(el), el.value),
-  'guild-lv2': el => updGuildLv2(guildId(el), el.value),
-  'guild-lv1': el => updGuildLv1(guildId(el), el.value),
+  // Shows or hides the Points / Castle / Dorms / Towns boxes on the guild list. (Typing in one keeps
+  // them showing, so setting the last one back to 0 doesn't whisk them away mid-edit; see midValue.)
+  'mid-event-toggle': el => {
+    const s = activeSrv();
+    if (!s || s.isViewOnly) return;
+    s.showMidEvent = el.checked;
+    save();
+    renderAll();
+  },
+  'guild-points': el => midValue(el, updGuildPoints),
+  'guild-lv3': el => midValue(el, updGuildLv3),
+  'guild-lv2': el => midValue(el, updGuildLv2),
+  'guild-lv1': el => midValue(el, updGuildLv1),
   cell: (el, e) => onCell(e),
   'import-file': (el, e) => handleFileSelect(e),
   'import-mode': el => {

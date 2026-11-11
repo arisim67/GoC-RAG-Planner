@@ -60,6 +60,50 @@
   .guild-row {
     grid-template-columns: 18px 20px minmax(130px, 1fr) 120px 128px 72px 64px 64px 64px 40px;
   }
+  /* With the mid-event boxes hidden, a row fits the screen: the name on top, and Small guild /
+     Exclude guild on a second line under it (sharing it, one at each end, so they fit even on a
+     small phone), instead of off to the side behind a sideways scroll.
+     Children: handle, number, color, name, small (or a blank in Ragnarok), exclude, remove. */
+  .guild-list.hide-mid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .guild-list.hide-mid .guild-row {
+    grid-template-columns: 18px 18px 20px minmax(0, 1fr) 40px;
+    row-gap: 0;
+    min-width: 0;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(1) {
+    grid-area: 1 / 1;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(2) {
+    grid-area: 1 / 2;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(3) {
+    grid-area: 1 / 3;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(4) {
+    grid-area: 1 / 4;
+    min-width: 0;
+    width: 100%;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(5) {
+    grid-area: 2 / 3 / 3 / 6;
+    justify-self: start;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(6) {
+    grid-area: 2 / 3 / 3 / 6;
+    justify-self: end;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(7) {
+    grid-area: 1 / 5;
+  }
+  /* Ragnarok has no Small guild: Exclude guild sits at the start of the line instead */
+  .guild-list.hide-mid .guild-row > span:nth-child(5):empty {
+    display: none;
+  }
+  .guild-list.hide-mid .guild-row > span:nth-child(5):empty + * {
+    justify-self: start;
+  }
   .guild-color {
     width: 20px;
     height: 20px;
@@ -138,4 +182,13 @@ html.capturing .cname {
 html.capturing .clear-day-btn {
   font-size: 9px !important;
   padding: 2px 6px !important;
+}
+
+/* The smallest phones (320px wide): Small guild / Exclude guild get the guild row's full width, from
+   under the drag handle, or they run into each other. */
+@media (max-width: 360px) {
+  .guild-list.hide-mid .guild-row > :nth-child(5),
+  .guild-list.hide-mid .guild-row > :nth-child(6) {
+    grid-column: 1 / 6;
+  }
 }

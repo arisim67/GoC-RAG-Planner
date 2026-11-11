@@ -629,3 +629,309 @@ th .today-tag {
 .score-card[data-action='spotlight'] {
   cursor: pointer;
 }
+
+/* Map view (map-view.js): the event map on one day, towns in their holder's color */
+.map-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.map-day {
+  min-width: 40px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg3);
+  color: var(--text2);
+  font: 600 12px var(--font-body);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.map-day:hover {
+  color: var(--text);
+  border-color: var(--border2);
+}
+
+.map-day.is-today {
+  border-color: var(--accent);
+}
+
+.map-day.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #191425;
+}
+
+.map-wrap {
+  max-width: 1000px;
+  margin: 0 auto;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.map-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Phones: the whole map shrinks to fit the screen, with the name tags drawn bigger so they stay
+   readable (they grow downward, away from the building above them) */
+@media (max-width: 600px) {
+  .map-wrap {
+    padding: 2% 5% 4%;
+  }
+  .map-svg {
+    overflow: visible;
+  }
+  .map-label-in {
+    transform: translateY(14px) scale(1.7);
+  }
+}
+
+/* Maps with their own artwork: the art already shows the roads, so only the towns are drawn on it */
+.map-bg {
+  opacity: 0.8;
+}
+
+.map-svg.has-bg .map-roads {
+  display: none;
+}
+
+.map-roads path {
+  fill: none;
+  /* a neutral gray, so roads never look like a guild's color */
+  stroke: #8d8a86;
+  opacity: 0.5;
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* A road a guild took a town along that day: a glow in its color with dashes running toward the town */
+.map-attack {
+  fill: none;
+  stroke: var(--c);
+  stroke-width: 16;
+  stroke-linecap: round;
+  stroke-dasharray: 34 22;
+  filter: drop-shadow(0 0 10px var(--c));
+  animation: map-march 1.2s linear infinite;
+}
+
+@keyframes map-march {
+  to {
+    stroke-dashoffset: -56;
+  }
+}
+
+.map-attack.lane {
+  stroke-width: 11;
+  filter: drop-shadow(0 0 6px var(--c));
+}
+
+.map-attack.rev {
+  animation-direction: reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-attack {
+    animation: none;
+  }
+}
+
+/* Each town: its picture on an oval base in the holder's color, its name in a pill below */
+.map-flag {
+  fill: none;
+  stroke: none;
+}
+
+.map-base {
+  fill: color-mix(in srgb, var(--c) 55%, transparent);
+  stroke: var(--c);
+  stroke-width: 6;
+}
+
+.map-label rect {
+  fill: color-mix(in srgb, var(--c) 88%, #000);
+  stroke: rgba(0, 0, 0, 0.55);
+  stroke-width: 3;
+}
+
+.map-label text {
+  fill: #191425;
+  font: 700 34px var(--font-body);
+  text-anchor: middle;
+}
+
+.map-town.empty .map-base {
+  fill: color-mix(in srgb, var(--border2) 35%, transparent);
+  stroke: var(--border2);
+}
+
+.map-town.empty image {
+  opacity: 0.45;
+  filter: grayscale(0.7);
+}
+
+.map-town.empty .map-label rect {
+  fill: var(--bg3);
+}
+
+.map-town.empty .map-label text {
+  fill: var(--text2);
+}
+
+.map-town.taken .map-flag {
+  stroke: #fff;
+  stroke-width: 8;
+  stroke-dasharray: 20 11;
+}
+
+.map-town,
+.map-key {
+  transition: opacity 0.2s;
+}
+
+.spot-on .map-attack:not(.spot-hit),
+.spot-on .map-town:not(.spot-hit),
+.spot-on .map-key:not(.spot-hit) {
+  opacity: 0.25;
+}
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.map-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-key b {
+  color: var(--text);
+}
+
+.map-key-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.map-line {
+  width: 22px;
+  height: 0;
+  border-top: 3px dashed var(--accent);
+}
+
+.map-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.map-pick-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+  margin-right: 4px;
+}
+
+.map-pick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.map-pick-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.map-pick-btn[aria-pressed='true'] {
+  border-color: var(--c, var(--accent));
+  background: color-mix(in srgb, var(--c, var(--accent)) 25%, var(--bg3));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--c, var(--accent)) 45%, transparent);
+}
+
+.map-pick-count {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text2);
+}
+
+.map-pick-count.full {
+  color: var(--green, #45d6a8);
+  font-weight: 700;
+}
+
+.map-pick-hint {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--text3, var(--text2));
+}
+
+/* Only the towns take taps; roads and the artwork let them through */
+.map-roads,
+.map-attacks,
+.map-bg {
+  pointer-events: none;
+}
+
+.map-town.pickable {
+  cursor: pointer;
+  outline: none;
+}
+
+.map-town.pickable:hover .map-base,
+.map-town.pickable:focus-visible .map-base {
+  stroke: #fff;
+  stroke-width: 10;
+}
+
+.map-disclaimer {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--text3, var(--text2));
+}
+
+.map-key-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.map-key-note + .map-key-note {
+  margin-left: 0;
+}
+
+.map-ring {
+  width: 18px;
+  height: 10px;
+  border-radius: 5px;
+  border: 2px dashed #fff;
+}

@@ -24,6 +24,31 @@
   min-width: max-content; /* Keeps the row's natural width and triggers the scrollbar on small screens */
 }
 
+/* Planning mid-event off: no Points / Castle / Dorms / Towns columns, and a number in their place
+   at the front, since on a wide screen the list is split into two columns (1-8 down the left, 9-15
+   down the right) and the order still decides tie-breaks. */
+.guild-list.hide-mid .guild-row {
+  /* handle | number | dot | name | small | exclude | remove */
+  grid-template-columns: 18px 18px 14px minmax(140px, 1fr) 110px 120px 30px;
+}
+.guild-rank {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text2);
+  text-align: right;
+}
+@media (min-width: 1100px) {
+  .guild-list.hide-mid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(var(--rows), auto);
+    grid-auto-flow: column;
+    column-gap: 12px;
+  }
+  .guild-list.hide-mid .guild-row {
+    min-width: 0;
+  }
+}
+
 .guild-row.guild-row-head {
   background: transparent;
   border-color: transparent;
@@ -478,7 +503,17 @@
 .guild-actions {
   margin-top: 8px;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
+}
+
+.mid-toggle {
+  margin-left: auto;
+}
+
+.mid-toggle:has(input:disabled) {
+  cursor: help;
 }
 
 /* Daily message template editor */

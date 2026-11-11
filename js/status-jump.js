@@ -58,6 +58,12 @@ export function statusJump(btn) {
     bringIntoView(cells[0]);
     flash(cells);
     focusCell(cells[0]);
+  } else if (kind === 'starts') {
+    // Day 0: that guild's starting towns (or just the column, if it has none yet).
+    const head = table.querySelector('thead tr:first-child th:nth-child(4)');
+    const own = [...table.querySelectorAll(`tbody td[data-d="0"][data-g="${CSS.escape(g)}"]`)];
+    bringIntoView(own[0] || head);
+    flash(own.length ? own : [head].filter(Boolean));
   } else if (kind === 'wipe') {
     // A wiped guild holds nothing that day, so show the day's column, with that guild's towns the
     // day before (what it lost).

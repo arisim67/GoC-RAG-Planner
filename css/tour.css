@@ -185,6 +185,41 @@ body.tour-active .modal-bg.open {
   outline-offset: 2px;
 }
 
+/* What is still left to do (Finish Day 0 first) */
+.tour-list {
+  margin: 6px 0 8px;
+  padding-left: 18px;
+  max-height: 9em;
+  overflow-y: auto;
+}
+
+/* Two-way switch in a card (Finish Day 0: on the Map or in the grid) */
+.tour-switch {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0;
+}
+.tour-switch button {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.tour-switch button[aria-pressed='true'] {
+  border-color: var(--gold);
+  background: var(--bg4);
+  color: var(--gold);
+}
+.tour-switch button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 /* Shown while a step waits for the person to do something in the app */
 .tour-wait {
   display: flex;

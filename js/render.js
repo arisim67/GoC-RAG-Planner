@@ -3,7 +3,17 @@
 
 import { state, activeSrv, numDays, save, numDisplayDays, GUILD_COLORS } from './state.js';
 import { esc, dateLabel, dateLabelShort, todayDay } from './ui.js';
-import { calcScores, calcOcc, validateAdj, validateWipes, calcDec, kPts, getEligibleGuilds } from './calc.js';
+import {
+  calcScores,
+  calcOcc,
+  validateAdj,
+  validateWipes,
+  validateStarts,
+  isMidEvent,
+  calcDec,
+  kPts,
+  getEligibleGuilds,
+} from './calc.js';
 import { openTabCtx, openAdd } from './servers.js';
 import { renderFillSel } from './grid-fill.js';
 import { applyCollapse, expandSection } from './collapse.js';
@@ -12,6 +22,7 @@ import { buildMessages } from './messages.js';
 import { icon } from './icons.js';
 import { canUndo, canRedo, undoLabel, redoLabel } from './history.js';
 import { applySpotlight } from './spotlight.js';
+import { renderMapView, hasMapView } from './map-view.js';
 // Each mode's targets come from that mode's own model: Game of Claws has rules Ragnarok does not
 // (Darkwick needs a dorm or two lv1 towns behind it), so the GoC model is the only one that knows
 // which towns are really winnable. Reading GoC targets out of the Ragnarok model overstated them.
@@ -87,14 +98,17 @@ const JUMPS = [
   ['sec-settings', 'Setup'],
   ['sec-guilds', 'Guilds'],
   ['capture-grid', 'Grid'],
+  ['sec-map', 'Map'],
   ['capture-stats', 'Scores'],
   ['sec-declares', 'Declares'],
   ['sec-messages', 'Messages'],
 ];
-function renderJumpBar() {
+function renderJumpBar(srv) {
   // The links scroll inside .jump-links, so on narrow screens only they fade at the edge, not the bar's border.
   return `<nav class="jump-bar" aria-label="Jump to section"><div class="jump-links">
-    ${JUMPS.map(([id, label]) => `<a href="#${id}" class="jump-link" data-jump="${id}">${label}</a>`).join('')}
+    ${JUMPS.filter(([id]) => id !== 'sec-map' || hasMapView(srv))
+      .map(([id, label]) => `<a href="#${id}" class="jump-link" data-jump="${id}">${label}</a>`)
+      .join('')}
   </div></nav>`;
 }
 let jumpObserver = null;
@@ -192,15 +206,17 @@ export function renderAll() {
   const pageY = window.scrollY;
 
   mc.innerHTML = `
-    ${renderJumpBar()}
+    ${renderJumpBar(srv)}
     ${renderSettings(srv)}
     ${renderGuilds(srv)}
-    ${renderStatus(srv, issues, wipes)}
+    ${renderStatus(srv, issues, wipes, validateStarts(srv))}
     
     <!-- WRAPPER 1: The Grid -->
     <div class="capture-wrap" id="capture-grid">
       ${renderGrid(srv, days, mapData, issues, wipes)}
     </div>
+
+    ${renderMapView(srv, mapData, days)}
 
     <!-- WRAPPER 2: The Stats -->
     <div class="capture-wrap capture-wrap-stats" id="capture-stats" data-tour="stats">
@@ -332,11 +348,18 @@ function renderSettings(srv) {
 function renderGuilds(srv) {
   // Guilds are shown in the order they were dragged into (the order decides tie-breaks)
   const dAttr = srv.isViewOnly ? 'disabled' : '';
+  // Points / Castle / Dorms / Towns are only for plans started partway through an event, so they stay
+  // hidden until "Planning mid-event" is turned on. Numbers already in them always show, and the switch
+  // can't be turned off until they are all back to 0, so nothing counted is ever out of sight.
+  const midLocked = isMidEvent(srv);
+  const showMid = !!srv.showMidEvent || midLocked;
 
   return `<div class="section" id="sec-guilds" data-sec="guilds" data-tour="guilds">
     <div class="sec-title">Guilds</div>
-    <div class="guild-list" id="guild-list">
-      <div class="guild-row guild-row-head" aria-hidden="true">
+    <div class="guild-list${showMid ? '' : ' hide-mid'}" id="guild-list" style="--rows:${Math.ceil(srv.guilds.length / 2)}">
+      ${
+        showMid
+          ? `<div class="guild-row guild-row-head" aria-hidden="true">
         <span></span><span></span>
         <span class="gh-name">Guild</span>
         <span></span><span></span>
@@ -345,12 +368,15 @@ function renderGuilds(srv) {
         <span class="gh-num" title="Days already held before this plan starts (for events already under way)">Dorms</span>
         <span class="gh-num" title="Days already held before this plan starts (for events already under way)">Towns</span>
         <span></span>
-      </div>
+      </div>`
+          : ''
+      }
       ${srv.guilds
         .map(
           (g, i) => `
         <div class="guild-row" data-id="${g.id}">
           ${!srv.isViewOnly ? `<div class="drag-handle" title="Drag to reorder">${icon('grip-vertical')}</div>` : '<span></span>'}
+          ${showMid ? '' : `<span class="guild-rank" title="Order in the list">${i + 1}</span>`}
           <button type="button" class="guild-color" style="--guild-color:${g.color}" data-action="guild-color" data-id="${g.id}"
             title="${srv.isViewOnly ? '' : 'Change color'}" aria-label="${esc(g.name)}: change color" ${dAttr}></button>
 
@@ -375,6 +401,9 @@ function renderGuilds(srv) {
             <span>Exclude guild</span>
           </label>
 
+          ${
+            showMid
+              ? `
           <input class="guild-num" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="points" value="${esc(g.basePoints || 0)}"
             data-change="guild-points" title="Current points" aria-label="${esc(g.name)}: current points" ${dAttr}>
           <input class="guild-num" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv3" value="${esc(g.baseLv3 || 0)}"
@@ -383,6 +412,9 @@ function renderGuilds(srv) {
             data-change="guild-lv2" title="Dorm days already held" aria-label="${esc(g.name)}: dorm days already held" ${dAttr}>
           <input class="guild-num" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv1" value="${esc(g.baseLv1 || 0)}"
             data-change="guild-lv1" title="Town days already held" aria-label="${esc(g.name)}: town days already held" ${dAttr}>
+          `
+              : ''
+          }
 
           ${!srv.isViewOnly && srv.guilds.length > 2 ? `<button type="button" class="guild-remove" data-action="remove-guild" data-id="${g.id}" title="Remove guild" aria-label="Remove ${esc(g.name)}">${icon('x')}</button>` : '<span></span>'}
         </div>`,
@@ -394,6 +426,14 @@ function renderGuilds(srv) {
         ? `
     <div class="guild-actions">
       <button type="button" class="btn-tool" data-action="add-guild">${icon('plus')}<span class="btn-label">Add Guild</span></button>
+      <label class="guild-flag mid-toggle" title="${
+        midLocked
+          ? 'Some guilds have points or days held entered. Set them all back to 0 to hide these boxes.'
+          : "Starting a plan partway through an event? Turn this on to enter each guild's current points and the days it has already held the castle, dorms and towns."
+      }">
+        <input type="checkbox" class="guild-small-check" data-change="mid-event-toggle" ${showMid ? 'checked' : ''} ${midLocked ? 'disabled' : ''}>
+        <span>Planning mid-event</span>
+      </label>
     </div>`
         : ''
     }
@@ -446,7 +486,7 @@ function renderScores(srv, scores, targets) {
   </div>`;
 }
 
-function renderStatus(srv, issues, wipes) {
+function renderStatus(srv, issues, wipes, starts) {
   const days = numDays(srv);
   const baseMaxDecl = srv.mode === 'goc' ? 2 : 3;
   const byDay = Array.from({ length: days }, (_, i) => issues.filter(x => x.day === i + 1));
@@ -464,6 +504,22 @@ function renderStatus(srv, issues, wipes) {
   const jump = (kind, attrs, inner, cls = '') =>
     `<button type="button" class="${cls}" data-action="status-jump" data-kind="${kind}" ${attrs}>${inner}</button>`;
   const issueItems = [
+    ...starts.map(s => {
+      const g = srv.guilds.find(x => x.id === s.guild);
+      if (s.kingdom)
+        return jump(
+          'cell',
+          `data-day="0" data-k="${esc(s.kingdom)}" title="Show this town in the grid"`,
+          `Day 0: ${g ? esc(g.name) : '?'} on ${esc(s.kingdom)} (only towns at the start)`,
+          'status-item',
+        );
+      return jump(
+        'starts',
+        `data-g="${esc(s.guild)}" title="Show Day 0 in the grid"`,
+        `Day 0: ${g ? esc(g.name) : '?'} has ${s.count} of ${s.want} starting towns`,
+        'status-item',
+      );
+    }),
     ...issues.map(i => {
       const g = srv.guilds.find(x => x.id === i.guild);
       return jump(
@@ -504,6 +560,17 @@ function renderStatus(srv, issues, wipes) {
           ),
         )
         .join('')}
+      ${pill(
+        !starts.length,
+        starts.length ? `Starting Towns (${starts.length})` : 'Starting Towns',
+        starts.length && starts[0].kingdom ? 'cell' : 'starts',
+        starts.length
+          ? starts[0].kingdom
+            ? `data-day="0" data-k="${esc(starts[0].kingdom)}"`
+            : `data-g="${esc(starts[0].guild)}"`
+          : '',
+        'Show Day 0 in the grid',
+      )}
       ${pill(!decViol.length, 'Valid Declares', 'declares', '', 'Show the guilds declaring too many towns')}
       ${pill(
         !wipes.length,
@@ -518,9 +585,11 @@ function renderStatus(srv, issues, wipes) {
 }
 
 function renderGrid(srv, days, mapData, issues, wipes) {
+  const midEvent = isMidEvent(srv);
   const today = todayDay(srv, days);
   const totalCols = numDisplayDays(srv);
   const issSet = new Set(issues.map(i => `${i.day}_${i.kingdom}`));
+  validateStarts(srv).forEach(s => s.kingdom && issSet.add(`0_${s.kingdom}`));
   const lv3 = mapData.kingdoms.filter(k => k.type === 'lv3');
   const lv2 = mapData.kingdoms.filter(k => k.type === 'lv2');
   const lv1 = mapData.kingdoms.filter(k => k.type === 'lv1');
@@ -606,7 +675,14 @@ function renderGrid(srv, days, mapData, issues, wipes) {
             <td class="kname" style="color:${nameColor}">${esc(k.id)}</td>
             <td class="ktype"><span class="badge badge-${k.type}">${k.type.toUpperCase()}</span></td>
             ${Array.from({ length: totalCols }, (_, d) => {
-              const eligible = d === 0 ? srv.guilds : getEligibleGuilds(srv, k.id, d);
+              // At the start of an event, guilds only hold plain towns on Day 0.
+              const day0 = (srv.plan[0] || {})[k.id];
+              const eligible =
+                d > 0
+                  ? getEligibleGuilds(srv, k.id, d)
+                  : k.type === 'lv1' || midEvent
+                    ? srv.guilds
+                    : srv.guilds.filter(g => g.id === day0);
               const gOpts = [['', '—'], ...eligible.map(g => [g.id, g.name])];
               const gid = (srv.plan[d] || {})[k.id] || '';
               const g = srv.guilds.find(x => x.id === gid);

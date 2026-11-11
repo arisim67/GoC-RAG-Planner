@@ -81,6 +81,8 @@ Commit messages are short and say what changed, in the imperative:
 │   ├── spotlight.js        Guild spotlight: highlight one guild's towns
 │   ├── collapse.js         Folding sections down to their titles
 │   ├── status-jump.js      Status pills that jump to the problem
+│   ├── solve-panel.js      The panel shown while Auto-Optimize runs
+│   ├── map-view.js         The Map view: the event map for one day
 │   ├── whats-new.js        The one-time What's new card for returning visitors
 │   ├── discord-md.js       Shows message text the way Discord displays it (template preview)
 │   ├── handlers.js         Edits made in the page (settings, guilds, grid cells)
@@ -95,7 +97,7 @@ Commit messages are short and say what changed, in the imperative:
 │   ├── ui.js               Small helpers (toasts, escaping, date labels)
 │   ├── config.js           Deployment settings (cloud sync URL)
 │   ├── tour.js             Interactive first-visit tutorial
-│   ├── maps/               Town layouts and adjacency for each map
+│   ├── maps/               Towns and roads for each map; layouts.js, roads.js and art.js place them for the Map view
 │   └── solver/
 │       ├── worker.js       Runs HiGHS in a Web Worker so the page stays responsive
 │       ├── milp.js         Small helper for building MILP models
@@ -111,7 +113,7 @@ Commit messages are short and say what changed, in the imperative:
 ├── tests/                  Automated tests (node --test), with example plans in tests/fixtures/
 ├── .github/                CI workflow and issue templates
 ├── vendor/highs/           Vendored HiGHS solver (WebAssembly)
-├── images/                 Favicons
+├── images/                 Favicons, and map/ with the building and town pictures for the Map view
 └── docs/                   User guide and screenshots
 ```
 
@@ -147,4 +149,6 @@ Libraries: [JSZip](https://stuk.github.io/jszip/), [html2canvas](https://html2ca
 Code is released under the [MIT License](LICENSE).
 
 This is a fan-made tool and is not affiliated with or endorsed by the developers or publishers of
-Tokyo Debunker. Game names and terms belong to their respective owners.
+Tokyo Debunker. Game names and terms belong to their respective owners. The map artwork, buildings and
+characters in `images/map/` are official Tokyo Debunker artwork and belong to its creators; they are used
+here only to show the in-game maps.

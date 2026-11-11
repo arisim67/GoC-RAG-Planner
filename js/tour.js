@@ -31,6 +31,7 @@
 // is shown as an ordinary step instead of waiting for something that has already happened.
 
 import { applyCollapse, expandSection } from './collapse.js';
+import { startRule, validateStarts, isMidEvent, startingTownLimit } from './calc.js';
 
 // 2 for the move to the new site (November 2026), so everyone sees the updated tutorial once. Anyone
 // who skips it gets the What's new card instead (whats-new.js). Bump this only to deliberately show
@@ -58,6 +59,74 @@ let sizeWatch = null; // ResizeObserver on it, for controls that change shape in
 //   null puts the card in the middle of the screen.
 // Steps whose target is not on the page are skipped automatically.
 
+// Status, in both tours: have them click a red pill and see where it points. A plan with nothing wrong
+// gets a broken move put in for the step (hooks.makeDemoIssue) and taken out again as soon as they
+// leave it, whichever way (hooks.undoDemoIssue); it never reaches Undo or the saved plan.
+// Once they click, the spotlight moves from Status to what the pill points at (the first cell that
+// flashes), since the grid is dimmed and the flash alone is hard to spot. Another pill moves it again.
+let jumped = false;
+let demoIssue = false;
+let jumpTo = null; // element the last pill jumped to, while the Status step is open
+document.addEventListener(
+  'click',
+  e => {
+    if (!(e.target.closest && e.target.closest('[data-action="status-jump"]'))) return;
+    jumped = true;
+    if (!els) return;
+    // status-jump runs after this (it is the page's own handler) and marks what it points at.
+    setTimeout(() => {
+      const hit = document.querySelector('.jump-flash');
+      if (!hit || !els) return;
+      jumpTo = hit;
+      els.root.classList.add('tour-anim');
+      setTimeout(() => els && els.root.classList.remove('tour-anim'), 260);
+      // It scrolls there smoothly: follow it until it settles.
+      let frames = 0;
+      const follow = () => {
+        if (!els || frames++ > 90) return;
+        reposition();
+        requestAnimationFrame(follow);
+      };
+      requestAnimationFrame(follow);
+    }, 0);
+  },
+  true,
+);
+// optional: the walkthrough ("Just show me around") only looks, so there it is an invitation, not a
+// task: Next works straight away, and the page is still clickable so the pills work.
+function statusStep(title, intro, { optional = false } = {}) {
+  return {
+    live: true,
+    // Status until a pill is clicked, then what it pointed at (back to Status if that was re-rendered).
+    target: () => (jumpTo && jumpTo.isConnected ? jumpTo : 'status'),
+    title,
+    before: () => {
+      jumped = false;
+      jumpTo = null;
+      demoIssue = !document.querySelector('[data-sec="status"] .pill-fail') && !!hooks.makeDemoIssue?.();
+    },
+    after: () => {
+      jumpTo = null;
+      if (demoIssue) hooks.undoDemoIssue?.();
+      demoIssue = false;
+    },
+    body: () => `${intro}
+      <br><br>${
+        demoIssue
+          ? 'Your plan has nothing wrong yet, so we have put in a broken move to try it on (it is taken out again after this step). '
+          : ''
+      }${optional ? 'Try it: click' : 'Click'} a <b>red</b> pill: the planner jumps to the problem and flashes it.`,
+    wait: optional
+      ? null
+      : {
+          snap: () => null,
+          done: () => jumped,
+          hint: 'Click a red pill…',
+          ready: 'That is the problem, lit up. Try another pill, or press Next.',
+        },
+  };
+}
+
 // The opening card: which of the two ways through the tour they want.
 function chooserStep() {
   const has = !!hooks.getActiveServer();
@@ -80,6 +149,7 @@ function chooserStep() {
 // Guided setup. Each of these waits for the real thing to happen in the real app.
 function setupSteps() {
   const srv = () => hooks.getActiveServer();
+  const starts = () => (srv() ? startRule(srv()).replace('4 each.', 'Each guild starts with 4.') : ''); // how many towns each guild starts with
   // Older app.js builds do not pass getServerCount; fall back to watching the active server change.
   const count = () => (hooks.getServerCount ? hooks.getServerCount() : srv() ? 1 : 0);
   // What the guild list looks like now, so we can tell when they have touched it.
@@ -129,8 +199,9 @@ function setupSteps() {
     {
       target: 'grid',
       title: 'Set up Day 0',
-      body: `<b>Day 0</b> is where everyone starts, before any declares — put each guild on the towns
-             they already hold. Click a cell under Day 0 and pick the guild.
+      body: () => `<b>Day 0</b> is where everyone starts, before any declares — put each guild on the towns
+             they already hold, plain towns only (no dorms or castle at the start). ${starts()} There are two ways to do it; this is the first:
+             click a cell under Day 0 and pick the guild.
              <br><br>The rest of the plan is built outwards from this, so it is worth getting right.
              The <b>Adjacent Towns</b> column on the left shows what connects to what.`,
       wait: {
@@ -141,11 +212,144 @@ function setupSteps() {
       place: 'top',
     },
     {
-      target: 'status',
-      title: 'The app checks as you go',
-      body: `Green means the plan is legal. Red names the day and town at fault — a guild declaring a
-             town it is not next to, too many declares in a day, or a guild losing every town it has.
-             <br><br>Nothing stops you entering it; you just get told.`,
+      target: '#sec-map',
+      title: '…or tap them on the map',
+      before: () => hooks.showMapDay0 && hooks.showMapDay0(),
+      body: () => `The second way: the <b>Map</b> shows Day 0 too. Pick a guild in the <b>Starting towns</b> row
+             above it, then tap its towns. Each button counts them (like 1/2), and once a guild has
+             all of its towns the next one is picked for you. Tap a town again to clear it.
+             <br><br>Both ways fill in the same Day 0, so use whichever is easier — or mix them.
+             Later, the day buttons above the Map show any day of the plan, with each day's attacks drawn as glowing roads.`,
+      wait: {
+        snap: day0,
+        done: s0 => day0() !== s0,
+        hint: 'Pick a guild, then tap one of its towns…',
+      },
+      place: 'top',
+    },
+    statusStep(
+      'The app checks as you go',
+      `Green means the plan is legal. Red names the day and town at fault — a guild declaring a
+       town it is not next to, too many declares in a day, or a guild losing every town it has.
+       Nothing stops you entering it; you just get told.`,
+    ),
+  ];
+}
+
+// Auto-Optimize, in the guided setup. The solver builds the plan out from Day 0, so it is only offered
+// once Day 0 is complete: every guild on its starting towns (a Ragnarok map can have a town left over,
+// which is fine), or, planning mid-event, anything at all on Day 0. If it is not, they are taken back
+// to the Map (or the grid) to finish it first, and on to Auto-Optimize by themselves once it is done.
+// Ragnarok is quick, so they are asked to try it and the step waits for the plan to come back. Game
+// of Claws can take minutes, so starting it is enough to move on (it carries on in the corner), and
+// they are told plainly they can skip it. Whichever steps do not apply are left out (step.skip).
+// Finish Day 0 can be done on the Map or in the grid: the buttons in its card switch between them.
+let finishOn = 'map';
+const finishOnGrid = () => finishOn === 'grid' || !document.getElementById('sec-map');
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-finish-on]');
+  if (!b || !els) return;
+  finishOn = b.dataset.finishOn;
+  show(index, 1); // point at the other one
+});
+const escHtml = t => String(t).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+function optimizeSteps() {
+  const srv = () => hooks.getActiveServer();
+  const goc = () => srv()?.mode === 'goc';
+  const status = () => (hooks.optimizeStatus ? hooks.optimizeStatus() : { running: false, runs: 0 });
+  const placed = () => Object.values(srv()?.plan?.[0] || {}).filter(Boolean).length;
+  const ready = () => !!srv() && placed() > 0 && !validateStarts(srv()).length;
+  const name = gid => escHtml((srv().guilds.find(g => g.id === gid) || {}).name || 'A guild');
+  // What is still wrong with Day 0, one line each.
+  const todo = () => {
+    const s = srv();
+    if (!s) return '';
+    if (!placed()) {
+      const want = s.guilds.filter(g => startingTownLimit(s, g.id) > 0);
+      return want.map(g => `<li>${escHtml(g.name)}: 0 of ${startingTownLimit(s, g.id)}</li>`).join('');
+    }
+    return validateStarts(s)
+      .map(x =>
+        x.kingdom
+          ? `<li>${name(x.guild)} is on a dorm or the castle</li>`
+          : `<li>${name(x.guild)}: ${x.count} of ${x.want}</li>`,
+      )
+      .join('');
+  };
+  const time = () =>
+    (srv()?.guilds || []).length <= 11
+      ? 'usually around <b>1–5 minutes</b>'
+      : 'up to around <b>10 minutes</b> with this many guilds';
+
+  return [
+    {
+      target: () => (finishOnGrid() ? 'grid' : '#sec-map'),
+      title: 'Finish Day 0 first',
+      skip: () => !srv() || ready(),
+      before: () => !finishOnGrid() && hooks.showMapDay0 && hooks.showMapDay0(),
+      body: () => {
+        const mid = srv() && isMidEvent(srv());
+        const how = finishOnGrid()
+          ? 'Click a cell under <b>Day 0</b> and pick the guild.'
+          : 'Pick a guild above the Map, then tap its towns.';
+        return `${
+          mid
+            ? `<b>Auto-Optimize</b> plans every day after Day 0, so it needs to know where things stand: put
+               each guild on the towns it holds right now.`
+            : `<b>Auto-Optimize</b> plans every day after Day 0, so every guild needs its starting towns first.
+               ${startRule(srv())} Still to do:<ul class="tour-list">${todo()}</ul>`
+        }${
+          document.getElementById('sec-map')
+            ? `Do it on the Map or in the grid, whichever you like:
+               <div class="tour-switch" role="group" aria-label="Where to fill in Day 0">
+                 <button type="button" data-finish-on="map" aria-pressed="${!finishOnGrid()}">On the Map</button>
+                 <button type="button" data-finish-on="grid" aria-pressed="${finishOnGrid()}">In the grid</button>
+               </div>`
+            : ''
+        }${how}`;
+      },
+      wait: {
+        done: ready,
+        hint: 'Finish placing the starting towns…',
+        ready: 'Day 0 is done. On to Auto-Optimize.',
+        auto: true,
+      },
+      place: 'top',
+    },
+    {
+      target: 'optimize',
+      title: 'Try Auto-Optimize',
+      skip: () => !ready(),
+      body: () =>
+        goc()
+          ? `Day 0 is set, so the solver can propose the rest: every day planned legally, with points,
+             Darkwick and dorms shared out evenly.
+             <br><br>Game of Claws takes a while: ${time()}. Want to try it? Click <b>Auto-Optimize</b>.
+             It works in the corner while you carry on with the tour; just keep this tab open.
+             <br><br>Short on time? Press <b>Skip this step</b> and run it whenever you like.
+             <b>Undo</b> above the grid brings back your plan if you do not like the result.`
+          : `Day 0 is set, so let the solver propose the rest: every day planned legally, with points and
+             dorms shared out evenly. Ragnarok takes under a minute.
+             <br><br>Click <b>Auto-Optimize</b> and watch the grid fill in. Not happy with it?
+             <b>Undo</b> above the grid brings back your plan, even after a reload.`,
+      wait: {
+        snap: () => status().runs,
+        done: s0 => status().runs > s0 || (goc() && status().running),
+        hint: 'Click Auto-Optimize…',
+        ready: () =>
+          status().running
+            ? 'It is running in the corner. Carry on with the tour whenever you like; keep this tab open.'
+            : 'Your plan is filled in. Take a look, then press Next.',
+      },
+    },
+    {
+      // Day 0 was left unfinished (they skipped the step above): say what it does, nothing to try.
+      target: 'optimize',
+      title: 'Auto-Optimize',
+      skip: () => ready(),
+      body: () => `Once every guild is on its Day 0 towns, <b>Auto-Optimize</b> proposes the rest of the plan:
+             every day planned legally, with points${goc() ? ', Darkwick and dorms' : ' and dorms'} shared out evenly.
+             ${goc() ? `Game of Claws takes ${time()}.` : 'Ragnarok takes under a minute.'}`,
     },
   ];
 }
@@ -184,7 +388,7 @@ function buildSteps(srv) {
                  ? '<b>Small Guild</b> limits a guild to 1 declare a day.'
                  : "<b>Exclude Guild</b> keeps a guild's Day 0 towns but leaves it out of declares and point balancing."
              }
-             Planning mid-event? Enter current points and town counts in the boxes on the right.`,
+             Planning mid-event? Turn on <b>Planning mid-event</b> under the list, then enter each guild's current points and the days it has already held the castle, dorms and towns.`,
     },
     {
       target: 'import',
@@ -196,7 +400,7 @@ function buildSteps(srv) {
       target: 'grid',
       title: 'Planning grid',
       body: `One row per town, one column per day. Pick the guild that holds each town on each day, starting
-             with their footholds on <b>Day 0</b>. The left column lists each town's neighbors.
+             with their footholds on <b>Day 0</b> (you can also tap those in on the <b>Map</b>). The left column lists each town's neighbors.
              <br><br>To copy, select cells — long-press one, drag across a block, or shift-click a second cell —
              then drag the handle on the block's bottom-right corner sideways across days, or down the towns.
              The block repeats, so a two-day pattern dragged across six days lands three times.
@@ -207,12 +411,21 @@ function buildSteps(srv) {
       place: 'top',
     },
     {
-      target: 'status',
-      title: 'Validation',
-      body: `The app checks your plan as you go. <b>Green</b> pills mean that day is legal; <b>red</b> ones point
-             to the problem: a town taken without a neighboring town, too many declares, or a guild losing
-             every town.`,
+      target: '#sec-map',
+      title: 'See it on the map',
+      body: `The <b>Map</b> shows any day the way it looks in the game: each town in the color of the guild
+             holding it. Pick a day with the buttons above it.
+             <br><br>A dashed ring marks a town taken that day, and a glowing road shows where it was taken from.
+             <br><br>On <b>Day 0</b> you can set the starting towns here: pick a guild above the map, then tap its towns.`,
+      place: 'top',
     },
+    statusStep(
+      'Validation',
+      `The app checks your plan as you go. <b>Green</b> pills mean that day is legal; <b>red</b> ones point
+       to the problem: a town taken without a neighboring town, too many declares, or a guild losing
+       every town.`,
+      { optional: true },
+    ),
     {
       target: 'optimize',
       title: 'Auto-Optimize',
@@ -308,9 +521,13 @@ function pickFlow(which) {
     if (!srv || srv.isViewOnly) demoState = { created: true, prevId: hooks.createDemoServer() };
     steps = buildSteps(hooks.getActiveServer()).slice(1); // the opening card replaced step 1
   } else {
-    // Setup first, then the parts of the walkthrough that only make sense once a plan exists.
+    // Setup first, then the parts of the walkthrough that only make sense once a plan exists. The Map
+    // was already shown with Day 0, so its walkthrough step is left out here.
     const after = ['optimize', 'stats', 'share', 'messages'];
-    const tail = buildSteps(hooks.getActiveServer()).filter(s => after.includes(s.target));
+    // The server does not exist yet, so Auto-Optimize gets its own steps, which look it up as they go.
+    const tail = buildSteps(hooks.getActiveServer())
+      .filter(s => after.includes(s.target))
+      .flatMap(s => (s.target === 'optimize' ? optimizeSteps() : [s]));
     steps = [
       ...setupSteps(),
       ...tail,
@@ -440,7 +657,12 @@ function targetEl(step) {
   // which is how a step points at a dialog that has no anchor of its own.
   let el = null;
   try {
-    el = /^[#.]/.test(t) ? document.querySelector(t) : document.querySelector(`[data-tour="${t}"]`);
+    el =
+      t instanceof Element
+        ? t
+        : /^[#.]/.test(t)
+          ? document.querySelector(t)
+          : document.querySelector(`[data-tour="${t}"]`);
   } catch (_) {
     return null;
   }
@@ -452,15 +674,19 @@ function targetEl(step) {
 
 // dir: +1 forward, -1 back. Steps whose target is missing are skipped in that direction.
 function show(i, dir) {
-  while (i > 0 && i < steps.length - 1 && steps[i].target && !targetEl(steps[i])) i += dir;
+  const gone = s => (s.skip && s.skip()) || (s.target && !targetEl(s));
+  while (i > 0 && i < steps.length - 1 && gone(steps[i])) i += dir;
   i = Math.max(0, Math.min(steps.length - 1, i));
+  if (steps[index] && steps[index] !== steps[i] && steps[index].after) steps[index].after();
   index = i;
   const step = steps[i];
+  if (step.before) step.before();
 
   // The walkthrough hides steps whose part of the page is not there. The guided setup must not do
   // that: almost none of the app exists on step one, and counting only what is on screen would
   // promise a two-step tour that is really nine.
-  const visible = flow === 'setup' ? steps : steps.filter(s => !s.target || targetEl(s));
+  const visible =
+    flow === 'setup' ? steps.filter(s => !(s.skip && s.skip())) : steps.filter(s => !s.target || targetEl(s));
   const pos = visible.indexOf(step) + 1;
   els.count.textContent = flow ? `${pos} of ${visible.length}` : '';
   els.fill.style.width = flow ? `${(pos / visible.length) * 100}%` : '0';
@@ -521,7 +747,7 @@ function show(i, dir) {
   // The guided setup asks them to use the app, so it never swallows clicks - not only on the steps
   // that wait. A step whose goal is already met still says "click + Add Server", and locking the
   // page behind that instruction is how the button ends up dead.
-  if (flow === 'setup') live = true;
+  if (flow === 'setup' || step.live) live = true;
   els.root.classList.toggle('tour-pass', live);
   els.card.classList.toggle('tour-card-waiting', waiting);
 
@@ -554,8 +780,8 @@ function show(i, dir) {
 //
 // Keeping the highlight on its target. The page does not hold still: the app re-renders whole sections
 // (so the element the step points at is replaced by a new one), and controls change shape under their
-// own steam - Auto-Optimize relabels itself to "Finding Optimal Plan... (7s)" and grows, which used to
-// leave the highlight sitting around where the button had been. The target is looked up again every
+// own steam - a button whose label changes can grow or shrink, which used to leave the highlight
+// sitting around where it had been. The target is looked up again every
 // tick rather than held onto, because a re-render would make any reference stale, and a ResizeObserver
 // on whatever is there now catches a control changing shape between ticks.
 //
@@ -607,7 +833,8 @@ function unlock(step) {
   if (hint) {
     hint.classList.add('tour-wait-done');
     hint.innerHTML = `<span class="tour-wait-tick">✓</span>${
-      step.wait.ready || (auto ? 'Created — on we go.' : 'Done — take as long as you like, then press Next.')
+      (typeof step.wait.ready === 'function' ? step.wait.ready() : step.wait.ready) ||
+      (auto ? 'Created — on we go.' : 'Done — take as long as you like, then press Next.')
     }`;
   }
   if (auto) {
@@ -725,12 +952,16 @@ function reposition() {
     x = vw - cw - 24;
     y = vh - ch - 16;
   }
+  // Never off screen, even when the target has been scrolled away (a Status pill jumping down to the
+  // grid, say): the card stays where Next can be reached.
+  y = Math.min(Math.max(y, 8), vh - ch - 16);
   card.style.left = x + 'px';
   card.style.top = y + 'px';
 }
 
 function endTour(finished = false) {
   if (!els) return;
+  if (steps[index] && steps[index].after) steps[index].after();
   stopWatch();
   waiting = false;
   live = false;

@@ -154,6 +154,51 @@ export function calcDec(srv) {
   return { dec, give };
 }
 
+// How many towns a guild starts with on Day 0. Ragnarok: always 4. Game of Claws depends on the map:
+// the top guilds (in guild-list order) get 2, the next one gets 1 and the rest start with none.
+// In words, for hints: "4 each." / "The top 6 guilds start with 2, the 7th with 1, the rest with none."
+export function startRule(srv) {
+  if (srv.mode !== 'goc') return '4 each.';
+  const top = GOC_TWO_TOWNS[srv.mapKey] ?? 8;
+  return `The top ${top} guilds start with 2, the ${top + 1}th with 1, the rest with none.`;
+}
+const GOC_TWO_TOWNS = { forest: 8, wetland: 6, snowfield: 8, woodlands: 5, badlands: 8 };
+export function startingTownLimit(srv, gid) {
+  if (srv.mode !== 'goc') return 4;
+  const top = GOC_TWO_TOWNS[srv.mapKey] ?? 8;
+  const rank = srv.guilds.findIndex(g => g.id === gid);
+  return rank < 0 ? 0 : rank < top ? 2 : rank === top ? 1 : 0;
+}
+
+// Planning from the middle of an event: some guild already has points or days held entered in the
+// guild settings. Day 0 is then wherever things stand, not the event's start.
+export const isMidEvent = srv =>
+  (srv.guilds || []).some(g => ['basePoints', 'baseLv1', 'baseLv2', 'baseLv3'].some(f => Number(g[f]) > 0));
+
+// Day 0 at the start of an event: every guild on exactly its starting towns (only plain towns, no
+// dorms or castle). Only checked once Day 0 has been started (a new, empty plan isn't flagged), and
+// not at all when planning from the middle of an event.
+//   { guild, count, want }      a guild with more or fewer starting towns than it should have
+//   { guild, kingdom }          a guild on a dorm or the castle
+export function validateStarts(srv) {
+  if (isMidEvent(srv)) return [];
+  const day0 = srv.plan[0] || {};
+  const type = Object.fromEntries(getMapData(srv.mode, srv.mapKey).kingdoms.map(k => [k.id, k.type]));
+  const count = {};
+  const out = [];
+  Object.entries(day0).forEach(([kid, gid]) => {
+    if (!gid) return;
+    count[gid] = (count[gid] || 0) + 1;
+    if (type[kid] && type[kid] !== 'lv1') out.push({ guild: gid, kingdom: kid });
+  });
+  if (!Object.keys(count).length) return [];
+  [...srv.guilds]
+    .reverse()
+    .filter(g => (count[g.id] || 0) !== startingTownLimit(srv, g.id))
+    .forEach(g => out.unshift({ guild: g.id, count: count[g.id] || 0, want: startingTownLimit(srv, g.id) }));
+  return out;
+}
+
 export function validateWipes(srv) {
   const days = numDays(srv);
   const mapData = getMapData(srv.mode, srv.mapKey);

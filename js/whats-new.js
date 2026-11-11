@@ -22,6 +22,7 @@ const ITEMS = [
     'Keyboard editing',
     'Arrow keys move around the grid, typing picks a guild, and Ctrl+C / Ctrl+V copy blocks of cells.',
   ],
+  ['map', 'Map view', 'See who holds each town on the in-game map, one day at a time.'],
   ['eye', 'Guild spotlight', 'Click a guild above the grid to see only its towns, on view-only links too.'],
   [
     'calendar',

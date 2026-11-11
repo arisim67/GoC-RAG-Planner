@@ -37,13 +37,17 @@ export function esc(s) {
 
 // Which plan day (1 = the start date) is today, by this device's calendar date. null if the event
 // hasn't started, is over, or has no start date.
-// The game's day changes at 1 am Eastern Standard Time, which is 06:00 UTC: the same moment for
-// everyone, wherever they are. (Fixed in UTC, so in summer time it falls at 2 am EDT.)
-const RESET_UTC_HOUR = 6;
+// "Today" moves on to the next day once that day's battle phase is over: 10:45 pm Eastern Standard Time
+// in Game of Claws and 11:45 pm in Ragnarok. EST is UTC-5 all year here, the same moment for everyone,
+// wherever they are.
+const EST_OFFSET_MIN = -5 * 60;
+const BATTLE_END_MIN = { goc: 22 * 60 + 45, ragnarok: 23 * 60 + 45 }; // minutes after midnight EST
 
-// Today's game date as 'YYYY-MM-DD': before the reset it is still yesterday.
-export function gameDate(now = Date.now()) {
-  return new Date(now - RESET_UTC_HOUR * 3600000).toISOString().slice(0, 10);
+// The day the planner treats as today, as 'YYYY-MM-DD': after the battle ends it is already tomorrow.
+export function gameDate(mode, now = Date.now()) {
+  const end = BATTLE_END_MIN[mode] ?? BATTLE_END_MIN.ragnarok;
+  const shift = EST_OFFSET_MIN + (24 * 60 - end); // to EST, then forward so battle end lands on midnight
+  return new Date(now + shift * 60000).toISOString().slice(0, 10);
 }
 
 // The plan day (1 = the start date) that is today in the game, or null outside the event.
@@ -53,7 +57,7 @@ export function todayDay(srv, days) {
     const [yy, mm, dd] = s.split('-').map(Number);
     return Date.UTC(yy, mm - 1, dd);
   };
-  const d = Math.round((utc(gameDate()) - utc(srv.startDate)) / 86400000) + 1;
+  const d = Math.round((utc(gameDate(srv.mode)) - utc(srv.startDate)) / 86400000) + 1;
   return d >= 1 && d <= days ? d : null;
 }
 

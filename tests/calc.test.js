@@ -1,6 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { calcScores, calcOcc, calcDec, validateAdj, validateWipes, kPts } from '../js/calc.js';
+import {
+  calcScores,
+  calcOcc,
+  calcDec,
+  validateAdj,
+  validateWipes,
+  validateStarts,
+  startingTownLimit,
+  kPts,
+} from '../js/calc.js';
 import { numDays } from '../js/state.js';
 import { getMapData } from '../js/maps/index.js';
 import { fixture } from './helpers.js';
@@ -43,3 +52,37 @@ for (const name of ['goc-wetland', 'ragnarok-poseidon']) {
     }
   });
 }
+
+test('starting towns: 4 each in Ragnarok; in Game of Claws 2 for the top guilds, 1 for the next', () => {
+  const rag = fixture('ragnarok-poseidon');
+  assert.deepEqual(validateStarts(rag), []);
+  const k = Object.keys(rag.plan[0]).find(x => rag.plan[0][x] === rag.guilds[0].id);
+  rag.plan[0][k] = '';
+  assert.deepEqual(validateStarts(rag), [{ guild: rag.guilds[0].id, count: 3, want: 4 }]);
+
+  // Wetland: top 6 get 2, the 7th gets 1, the rest none (the example plan is set up that way)
+  const goc = fixture('goc-wetland');
+  assert.deepEqual(
+    goc.guilds.map(g => startingTownLimit(goc, g.id)),
+    [2, 2, 2, 2, 2, 2, 1, 0, 0, 0],
+  );
+  assert.deepEqual(validateStarts(goc), []);
+  goc.plan[0] = {};
+  assert.deepEqual(validateStarts(goc), [], 'an empty Day 0 is not flagged');
+  goc.mapKey = 'woodlands';
+  assert.deepEqual(
+    goc.guilds.map(g => startingTownLimit(goc, g.id)),
+    [2, 2, 2, 2, 2, 1, 0, 0, 0, 0],
+  );
+});
+
+test('starting towns: only plain towns on Day 0, unless planning from mid-event', () => {
+  const rag = fixture('ragnarok-poseidon');
+  const g = rag.guilds[0].id;
+  const k = Object.keys(rag.plan[0]).find(x => rag.plan[0][x] === g);
+  rag.plan[0][k] = '';
+  rag.plan[0].Darkwick = g; // four again, but one of them is the castle
+  assert.deepEqual(validateStarts(rag), [{ guild: g, kingdom: 'Darkwick' }]);
+  rag.guilds[1].basePoints = 120; // mid-event: Day 0 is wherever things stand
+  assert.deepEqual(validateStarts(rag), []);
+});

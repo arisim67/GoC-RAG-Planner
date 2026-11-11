@@ -13,6 +13,8 @@ The GoC / Ragnarok Planner, made by ari (EA-4, 43, 45) and gharial (EA-44), help
 - [Servers](#servers)
 - [Guilds](#guilds)
 - [The planning grid](#the-planning-grid)
+- [Starting towns](#starting-towns)
+- [Map](#map)
 - [Auto-Optimize](#auto-optimize)
 - [Checking the plan](#checking-the-plan)
 - [Scores and tables](#scores-and-tables)
@@ -24,7 +26,7 @@ The GoC / Ragnarok Planner, made by ari (EA-4, 43, 45) and gharial (EA-44), help
 
 1. **Add a server.** Click **+ Add Server** and fill in the server name, mode, map and event dates. The mode sets the declare limits and which maps you can pick.
 2. **Add your guilds.** Type their names in the Guilds list, or click **Import** and paste the whole list.
-3. **Plan the grid.** Pick who holds each town on each day, starting with Day 0, or click **Auto-Optimize** to have the planner work it out.
+3. **Plan the grid.** Pick who holds each town on each day, starting with Day 0 (set the starting towns in the grid or by tapping them on the [Map](#map)), or click **Auto-Optimize** to have the planner work it out.
 4. **Check it.** Every pill under **Status** should be green. A red one takes you straight to the problem.
 5. **Share it.** **Save to Cloud** copies a link for your leads, and each day's message is one click to copy for Discord.
 
@@ -32,7 +34,7 @@ The GoC / Ragnarok Planner, made by ari (EA-4, 43, 45) and gharial (EA-44), help
 
 ## Getting around
 
-- **Section links:** the bar of links at the top (Setup, Guilds, Grid, Scores, Declares, Messages) stays on screen as you scroll and jumps to each part of the page.
+- **Section links:** the bar of links at the top (Setup, Guilds, Grid, Map, Scores, Declares, Messages) stays on screen as you scroll and jumps to each part of the page.
 - **Folding sections:** click a section's title, or the arrow beside it, to fold it down to just the title, and again to open it. Hide what you don't need, such as the Guilds list once it's set up. Folded sections are remembered in this browser for every server, open when you jump to them, and are still included in Screenshots.
 - **Server tabs:** each server you plan has its own tab along the top. Right-click a tab (or press and hold on a phone) to rename, duplicate or delete it.
 
@@ -63,7 +65,7 @@ The settings at the top hold the server's name, mode, map and event dates. The t
 3. **Name:** type the guild's name. To set up every name at once, click **Import**, choose **Import Guild List (Setup)** and paste the names, one per line.
 4. **Small guild:** for a guild that has trouble staying in the top 8 for kudos. It limits the guild to 1 declare a day.
 5. **Exclude guild (Ragnarok only):** keeps the guild's Day 0 towns on the map but leaves it out of declares and point balancing, so the plan is built around it without giving it anything.
-6. **Points, Castle, Dorms, Towns:** when you start a plan partway through an event, enter each guild's current points and how many days it has already held the castle, dorms and towns. Auto-Optimize uses these to keep the rotation fair across the whole event.
+6. **Points, Castle, Dorms, Towns:** when you start a plan partway through an event, turn on **Planning mid-event** (below the guild list, across from **Add Guild**) to show these boxes, then enter each guild's current points and how many days it has already held the castle, dorms and towns. Auto-Optimize uses these to keep the rotation fair across the whole event. The boxes stay hidden until then (and on a wide screen the guild list is split into two numbered columns to save space). Once any of them has a number in it, the switch stays on until they are all back to 0.
 7. **Remove** the guild.
 8. **Add Guild:** a server holds up to **15 guilds**, and each new one gets a color no other guild is using.
 
@@ -79,7 +81,7 @@ One row per town, one column per day.
 4. **Clear:** empties that day.
 5. **Running points:** every guild's total so far, day by day.
 6. **Today:** while the event is running, today's column is highlighted (more below).
-7. **A cell:** click it and pick the guild that holds the town that day. Start with each guild's footholds on **Day 0**. A long guild name wraps onto a second line rather than being cut off.
+7. **A cell:** click it and pick the guild that holds the town that day. Start with each guild's footholds on **Day 0**; you can also tap those in on the [Map](#map). A long guild name wraps onto a second line rather than being cut off.
 
 ### Copying across the grid
 
@@ -123,7 +125,7 @@ It works on view-only shared plans too, so guild members can check their own rou
 
 While an event is running, today's column is highlighted in the grid and the Declares & Giveaways table, and the grid opens scrolled to it. Today's daily message card is highlighted too, and **Copy Today's Message** in the toolbar copies it without scrolling down.
 
-"Today" follows the game's day, which changes at 1 am Eastern Standard Time (06:00 UTC), so everyone sees the same day wherever they are.
+"Today" moves on to the next day as soon as that day's battle phase ends: **10:45 pm Eastern Standard Time** in Game of Claws and **11:45 pm** in Ragnarok. So after the battle, the highlight is already on tomorrow, ready for planning. Everyone sees the same day, wherever they are.
 
 ### Undo and Redo
 
@@ -135,14 +137,47 @@ The last 50 changes are kept while the page is open. Changing the mode or map, o
 
 Click **Import**, choose **Import Daily Map Data**, pick the target day, and paste the guilds in the same order as the towns in the grid, one per line.
 
+## Starting towns
+
+Every guild starts the event on a set number of plain towns (no dorms or castle):
+
+| Event | Starting towns |
+| --- | --- |
+| Ragnarok | 4 for every guild |
+| Game of Claws, Forest | 2 each for the top 8 guilds, 1 for the 9th |
+| Game of Claws, Wetland | 2 each for the top 6 guilds, 1 for the 7th |
+| Game of Claws, Snowfield | 2 each for the top 8 guilds, 1 for the 9th |
+| Game of Claws, Woodlands | 2 each for the top 5 guilds, 1 for the 6th |
+| Game of Claws, Badlands | 2 each for the top 8 guilds, 1 for the 9th |
+
+In Game of Claws, "top" follows the order of the guild list (drag guilds to reorder them), and any guild below those starts with none. **Status** checks Day 0 against this, and the map's **Starting towns** row won't let a guild go over. If you're planning from the middle of an event (points or days entered under **Guilds**), none of this is checked.
+
+## Map
+
+The **Map** section, under the grid, shows the event map the way it looks in the game, for one day at a time. Each town shows its building standing on a base in the color of the guild holding it, with its name below in the same color, and the roads follow the paths on the in-game map.
+
+- **Pick a day** with the buttons above the map. It opens on today while an event is running, and on Day 1 otherwise.
+- **White dashes around the base** mark a town that changed hands that day, and **a glowing road in the taker's color** shows which of its towns (as of the day before) it was taken from.
+- **Set Day 0 on the map.** On Day 0, pick a guild in the **Starting towns** row above the map, then tap the towns it starts with, plain towns only (dorms and the castle can't be picked at the start). Each button counts them (like 3/4), and once a guild has all of its towns the next guild is picked for you. Tap a town again to clear it, or pick **Clear** and tap towns to empty them. It fills in the grid's Day 0 just as typing there would, and **Undo** takes it back.
+- **Hover a town** (or press and hold on a phone) to see its name, who holds it and whether it was taken that day.
+- **Spotlight** works here too: pick a guild above the grid and the other guilds' towns fade.
+- As in the game, each town has a cat in front of it, and each dorm and Darkwick a ghoul, picked at random for each server (a dorm only gets its own house's members), so they won't match your in-game map.
+
+On a phone the whole map shrinks to fit the screen, with bigger name tags so they stay readable.
+
+> The Map view is still filling in: only some maps show the in-game artwork behind the towns. The rest will be added in future updates.
+>
+> The map artwork, buildings and characters are official Tokyo Debunker artwork and belong to its creators.
+
 ## Auto-Optimize
 
 **Auto-Optimize** works out a route that follows every adjacency rule, never wipes a guild off the map, and evens out final scores and time on Darkwick and the dorms.
 
 - **Ragnarok:** the route is found in one pass, which can take up to about a minute.
-- **Game of Claws:** around **1 to 3 minutes for 10 guilds**, and up to about **10 minutes for 13**. A message appears when you start.
+- **Game of Claws:** around **1 to 3 minutes for 10 guilds**, and up to about **10 minutes for 13**.
 - **Speed it up:** filling in a day or two yourself first makes a real difference, because those are days the optimizer no longer has to work out.
-- **Keep the page open** until it finishes. The button shows how long it has been running. Keeping the tab visible is best, since browsers can slow down background tabs, and phones may stop the work if the screen locks.
+- **While it runs,** a panel in the corner shows how long it has been going, what it's working on and a tip or two. **Stop** ends the run and leaves your plan exactly as it was.
+- **Keep the page open** until it finishes. Keeping the tab visible is best, since browsers can slow down background tabs, and phones may stop the work if the screen locks.
 - **Not happy with the result?** **Undo** puts the plan back exactly as it was, and **Redo** brings the optimized plan back. This still works after reloading the page, as long as you haven't changed the plan since.
 
 <details>
@@ -160,7 +195,7 @@ The optimizer is still being improved and won't always produce a perfect split. 
 
 The app checks your plan as you go, to make sure it can actually be played out in-game. Look at **Status** above the planning grid:
 
-1. **A red pill** means a rule is broken. Click it to jump straight to the problem: a day's pill shows that day's problem cells in the grid, **Valid Declares** shows the guilds declaring too many towns, and **No Map Wipes** shows the day a guild is wiped. What it jumps to flashes so it's easy to spot, and a folded section opens.
+1. **A red pill** means a rule is broken. Click it to jump straight to the problem: a day's pill shows that day's problem cells in the grid, **Starting Towns** shows a guild with the wrong number of starting towns (see [Starting towns](#starting-towns)) or one starting on a dorm or the castle (not checked when you're planning from the middle of an event, with points or days entered under Guilds), **Valid Declares** shows the guilds declaring too many towns, and **No Map Wipes** shows the day a guild is wiped. What it jumps to flashes so it's easy to spot, and a folded section opens.
 2. **A green pill** means that day (or rule) is fine.
 3. **Each problem** is listed under the pills. Click one to go to it.
 
@@ -274,4 +309,4 @@ The template is saved in your browser and used for every server. **Reset to defa
   2. **Restore** puts the server back to this copy.
 
 - **Backups you can take elsewhere:** History stays in this browser only. Use **Export Server** for a file you can keep (drop it into **Import** to restore everything), or **Save to Cloud** to open the plan on another device.
-- **Support:** found a problem or have an idea? Contact `arianes.` on Discord.
+- **Support:** found a problem or have an idea? Contact [`arianes.` on Discord](https://discord.com/users/1013812813245988865).
