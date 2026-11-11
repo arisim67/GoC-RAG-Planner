@@ -20,6 +20,7 @@ The app is updated continuously rather than in numbered releases, so entries are
 - **A new user guide.** It starts with a five-step Quick start and a table of contents, and every part of the planner has a screenshot with numbered markers explaining each button. Short animations show copying across the grid, keyboard editing and Spotlight, and an example shows the card a shared plan link produces. Fine detail (how Auto-Optimize works, every message placeholder) is tucked behind "More details".
 - **An updated tutorial and a What's new card.** The tutorial has been updated and shows once more for everyone, and its welcome card now has **Skip tour**. If you used the planner before and skip it, a What's new card lists the highlights of this update instead.
 - The project now has automated tests that run on every update, and issue forms for bug reports and suggestions.
+- Day 0 in the planning grid no longer shows a date.
 
 ## 2026-11-09
 

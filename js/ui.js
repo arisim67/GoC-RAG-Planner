@@ -61,9 +61,10 @@ export function todayDay(srv, days) {
   return d >= 1 && d <= days ? d : null;
 }
 
+// Day 0 is where everyone starts, before the event's first day, so it gets no date.
 export function dateLabel(srv, d) {
-  if (!srv.startDate) {
-    return d === 0 ? 'Day 0' : `Day ${d}`;
+  if (!srv.startDate || d === 0) {
+    return `Day ${d}`;
   }
   // Split to avoid UTC timezone shifting issues
   const [yy, mm, dd] = srv.startDate.split('-');
@@ -71,21 +72,17 @@ export function dateLabel(srv, d) {
   dt.setDate(dt.getDate() + d - 1);
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const dateStr = `${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}`;
-
-  if (d === 0) {
-    return `Day 0<br><small style="font-size:9px;color:var(--text3)">${days[dt.getDay()]} ${dateStr}</small>`;
-  }
   return `Day ${d}<br><small style="font-size:9px;color:var(--text3)">${days[dt.getDay()]} ${dateStr}</small>`;
 }
 
 export function dateLabelShort(srv, d) {
-  if (!srv.startDate) return d === 0 ? 'D0' : `D${d}`;
+  if (!srv.startDate || d === 0) return `D${d}`;
   const [yy, mm, dd] = srv.startDate.split('-');
   const dt = new Date(yy, mm - 1, dd);
   dt.setDate(dt.getDate() + d - 1);
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const dateStr = `${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}`;
-  return d === 0 ? `D0 ${days[dt.getDay()]} ${dateStr}` : `D${d} ${days[dt.getDay()]} ${dateStr}`;
+  return `D${d} ${days[dt.getDay()]} ${dateStr}`;
 }
 
 export function closeModal(id) {
