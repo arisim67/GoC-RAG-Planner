@@ -9,6 +9,10 @@ export async function takeScreenshots(e) {
   const btn =
     (evt && evt.target && evt.target.closest && evt.target.closest('button')) || document.createElement('button');
   const originalText = setBtnLabel(btn, 'Processing...');
+  // Everything the capture changes on the page, so it can be put back even if the capture fails
+  // (no connection, the browser refuses a big canvas...). Left in place, the page stays stretched
+  // wide with the Town column no longer sticky until a reload.
+  const undo = [];
 
   try {
     // Make sure web fonts are loaded so measured widths match rendered widths
@@ -26,11 +30,17 @@ export async function takeScreenshots(e) {
     const origScrollX = window.scrollX;
     const origScrollY = window.scrollY;
     window.scrollTo(0, 0);
+    undo.push(() => window.scrollTo(origScrollX, origScrollY));
 
     const html = document.documentElement;
     const origHtmlOverflow = html.style.overflow;
     const origBodyOverflow = document.body.style.overflow;
     const origMainMaxWidth = mainEl.style.maxWidth;
+    undo.push(() => {
+      html.style.overflow = origHtmlOverflow;
+      document.body.style.overflow = origBodyOverflow;
+      mainEl.style.maxWidth = origMainMaxWidth;
+    });
 
     // Remove any hidden overflows on the main page that might clip the canvas
     html.style.overflow = 'visible';
@@ -103,6 +113,10 @@ export async function takeScreenshots(e) {
 
     const gridStyles = expandForCapture(gridEl);
     const statsStyles = expandForCapture(statsEl);
+    undo.push(() => {
+      restoreStyles(gridStyles);
+      restoreStyles(statsStyles);
+    });
 
     // Measure the exact, flawless pixel dimensions of the inline blocks
     const gridW = gridEl.scrollWidth;
@@ -219,6 +233,14 @@ export async function takeScreenshots(e) {
   } catch (err) {
     console.error('Screenshot failed:', err);
     document.documentElement.classList.remove('capturing');
+    // Put the page back as it was (the steps that ran are undone, latest first; doing one twice is harmless)
+    undo.reverse().forEach(fn => {
+      try {
+        fn();
+      } catch (_) {
+        /* keep undoing the rest */
+      }
+    });
     setBtnLabel(btn, 'Error');
   }
 

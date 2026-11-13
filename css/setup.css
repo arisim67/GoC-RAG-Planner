@@ -341,7 +341,6 @@
 
 .guild-small-check {
   cursor: pointer;
-  accent-color: var(--accent);
 }
 
 /* Server settings: inputs and the action toolbar */

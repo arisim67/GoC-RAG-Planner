@@ -86,6 +86,20 @@ body.tour-active .modal-bg.open {
   font-size: 13px;
   line-height: 1.55;
   outline: none;
+  /* A long step scrolls its text, but the buttons stay in view at the bottom of the card */
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+}
+.tour-card > * {
+  flex-shrink: 0;
+}
+.tour-card > .tour-body {
+  flex-shrink: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .tour-card-center {
   left: 50% !important;
@@ -100,7 +114,6 @@ body.tour-active .modal-bg.open {
   bottom: 12px;
   width: auto;
   max-height: 46vh;
-  overflow-y: auto;
 }
 
 .tour-progress {

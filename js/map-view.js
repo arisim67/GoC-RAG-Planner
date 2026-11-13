@@ -134,10 +134,13 @@ export function renderMapView(srv, mapData, days) {
   const layout = LAYOUTS[srv.mapKey];
   if (!layout || !mapData) return '';
   const today = todayDay(srv, days);
-  let day = chosen.has(srv.id) ? chosen.get(srv.id) : (today ?? 1);
+  const plan = srv.plan || {};
+  // Until something is planned after Day 0 (a new server), it opens on Day 0, where the starting towns
+  // are set; after that, on today (or Day 1 before the event starts).
+  const onlyDay0 = !Object.entries(plan).some(([d, cells]) => +d > 0 && Object.values(cells || {}).some(Boolean));
+  let day = chosen.has(srv.id) ? chosen.get(srv.id) : onlyDay0 ? 0 : (today ?? 1);
   day = Math.max(0, Math.min(days, day));
 
-  const plan = srv.plan || {};
   const owner = (d, k) => (plan[d] || {})[k] || '';
   const guildOf = id => srv.guilds.find(g => g.id === id);
 

@@ -18,7 +18,16 @@ import { openTabCtx, openAdd } from './servers.js';
 import { renderFillSel } from './grid-fill.js';
 import { applyCollapse, expandSection } from './collapse.js';
 import { getMapData, getMapList } from './maps/index.js';
-import { buildMessages } from './messages.js';
+import {
+  dailyPlans,
+  messageParts,
+  formatGuildMessage,
+  getMsgView,
+  getMsgDay,
+  msgGuild,
+  gameLength,
+  GAME_LIMIT,
+} from './messages.js';
 import { icon } from './icons.js';
 import { canUndo, canRedo, undoLabel, redoLabel } from './history.js';
 import { applySpotlight } from './spotlight.js';
@@ -88,9 +97,34 @@ function scrollToToday(mc, srv) {
   if (!th) return;
   scrolledToToday.add(srv.id);
   const wrap = th.closest('.tbl-wrap');
-  const town = mc.querySelector('table.ptbl thead th.kname');
-  // Sit just right of the Town column, which stays put while scrolling sideways.
-  wrap.scrollLeft = Math.max(0, th.offsetLeft - (town ? town.offsetWidth : 0) - 8);
+  // Sit just right of the Town column, which sticks to the grid's left edge once it's scrolled (the
+  // Adjacent Towns column before it scrolls away), so that edge is the grid's left plus Town's width.
+  // (Measured on screen: offsetLeft counts from the page, which put Today under Town on phones.)
+  const place = () => {
+    const town = wrap.querySelector('tbody td.kname') || wrap.querySelector('thead th.kname');
+    const edge = wrap.getBoundingClientRect().left + wrap.clientLeft + (town ? town.offsetWidth : 0);
+    wrap.scrollLeft = Math.max(0, wrap.scrollLeft + th.getBoundingClientRect().left - edge - 8);
+    return wrap.scrollLeft;
+  };
+  const at = place();
+  // The columns change width once the web fonts load: line it up again then, unless the grid has
+  // been scrolled by hand in the meantime.
+  if (document.fonts && document.fonts.status !== 'loaded')
+    document.fonts.ready.then(() => {
+      if (th.isConnected && wrap.scrollLeft === at) place();
+    });
+}
+
+// ── Day buttons (Map, Daily Messages): on phones they're one row that scrolls sideways, so keep the
+// picked day in the middle of it ──
+function centerDays(mc) {
+  mc.querySelectorAll('.map-days').forEach(strip => {
+    const a = strip.querySelector('.map-day.active');
+    if (!a || strip.scrollWidth <= strip.clientWidth) return;
+    const r = a.getBoundingClientRect(),
+      sr = strip.getBoundingClientRect();
+    strip.scrollLeft += r.left + r.width / 2 - (sr.left + sr.width / 2);
+  });
 }
 
 // ── Jump bar: quick links to each part of the page ──
@@ -235,6 +269,7 @@ export function renderAll() {
   wireJumpBar(mc);
   applySpotlight(mc);
   scrollToToday(mc, srv);
+  centerDays(mc);
 
   // Dynamically set pts-row sticky offset to match the actual first header row height
   requestAnimationFrame(() => {
@@ -760,11 +795,11 @@ function renderDecTable(srv, days, dec, give) {
             </div>
           </td>
           ${Array.from({ length: days }, (_, d) => {
+            // Days with nothing declared are left blank (just any giveaways), so declares stand out.
             const cnt = dec[g.id][d].length;
-            const cls = cnt > maxDecl ? 'dc-bad' : cnt > 0 ? 'dc-warn' : 'dc-ok';
+            const cls = cnt > maxDecl ? 'dc-bad' : 'dc-warn';
             return `<td${d + 1 === today ? ' class="is-today"' : ''}>
-              <div class="${cls} dec-count">${cnt}▲</div>
-              <div class="dec-towns">${dec[g.id][d].join(', ') || '—'}</div>
+              ${cnt ? `<div class="${cls} dec-count">${cnt}▲</div><div class="dec-towns">${dec[g.id][d].join(', ')}</div>` : ''}
               ${give[g.id][d].length ? `<div class="dec-give">↓${give[g.id][d].join(',')}</div>` : ''}
             </td>`;
           }).join('')}
@@ -776,30 +811,77 @@ function renderDecTable(srv, days, dec, give) {
   </div>`;
 }
 
+// Daily Messages: one day at a time (day buttons, like the Map), opening on today. Either the whole
+// server's message, for Discord, laid out across the width in columns (one block per guild; it copies
+// as one message), or every guild's message for the in-game chat side by side, each with its length
+// against the game's limit and copied on its own. The guild picked ("your guild") comes first, and is
+// the one Copy Today's Message copies. Click a message to copy it.
 function renderMsgs(srv) {
-  const today = todayDay(srv, numDays(srv));
-  const msgs = buildMessages(srv);
+  const days = numDays(srv);
+  const today = todayDay(srv, days);
+  const view = getMsgView();
+  const d = getMsgDay(srv, days, today);
+  const plan = dailyPlans(srv)[d];
+  const mine = msgGuild(srv);
+  const copied = `<span class="msg-copied" aria-live="polite"></span>`;
+
+  const dayBtns = Array.from(
+    { length: days },
+    (_, i) => `<button type="button" class="map-day${i === d ? ' active' : ''}${i + 1 === today ? ' is-today' : ''}"
+      data-action="msg-day" data-day="${i}" aria-pressed="${i === d}"${i + 1 === today ? ' title="Today"' : ''}>D${i + 1}</button>`,
+  ).join('');
+
+  let content;
+  if (!plan || !plan.guilds.length) {
+    content = `<div class="msg-none">Nothing planned for Day ${d + 1} yet.</div>`;
+  } else if (view === 'server') {
+    const parts = messageParts(srv, plan);
+    const text = [parts.head, ...parts.blocks].join('\n').trim();
+    content = `<div class="msg-card msg-card-server${d + 1 === today ? ' is-today' : ''}" data-action="copy-message" data-day="${d}" data-msg="${esc(text)}" role="button" tabindex="0" aria-label="Copy Day ${d + 1}'s message">
+        <div class="msg-date">${d + 1 === today ? '<span class="today-tag">Today</span>' : ''}<span class="msg-hint">Click to copy</span> ${copied}</div>
+        ${parts.head.trim() ? `<div class="msg-body msg-head">${esc(parts.head.trim())}</div>` : ''}
+        ${parts.blocks.length ? `<div class="msg-cols">${parts.blocks.map(b => `<div class="msg-block msg-body">${esc(b.trim())}</div>`).join('')}</div>` : ''}
+      </div>`;
+  } else {
+    const order = [...plan.guilds].sort((a, b) => (b.g.id === mine?.id) - (a.g.id === mine?.id));
+    const bubbles = order
+      .map(({ g }) => {
+        const text = formatGuildMessage(srv, plan, g.id);
+        const len = gameLength(text);
+        const over = len > GAME_LIMIT;
+        const isMine = mine && g.id === mine.id;
+        return `<div class="msg-card msg-card-game${isMine ? ' is-mine' : ''}" data-action="copy-message" data-day="${d}" data-msg="${esc(text)}" role="button" tabindex="0" aria-label="Copy ${esc(g.name)}'s message">
+          <div class="msg-date msg-who"><span class="guild-dot" style="background:${g.color}"></span>${esc(g.name)}${isMine ? '<span class="msg-mine">Your guild</span>' : ''} ${copied}</div>
+          <div class="msg-body">${esc(text)}</div>
+          <div class="msg-count${over ? ' over' : ''}" title="Characters used, of the game's ${GAME_LIMIT}">${len} / ${GAME_LIMIT}${over ? ': too long for the game' : ''}</div>
+        </div>`;
+      })
+      .join('');
+    const away = srv.guilds.filter(g => !plan.guilds.some(x => x.g.id === g.id));
+    content = `<div class="msg-bubbles">${bubbles}</div>
+      ${away.length ? `<p class="msg-note">Not on the map on Day ${d + 1}: ${away.map(g => esc(g.name)).join(', ')}</p>` : ''}`;
+  }
 
   return `<div class="section" id="sec-messages" data-sec="messages" data-tour="messages">
     <div class="sec-title sec-title-row">
-      <div>Daily Messages <span class="sec-note"> — click to copy</span></div>
+      <div>Daily Messages</div>
       <button type="button" class="btn-tool btn-tool-sm" data-action="message-template">${icon('pencil')}<span class="btn-label">Template</span></button>
     </div>
-    
-    <div class="msg-grid">
-      ${msgs
-        .map(
-          (
-            m,
-            d,
-          ) => `<div class="msg-card${d + 1 === today ? ' is-today' : ''}" data-action="copy-message" data-day="${d}" data-msg="${esc(m)}">
-        <div class="msg-date">
-          ${d + 1 === today ? '<span class="today-tag">Today</span>' : ''}${dateLabelShort(srv, d + 1).replace('<br>', ' ')} <span class="msg-copied" id="cpd-${d}"></span>
-        </div>
-        <div class="msg-body">${esc(m)}</div>
-      </div>`,
-        )
-        .join('')}
+    <div class="msg-controls">
+      <div class="msg-views" role="group" aria-label="Which message">
+        <button type="button" class="msg-view-btn${view === 'server' ? ' active' : ''}" data-action="msg-view" data-view="server" aria-pressed="${view === 'server'}">Whole server <span class="msg-view-sub">Discord</span></button>
+        <button type="button" class="msg-view-btn${view === 'guild' ? ' active' : ''}" data-action="msg-view" data-view="guild" aria-pressed="${view === 'guild'}">Each guild <span class="msg-view-sub">in game</span></button>
+      </div>
+      ${
+        view === 'guild'
+          ? `<label class="msg-mine-pick">Your guild
+          <select class="msg-guild" data-change="msg-guild">
+            ${srv.guilds.map(x => `<option value="${esc(x.id)}"${mine && x.id === mine.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}
+          </select></label>`
+          : ''
+      }
     </div>
+    <div class="map-days msg-days" role="group" aria-label="Day">${dayBtns}</div>
+    ${content}
   </div>`;
 }

@@ -4,6 +4,7 @@
 // section opens if it was folded, and the cells flash so they're easy to spot.
 
 import { expandSection } from './collapse.js';
+import { usingTouch } from './ui.js';
 
 const FLASH_MS = 2400;
 
@@ -22,8 +23,10 @@ function bringIntoView(el) {
   el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'center', inline: 'center' });
 }
 
-// Put the keyboard on a grid cell too, so the arrow keys carry on from it.
+// Put the keyboard on a grid cell too, so the arrow keys carry on from it. (Not after a tap: on a
+// touch screen that would open the cell's list.)
 function focusCell(td) {
+  if (usingTouch()) return;
   const sel = td && td.querySelector('select');
   if (sel && !sel.disabled) sel.focus({ preventScroll: true });
 }

@@ -10,19 +10,28 @@ const KEY = 'goc_whats_new';
 const WHATS_NEW_ID = '2026-11-15';
 const CHANGELOG_URL = 'https://github.com/arisim67/goc-rag-planner/blob/main/CHANGELOG.md';
 
+// [icon, title, text, extra]. extra: 'desktop' for things that only apply with a mouse and keyboard
+// (left out on phones and tablets), or { touch: text } for different wording there.
 const ITEMS = [
   [
     'undo-2',
     'Undo and Redo',
     'Step back through changes to the grid, Auto-Optimize included: buttons above the grid, or Ctrl+Z / Ctrl+Y.',
+    { touch: 'Step back through changes to the grid, Auto-Optimize included, with the buttons above the grid.' },
   ],
   ['history', 'History', 'Saved copies of each server. Restore one in a click, even a server you deleted.'],
   [
     'keyboard',
     'Keyboard editing',
     'Arrow keys move around the grid, typing picks a guild, and Ctrl+C / Ctrl+V copy blocks of cells.',
+    'desktop',
   ],
   ['map', 'Map view', 'See who holds each town on the in-game map, one day at a time.'],
+  [
+    'copy',
+    'In-game guild messages',
+    "Daily Messages can write each guild its own message, short enough for Tokyo Debunker's guild chat, in your own format.",
+  ],
   ['eye', 'Guild spotlight', 'Click a guild above the grid to see only its towns, on view-only links too.'],
   [
     'calendar',
@@ -34,11 +43,19 @@ const ITEMS = [
     'Status jumps to problems',
     'Click a red chip under Status to go straight to the cell that needs fixing.',
   ],
-  ['maximize-2', 'All 13 days on screen', 'On a desktop the whole grid fits without scrolling, with full guild names.'],
+  [
+    'maximize-2',
+    'All 13 days on screen',
+    'On a desktop the whole grid fits without scrolling, with full guild names.',
+    'desktop',
+  ],
   ['chevron-down', 'Fold away sections', "Click a section's title to hide it until you need it."],
   ['palette', 'Guild colors', 'Click the dot next to a guild to choose any color.'],
   ['share-2', 'Share your message template', 'Share in the template editor copies a link for other planners.'],
 ];
+
+// A phone or tablet: no mouse to hover with, and a finger to point.
+const touchOnly = () => window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
 let pending = false;
 let startTour = () => {};
@@ -86,12 +103,14 @@ export function showWhatsNew() {
       <h3 id="wn-title">${icon('sparkles')} What's new</h3>
       <p class="wn-intro">The planner has a new home and a lot of new features. Here are the highlights:</p>
       <ul class="wn-list">
-        ${ITEMS.map(
-          ([ic, title, text]) => `<li class="wn-item">
+        ${ITEMS.filter(([, , , extra]) => !(extra === 'desktop' && touchOnly()))
+          .map(
+            ([ic, title, text, extra]) => `<li class="wn-item">
             <span class="wn-icon">${icon(ic)}</span>
-            <span><b>${title}.</b> ${text}</span>
+            <span><b>${title}.</b> ${(touchOnly() && extra && extra.touch) || text}</span>
           </li>`,
-        ).join('')}
+          )
+          .join('')}
       </ul>
       <p class="wn-more"><a href="${CHANGELOG_URL}" target="_blank" rel="noopener">See everything that changed</a></p>
       <div class="modal-row">

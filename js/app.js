@@ -5,7 +5,7 @@
 import { state, load, activeSrv, setAfterSave, save, numDays } from './state.js';
 
 let demoCell = null; // the broken move put in for the tutorial's Status step
-import { closeModal, showToast } from './ui.js';
+import { closeModal, showToast, usingTouch } from './ui.js';
 import { renderTabs, renderAll } from './render.js';
 import {
   createTutorialServer,
@@ -58,7 +58,14 @@ import { takeScreenshots } from './screenshots.js';
 import { checkUrlForSharedPlan, publishToCloud, syncFromCloud } from './cloud.js';
 import { initTour } from './tour.js';
 import { isOldSite, forwardSharedLink, showMovedBanner, receiveMovedServers } from './move.js';
-import { openMsgTemplate, setMessagesRerender, receiveSharedTemplate, hasSharedTemplate } from './messages.js';
+import {
+  openMsgTemplate,
+  setMessagesRerender,
+  receiveSharedTemplate,
+  hasSharedTemplate,
+  setMsgView,
+  setMsgDay,
+} from './messages.js';
 import { isMidEvent, validateAdj } from './calc.js';
 import { getMapData } from './maps/index.js';
 import { initActions, registerActions } from './actions.js';
@@ -160,9 +167,10 @@ setMessagesRerender(renderAll);
 const guildId = el => el.dataset.guildId || el.dataset.id;
 
 // Towns on the map are SVG, which has no keyboard click: Enter or Space on a focused town taps it.
+// The same for the daily message card (a div that copies when clicked).
 document.addEventListener('keydown', e => {
   const t = e.target;
-  if ((e.key === 'Enter' || e.key === ' ') && t.closest && t.closest('.map-town.pickable')) {
+  if ((e.key === 'Enter' || e.key === ' ') && t.closest && t.closest('.map-town.pickable, .msg-card')) {
     e.preventDefault();
     t.dispatchEvent(new MouseEvent('click', { bubbles: true }));
   }
@@ -255,9 +263,39 @@ registerActions('click', {
   'clear-day': el => clearDay(Number(el.dataset.day)),
   'copy-message': el => cpyMsg(el, Number(el.dataset.day)),
   'message-template': openMsgTemplate,
+  // Daily Messages: which day, and the whole server's message or one guild's
+  'msg-day': el => {
+    const s = activeSrv();
+    if (!s) return;
+    setMsgDay(s.id, Number(el.dataset.day));
+    renderAll();
+    focusAgain(`#sec-messages [data-action="msg-day"][data-day="${el.dataset.day}"]`);
+  },
+  'msg-view': el => {
+    setMsgView(el.dataset.view);
+    renderAll();
+    focusAgain(`#sec-messages [data-action="msg-view"][data-view="${el.dataset.view}"]`);
+  },
 });
 
+// After a re-render, put the keyboard back on the control that was used. (Not after a tap on a
+// dropdown: on a touch screen that would open its list again.)
+function focusAgain(sel) {
+  const el = document.querySelector(sel);
+  if (el && el.tagName === 'SELECT' && usingTouch()) return;
+  if (el) el.focus({ preventScroll: true });
+}
+
 registerActions('change', {
+  // The guild whose message Daily Messages shows (saved with the server)
+  'msg-guild': el => {
+    const s = activeSrv();
+    if (!s || s.isViewOnly) return;
+    s.msgGuild = el.value;
+    save();
+    renderAll();
+    focusAgain('#sec-messages .msg-guild');
+  },
   'server-name': el => updName(el.value),
   'server-mode': el => updMode(el.value),
   'server-map': el => updMap(el.value),

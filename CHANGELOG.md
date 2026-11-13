@@ -3,7 +3,7 @@
 Notable changes to the GoC / Ragnarok Planner, newest first.
 The app is updated continuously rather than in numbered releases, so entries are grouped by date.
 
-## 2026-11-15
+## 2026-11-17
 
 ### Changed
 - **The planner has moved to [goc-rag-planner.pages.dev](https://goc-rag-planner.pages.dev/).** The old address (arisim67.github.io) will be turned off on January 1, 2027. Until then it shows a banner with **Move my servers**, which brings your saved servers (and whether you've seen the tutorial) to the new site without uploading them. Shared plan links made on the old address, including Save to Cloud links, open on the new site automatically.
@@ -19,6 +19,16 @@ The app is updated continuously rather than in numbered releases, so entries are
 - **Sharing.** Shared plan links now show the plan itself in Discord and other apps: each guild's final score and total occupation (the user guide and tutorial explain these previews). Message templates can be shared too: **Share** in the template editor copies a link, and whoever opens it sees your template previewed with their own plan and can save it (or paste the link under **Use a shared template**).
 - **A new user guide.** It starts with a five-step Quick start and a table of contents, and every part of the planner has a screenshot with numbered markers explaining each button. Short animations show copying across the grid, keyboard editing and Spotlight, and an example shows the card a shared plan link produces. Fine detail (how Auto-Optimize works, every message placeholder) is tucked behind "More details".
 - **An updated tutorial and a What's new card.** The tutorial has been updated and shows once more for everyone, and its welcome card now has **Skip tour**. If you used the planner before and skip it, a What's new card lists the highlights of this update instead.
+- The Points, Castle, Dorms and Towns boxes under Guilds are hidden until you turn on Planning mid-event. If any of them already has a number, they stay visible.
+- With those boxes hidden, the guild list uses two numbered columns on wide screens. On phones, Small guild and Exclude guild sit under the guild name, so you don't have to scroll sideways.
+- Day 0 in the planning grid no longer shows a date.
+- Daily Messages shows one day at a time, with day buttons like the Map's, opening on today. The whole server's message is laid out in columns, one per guild, and still copies as one message.
+- Daily Messages can write each guild its own message for Tokyo Debunker's guild chat, side by side with your guild first, with its own template and a count against the 150-character limit. It spells out the backup ("Smallest team on J if not available for battle phase") when a guild might not have its def town in time. Buildings switch to short names (Castle, Mort, Dio…) when a message would be too long, or always if you choose. Copy Today's Message copies your guild's message when Each guild is showing.
+- Message templates say "Day 1" instead of "D1", can show the weekday as Mon or Monday, and can use a separate message for days nobody declares or gives anything away.
+- The Declares & Giveaways table leaves days with no declares blank.
+- On phones, User Guide and Tutorial sit together under the title, and the server settings fit without cutting off the dates.
+- A new server's Map opens on Day 0.
+- Checkboxes are now on/off switches in the site's colors.
 - The project now has automated tests that run on every update, and issue forms for bug reports and suggestions.
 - Day 0 in the planning grid no longer shows a date.
 

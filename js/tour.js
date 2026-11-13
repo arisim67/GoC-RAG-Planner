@@ -460,10 +460,11 @@ function buildSteps(srv) {
     {
       target: 'messages',
       title: 'Daily messages',
-      body: `Ready-made instructions for each day. Click a card to copy it, then paste it into Discord.
-             During an event, today's card is highlighted, and <b>Copy Today's Message</b> in the toolbar copies it in one click.
-             <br><br>Want them in your own style? <b>Template</b> changes the format, and lets you give guilds
-             emoji names just for messages. <b>Share</b> in there copies a link to your template for other planners.`,
+      body: `Ready-made instructions for each day, one day at a time (it opens on today). Click the message to copy it.
+             <b>Whole server</b> is every guild's part, for Discord; <b>Each guild</b> gives every guild its own message,
+             short enough for the in-game guild chat. <b>Copy Today's Message</b> in the toolbar copies today's in one click.
+             <br><br>Want them in your own style? <b>Template</b> changes the format of both, and lets you give guilds
+             emoji names just for messages. <b>Share</b> in there copies a link to your templates for other planners.`,
       place: 'top',
     },
     {

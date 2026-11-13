@@ -1,9 +1,10 @@
 // js/handlers.js
 // Edits made in the page: server settings, guild fields, grid cells, clearing days, copying messages.
 
-import { activeSrv, save, nextGuildColor, MAX_GUILDS } from './state.js';
+import { activeSrv, save, numDays, nextGuildColor, MAX_GUILDS } from './state.js';
 import { renderTabs, renderAll } from './render.js';
-import { showToast } from './ui.js';
+import { showToast, todayDay } from './ui.js';
+import { todayMessage } from './messages.js';
 import { openColorPicker } from './color-picker.js';
 import { setBtnLabel } from './icons.js';
 import { recordChange, clearHistory } from './history.js';
@@ -202,7 +203,7 @@ export function cpyMsg(el, d) {
   navigator.clipboard
     .writeText(el.dataset.msg)
     .then(() => {
-      const h = document.getElementById('cpd-' + d);
+      const h = el.querySelector('.msg-copied') || document.getElementById('cpd-' + d);
       if (h) {
         h.textContent = '✓ Copied';
         setTimeout(() => {
@@ -213,18 +214,21 @@ export function cpyMsg(el, d) {
     .catch(() => {});
 }
 
-// Toolbar: copy today's daily message without scrolling down to the cards.
+// Toolbar: copy today's daily message (whole server or one guild, whichever Daily Messages shows)
+// without scrolling down to it.
 export function copyTodayMessage(btn) {
-  const card = document.querySelector('.msg-card.is-today');
-  if (!card) return;
-  const done = text => {
-    const before = setBtnLabel(btn, text);
+  const s = activeSrv();
+  if (!s) return;
+  const text = todayMessage(s, todayDay(s, numDays(s)));
+  if (!text) return showToast('Nothing to send today.', false, 2500);
+  const done = label => {
+    const before = setBtnLabel(btn, label);
     setTimeout(() => setBtnLabel(btn, before), 2000);
   };
   navigator.clipboard
-    .writeText(card.dataset.msg)
+    .writeText(text)
     .then(() => done('✓ Copied'))
-    .catch(() => window.prompt("Copy today's message:", card.dataset.msg));
+    .catch(() => window.prompt("Copy today's message:", text));
 }
 
 export function clearDay(d) {

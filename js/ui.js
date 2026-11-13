@@ -88,3 +88,25 @@ export function dateLabelShort(srv, d) {
 export function closeModal(id) {
   document.getElementById(id).classList.remove('open');
 }
+
+// Whether the last tap or click was a touch (a phone or tablet) rather than a mouse or the keyboard.
+// After a redraw the planner puts the keyboard back on the control that was used, but on a touch
+// screen focusing a dropdown opens its list again, so that is skipped for touch.
+let touchInput = false;
+if (typeof document !== 'undefined') {
+  document.addEventListener(
+    'pointerdown',
+    e => {
+      touchInput = e.pointerType === 'touch' || e.pointerType === 'pen';
+    },
+    true,
+  );
+  document.addEventListener(
+    'keydown',
+    () => {
+      touchInput = false;
+    },
+    true,
+  );
+}
+export const usingTouch = () => touchInput;

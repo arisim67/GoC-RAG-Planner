@@ -11,7 +11,7 @@
 import { state, activeSrv, save } from './state.js';
 import { renderAll } from './render.js';
 import { recordChange } from './history.js';
-import { showToast } from './ui.js';
+import { showToast, usingTouch } from './ui.js';
 import { gridRows, posOf, rangeOf, getFillSel, setFillSel, setAfterPaint } from './grid-fill.js';
 
 const TYPE_MS = 900; // letters typed within this long of each other spell one name
@@ -54,7 +54,8 @@ function showCursor() {
   const td = cellAt(cursor.r, cursor.d);
   if (!td) return;
   if (keyboard) td.classList.add('kb-cursor');
-  const sel = focus && td.querySelector('select');
+  // (Not after a tap: on a touch screen, focusing the dropdown would open its list again.)
+  const sel = focus && !usingTouch() && td.querySelector('select');
   if (sel) sel.focus({ preventScroll: true });
 }
 setAfterPaint(showCursor);
@@ -354,7 +355,12 @@ document.addEventListener('focusin', e => {
 document.addEventListener(
   'change',
   e => {
-    if (e.target.matches && e.target.matches('table.ptbl select.csel') && document.activeElement === e.target) {
+    if (
+      e.target.matches &&
+      e.target.matches('table.ptbl select.csel') &&
+      document.activeElement === e.target &&
+      !usingTouch()
+    ) {
       refocus = true;
     }
   },
