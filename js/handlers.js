@@ -6,6 +6,7 @@ import { renderTabs, renderAll } from './render.js';
 import { showToast, todayDay } from './ui.js';
 import { todayMessage } from './messages.js';
 import { openColorPicker } from './color-picker.js';
+import { gcolor } from './colors.js';
 import { setBtnLabel } from './icons.js';
 import { recordChange, clearHistory } from './history.js';
 import { getMapList, getMapData } from './maps/index.js';
@@ -311,7 +312,7 @@ const luminance = ([r, g, b]) => {
 // While choosing: recolor this guild's dot only (the rest of the page updates once a color is picked).
 export function previewGuildColor(gid, color) {
   const dot = document.querySelector(`.guild-color[data-id="${gid}"]`);
-  if (dot) dot.style.setProperty('--guild-color', color);
+  if (dot) dot.style.setProperty('--guild-color', gcolor(color));
 }
 
 // Open the Palette / Custom picker for a guild's dot.
@@ -343,7 +344,7 @@ export function updGuildColor(gid, color) {
   const close = s.guilds.find(o => o.id !== gid && hexToRgb(o.color) && colorDistance(rgb, hexToRgb(o.color)) < 90);
   if (close) {
     showToast(`That color looks a lot like ${close.name}'s, which may be hard to tell apart in the grid.`, false, 6000);
-  } else if (luminance(rgb) < 0.12) {
+  } else if (luminance(rgb) < 0.12 && document.documentElement.getAttribute('data-theme') !== 'light') {
     showToast(
       'That color is quite dark, so guild names in it may be hard to read on the dark background.',
       false,
