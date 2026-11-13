@@ -341,7 +341,7 @@ body.tour-active .modal-bg.open {
 }
 .tour-next {
   background: var(--accent);
-  color: #0a1a14;
+  color: var(--on-accent);
   box-shadow: 0 4px 12px var(--accent-glow);
 }
 @media (hover: hover) {

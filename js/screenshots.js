@@ -128,6 +128,8 @@ export async function takeScreenshots(e) {
     // (A wider windowWidth flips the clone to desktop CSS: wider cells, bigger fonts, so the
     // table grows past the width we measured and the right-hand day columns get cropped.)
     const captureWindowWidth = window.innerWidth;
+    // Match the page background of the current theme (it differs per theme)
+    const captureBg = getComputedStyle(document.body).getPropertyValue('--bg').trim() || '#191425';
 
     const isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
     // iOS Safari refuses canvases above ~16.7M pixels, so shrink the scale if a big GoC map would exceed it
@@ -136,7 +138,7 @@ export async function takeScreenshots(e) {
 
     // Pass the measured bounds to html2canvas explicitly
     const canvasGrid = await html2canvas(gridEl, {
-      backgroundColor: '#191425',
+      backgroundColor: captureBg,
       scale: fitScale(gridW, gridH),
       width: gridW,
       height: gridH,
@@ -147,7 +149,7 @@ export async function takeScreenshots(e) {
     });
 
     const canvasStats = await html2canvas(statsEl, {
-      backgroundColor: '#191425',
+      backgroundColor: captureBg,
       scale: fitScale(statsW, statsH),
       width: statsW,
       height: statsH,

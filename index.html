@@ -42,6 +42,14 @@
     <link rel="stylesheet" href="css/dialogs.css" />
     <link rel="stylesheet" href="css/responsive.css" />
     <link rel="stylesheet" href="css/tour.css" />
+    <link rel="stylesheet" href="css/themes.css" />
+    <!-- Apply the saved theme before first paint so the page doesn't flash dark. Keep the list in sync with js/theme.js -->
+    <script>
+      try {
+        var t = localStorage.getItem('goc_theme');
+        if (t && t !== 'dark' && /^[a-z]+$/.test(t)) document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div class="app-header">
@@ -86,6 +94,77 @@
             <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /></svg
           ><span>Tutorial</span>
         </button>
+        <div class="theme-picker" id="theme-picker" data-tour="theme">
+          <button
+            type="button"
+            class="theme-trigger"
+            id="theme-trigger"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+            aria-controls="theme-menu"
+            title="Change theme"
+          >
+            <span class="theme-current" id="theme-current"></span><span class="theme-arrow" aria-hidden="true">▾</span>
+          </button>
+          <ul class="theme-menu" id="theme-menu" role="listbox" aria-label="Theme" hidden>
+            <li class="theme-item" role="option" tabindex="-1" data-value="dark">
+              <svg
+                class="theme-glyph"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg
+              ><span>Dark</span>
+            </li>
+            <li class="theme-item" role="option" tabindex="-1" data-value="light">
+              <svg
+                class="theme-glyph"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="4" />
+                <path
+                  d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+                /></svg
+              ><span>Light</span>
+            </li>
+            <li class="theme-sep" role="separator"></li>
+            <li class="theme-item" role="option" tabindex="-1" data-value="dionysia">
+              <img class="crest-icon" src="images/crests/dionysia.webp" alt="" /><span>Dionysia</span>
+            </li>
+            <li class="theme-item" role="option" tabindex="-1" data-value="frostheim">
+              <img class="crest-icon" src="images/crests/frostheim.webp" alt="" /><span>Frostheim</span>
+            </li>
+            <li class="theme-item" role="option" tabindex="-1" data-value="hotarubi">
+              <img class="crest-icon" src="images/crests/hotarubi.webp" alt="" /><span>Hotarubi</span>
+            </li>
+            <li class="theme-item" role="option" tabindex="-1" data-value="jabberwock">
+              <img class="crest-icon" src="images/crests/jabberwock.webp" alt="" /><span>Jabberwock</span>
+            </li>
+            <li class="theme-item" role="option" tabindex="-1" data-value="mortkranken">
+              <img class="crest-icon" src="images/crests/mortkranken.webp" alt="" /><span>Mortkranken</span>
+            </li>
+            <li class="theme-item" role="option" tabindex="-1" data-value="obscuary">
+              <img class="crest-icon" src="images/crests/obscuary.webp" alt="" /><span>Obscuary</span>
+            </li>
+            <li class="theme-item" role="option" tabindex="-1" data-value="sinostra">
+              <img class="crest-icon" src="images/crests/sinostra.webp" alt="" /><span>Sinostra</span>
+            </li>
+            <li class="theme-item" role="option" tabindex="-1" data-value="vagastrom">
+              <img class="crest-icon" src="images/crests/vagastrom.webp" alt="" /><span>Vagastrom</span>
+            </li>
+          </ul>
+        </div>
         <span class="save-status" id="save-status"></span>
       </div>
       <div class="tabs-bar" id="tabs-bar" data-tour="tabs"></div>

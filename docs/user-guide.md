@@ -36,6 +36,7 @@ The GoC / Ragnarok Planner, made by ari (EA-4, 43, 45) and gharial (EA-44), help
 
 - **Section links:** the bar of links at the top (Setup, Guilds, Grid, Map, Scores, Declares, Messages) stays on screen as you scroll and jumps to each part of the page.
 - **Folding sections:** click a section's title, or the arrow beside it, to fold it down to just the title, and again to open it. Hide what you don't need, such as the Guilds list once it's set up. Folded sections are remembered in this browser for every server, open when you jump to them, and are still included in Screenshots.
+- **Themes:** the menu in the header switches between Dark, Light and the eight house themes. Your pick is saved in this browser (not per server), and Screenshots use whichever theme is on. On Light, guilds are drawn in a separate set of colors chosen to read on the pale background. Shared plans and link previews always use the default look.
 - **Server tabs:** each server you plan has its own tab along the top. Right-click a tab (or press and hold on a phone) to rename, duplicate or delete it.
 
 ## Servers

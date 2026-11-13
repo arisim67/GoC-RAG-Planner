@@ -4,6 +4,7 @@
 
 import { esc } from './ui.js';
 import { GUILD_COLORS } from './state.js';
+import { gcolor } from './colors.js';
 
 // The 15 default guild colors plus tones from the site's own theme, sorted by hue.
 export const PALETTE = [
@@ -73,7 +74,7 @@ export function openColorPicker({ anchor, guild, others, onPick, onPreview }) {
   el.setAttribute('aria-label', `Color for ${guild.name}`);
   el.innerHTML = `
     <div class="cp-head">
-      <span class="cp-title"><span class="cp-swatch-now" style="background:${esc(current)}"></span>${esc(guild.name)}</span>
+      <span class="cp-title"><span class="cp-swatch-now" style="background:${esc(gcolor(current))}"></span>${esc(guild.name)}</span>
       <div class="cp-tabs" role="tablist">
         <button type="button" role="tab" class="cp-tab" data-tab="palette">Palette</button>
         <button type="button" role="tab" class="cp-tab" data-tab="custom">Custom</button>
@@ -85,7 +86,7 @@ export function openColorPicker({ anchor, guild, others, onPick, onPreview }) {
           const who = takenBy.get(c);
           const label = who ? `${c}, used by ${who}` : c;
           return `<button type="button" class="cp-swatch${c === current ? ' current' : ''}${who ? ' taken' : ''}"
-            style="--sw:${c}" data-color="${c}" title="${esc(label)}" aria-label="${esc(label)}"></button>`;
+            style="--sw:${gcolor(c)}" data-color="${c}" title="${esc(label)}" aria-label="${esc(label)}"></button>`;
         }).join('')}
       </div>
       <p class="cp-hint"><span class="cp-taken-key"></span> Used by another guild</p>
@@ -115,7 +116,7 @@ export function openColorPicker({ anchor, guild, others, onPick, onPreview }) {
     warn = $('.cp-warn');
   const preview = c => {
     onPreview(c);
-    $('.cp-swatch-now').style.background = c;
+    $('.cp-swatch-now').style.background = gcolor(c);
   };
 
   const showTab = t => {

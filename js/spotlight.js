@@ -4,6 +4,7 @@
 // Click it again, or press Escape, to clear. Remembered per server while the page is open.
 
 import { activeSrv } from './state.js';
+import { gcolor } from './colors.js';
 
 const chosen = new Map(); // server id -> guild id
 
@@ -28,7 +29,7 @@ export function applySpotlight(root = document.getElementById('main-content')) {
   }
   const guild = gid ? srv.guilds.find(g => g.id === gid) : null;
   root.classList.toggle('spot-on', !!guild);
-  if (guild) root.style.setProperty('--spot-color', guild.color);
+  if (guild) root.style.setProperty('--spot-color', gcolor(guild.color));
   else root.style.removeProperty('--spot-color');
 
   root.querySelectorAll('[data-g]').forEach(el => el.classList.toggle('spot-hit', !!gid && el.dataset.g === gid));

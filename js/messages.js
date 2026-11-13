@@ -18,6 +18,7 @@ import { esc, showToast, todayDay } from './ui.js';
 import { calcDec } from './calc.js';
 import { getMapData } from './maps/index.js';
 import { renderDiscord } from './discord-md.js';
+import { gcolor } from './colors.js';
 import { isOldSite, newSiteUrl } from './move.js';
 
 const TEMPLATE_KEY = 'goc_msg_template';
@@ -539,7 +540,7 @@ function openTemplateEditor(incoming = null, kind = getMsgView() === 'guild' ? '
               .map(
                 g => `
               <div class="tpl-name-row">
-                <span class="guild-dot" style="background:${g.color}"></span>
+                <span class="guild-dot" style="background:${gcolor(g.color)}"></span>
                 <span class="tpl-name-plain">${esc(g.name)}</span>
                 <input type="text" class="tpl-input tpl-msgname" data-gid="${esc(g.id)}" value="${esc(g.msgName || '')}" placeholder="${esc(g.name)}" spellcheck="false">
               </div>`,

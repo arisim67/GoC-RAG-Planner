@@ -72,7 +72,7 @@ export function dateLabel(srv, d) {
   dt.setDate(dt.getDate() + d - 1);
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const dateStr = `${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}`;
-  return `Day ${d}<br><small style="font-size:9px;color:var(--text3)">${days[dt.getDay()]} ${dateStr}</small>`;
+  return `Day ${d}<br><small style="font-size:9px;color:var(--text2)">${days[dt.getDay()]} ${dateStr}</small>`;
 }
 
 export function dateLabelShort(srv, d) {

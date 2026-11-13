@@ -7,6 +7,7 @@
 import { esc, dateLabelShort, todayDay } from './ui.js';
 import { startingTownLimit, isMidEvent, startRule } from './calc.js';
 import { icon } from './icons.js';
+import { gcolor } from './colors.js';
 import { LAYOUTS } from './maps/layouts.js';
 import { ROADS } from './maps/roads.js';
 import { BUILDINGS, GHOULS, TOWN_SIZE, TOWN_CATS } from './maps/art.js';
@@ -188,7 +189,7 @@ export function renderMapView(srv, mapData, days) {
     const first = key.startsWith(`${to}|`);
     const shared = perRoad[key] > 1;
     const d = shared ? smooth(offsetLine(roadPts(key), first ? LANE : -LANE)) : roadPath(key);
-    return `<path class="map-attack${first ? ' rev' : ''}${shared ? ' lane' : ''}" data-g="${g.id}" style="--c:${g.color}" d="${d}"/>`;
+    return `<path class="map-attack${first ? ' rev' : ''}${shared ? ' lane' : ''}" data-g="${g.id}" style="--c:${gcolor(g.color)}" d="${d}"/>`;
   });
 
   // Day 0 can be filled in by tapping towns on the map (not on view-only copies).
@@ -205,7 +206,7 @@ export function renderMapView(srv, mapData, days) {
           .filter(g => mid || startingTownLimit(srv, g.id) > 0 || startingCount(srv, g.id) > 0) // not guilds that start with nothing
           .map(
             g => `<button type="button" class="map-pick-btn" data-action="map-pick" data-srv="${esc(srv.id)}" data-g="${g.id}"
-              aria-pressed="${cur === g.id}" style="--c:${g.color}"><span class="map-key-dot" style="background:${g.color}"></span>${esc(g.name)}
+              aria-pressed="${cur === g.id}" style="--c:${gcolor(g.color)}"><span class="map-key-dot" style="background:${gcolor(g.color)}"></span>${esc(g.name)}
               <span class="map-pick-count${!mid && startingCount(srv, g.id) >= startingTownLimit(srv, g.id) ? ' full' : ''}">${tally(g.id)}</span></button>`,
           )
           .join('')}
@@ -260,7 +261,7 @@ export function renderMapView(srv, mapData, days) {
           ? ` data-action="map-town" data-k="${esc(k.id)}" tabindex="0" role="button" aria-label="${esc(tip)}"`
           : '';
       return `<g class="map-town ${k.type}${g ? '' : ' empty'}${taken ? ' taken' : ''}${editing ? ' pickable' : ''}"
-        ${g ? `data-g="${g.id}" style="--c:${g.color}"` : ''}${pick}>
+        ${g ? `data-g="${g.id}" style="--c:${gcolor(g.color)}"` : ''}${pick}>
         <title>${esc(tip)}</title>
         ${pic}
         <g class="map-label" transform="translate(${x} ${y})">
@@ -280,7 +281,7 @@ export function renderMapView(srv, mapData, days) {
     .filter(g => held[g.id])
     .map(
       g =>
-        `<span class="map-key" data-g="${g.id}"><span class="map-key-dot" style="background:${g.color}"></span>${esc(g.name)} <b>${held[g.id]}</b></span>`,
+        `<span class="map-key" data-g="${g.id}"><span class="map-key-dot" style="background:${gcolor(g.color)}"></span>${esc(g.name)} <b>${held[g.id]}</b></span>`,
     )
     .join('');
 

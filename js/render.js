@@ -2,6 +2,7 @@
 // Builds the page: server tabs, settings, guilds, status, planning grid, stats and daily messages.
 
 import { state, activeSrv, numDays, save, numDisplayDays, GUILD_COLORS } from './state.js';
+import { gcolor } from './colors.js';
 import { esc, dateLabel, dateLabelShort, todayDay } from './ui.js';
 import {
   calcScores,
@@ -414,7 +415,7 @@ function renderGuilds(srv) {
         <div class="guild-row" data-id="${g.id}">
           ${!srv.isViewOnly ? `<div class="drag-handle" title="Drag to reorder">${icon('grip-vertical')}</div>` : '<span></span>'}
           ${showMid ? '' : `<span class="guild-rank" title="Order in the list">${i + 1}</span>`}
-          <button type="button" class="guild-color" style="--guild-color:${g.color}" data-action="guild-color" data-id="${g.id}"
+          <button type="button" class="guild-color" style="--guild-color:${gcolor(g.color)}" data-action="guild-color" data-id="${g.id}"
             title="${srv.isViewOnly ? '' : 'Change color'}" aria-label="${esc(g.name)}: change color" ${dAttr}></button>
 
           <input class="guild-name-inp" data-guild-id="${g.id}" data-guild-field="name" value="${esc(g.name)}" placeholder="Guild name" aria-label="Guild name"
@@ -511,11 +512,11 @@ function renderScores(srv, scores, targets) {
           const pct = Math.round((pts / maxPts) * 100);
 
           return `<div class="score-card" data-g="${g.id}" data-action="spotlight" data-id="${g.id}" title="Spotlight ${esc(g.name)}">
-          <div class="sc-label"><div class="guild-dot" style="background:${g.color}"></div>${esc(g.name)}</div>
-          <div class="sc-val" style="color:${g.color}">${pts}</div>
+          <div class="sc-label"><div class="guild-dot" style="background:${gcolor(g.color)}"></div>${esc(g.name)}</div>
+          <div class="sc-val gc-ink" style="--gc:${gcolor(g.color)}">${pts}</div>
           <div class="sc-sub">target: ${t}</div>
           <div class="sc-diff ${cls}">${diff >= 0 ? '+' : ''}${diff}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${g.color}"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${gcolor(g.color)}"></div></div>
         </div>`;
         })
         .join('')}
@@ -641,7 +642,7 @@ function renderGrid(srv, days, mapData, issues, wipes) {
       const o = occ[g.id] || { lv1: 0, lv2: 0, lv3: 0 };
       const pts = (scores.cumul[g.id] || [])[days - 1] || 0;
       const summary = `${g.name}: ${pts} points · castle ${o.lv3} · dorms ${o.lv2} · towns ${o.lv1} days`;
-      return `<button type="button" class="spot-chip" data-action="spotlight" data-id="${g.id}" style="--guild-color:${g.color}"
+      return `<button type="button" class="spot-chip" data-action="spotlight" data-id="${g.id}" style="--guild-color:${gcolor(g.color)}"
         aria-pressed="false" data-summary="${esc(summary)}"><span class="spot-dot"></span>${esc(g.name)}</button>`;
     })
     .join('');
@@ -696,7 +697,7 @@ function renderGrid(srv, days, mapData, issues, wipes) {
                   } else if (scores.cumul[g.id]) {
                     pts = scores.cumul[g.id][d - 1] || 0;
                   }
-                  return `<div class="pts-line" style="color:${g.color}">${esc(g.name)}:&nbsp;${pts}</div>`;
+                  return `<div class="pts-line gc-ink" style="--gc:${gcolor(g.color)}">${esc(g.name)}:&nbsp;${pts}</div>`;
                 })
                 .join('')}
             </th>`;
@@ -726,8 +727,8 @@ function renderGrid(srv, days, mapData, issues, wipes) {
               const err = issSet.has(`${d}_${k.id}`);
 
               const cls = [err ? 'cell-err' : '', d === today ? 'is-today' : ''].filter(Boolean).join(' ');
-              return `<td data-k="${k.id}" data-d="${d}" data-g="${gid}" style="background:${g ? g.color + '18' : ''}; position:relative;" ${cls ? `class="${cls}"` : ''}>
-                <span class="cname" aria-hidden="true"${g ? ` style="color:${g.color}"` : ''}>${g ? esc(g.name) : '—'}</span>
+              return `<td data-k="${k.id}" data-d="${d}" data-g="${gid}" style="background:${g ? gcolor(g.color) + '18' : ''}; position:relative;" ${cls ? `class="${cls}"` : ''}>
+                <span class="cname${g ? ' gc-ink' : ''}" aria-hidden="true"${g ? ` style="--gc:${gcolor(g.color)}"` : ''}>${g ? esc(g.name) : '—'}</span>
                 <select class="csel" data-k="${k.id}" data-d="${d}" aria-label="${esc(k.id)}, day ${d}" data-change="cell" ${dAttr}>
                   ${gOpts.map(([v, n]) => `<option value="${v}" ${v === gid ? 'selected' : ''}>${esc(n)}</option>`).join('')}
                 </select>
@@ -759,7 +760,7 @@ function renderOcc(srv, occ) {
             g => `<tr>
           <td class="occ-guild">
             <div class="occ-guild-inner">
-              <div class="guild-dot" style="background:${g.color}; flex-shrink:0;"></div>
+              <div class="guild-dot" style="background:${gcolor(g.color)}; flex-shrink:0;"></div>
               <span class="occ-guild-name">${esc(g.name)}</span>
             </div>
           </td>
@@ -792,7 +793,7 @@ function renderDecTable(srv, days, dec, give) {
             return `<tr data-g="${g.id}">
           <td class="dec-guild">
             <div class="dec-guild-inner">
-              <div class="guild-dot" style="background:${g.color}"></div>${esc(g.name)}
+              <div class="guild-dot" style="background:${gcolor(g.color)}"></div>${esc(g.name)}
               ${g.isSmall ? `<span class="dec-max">(Max 1)</span>` : ''}
             </div>
           </td>
@@ -854,7 +855,7 @@ function renderMsgs(srv) {
         const over = len > GAME_LIMIT;
         const isMine = mine && g.id === mine.id;
         return `<div class="msg-card msg-card-game${isMine ? ' is-mine' : ''}" data-action="copy-message" data-day="${d}" data-msg="${esc(text)}" role="button" tabindex="0" aria-label="Copy ${esc(g.name)}'s message">
-          <div class="msg-date msg-who"><span class="guild-dot" style="background:${g.color}"></span>${esc(g.name)}${isMine ? '<span class="msg-mine">Your guild</span>' : ''} ${copied}</div>
+          <div class="msg-date msg-who"><span class="guild-dot" style="background:${gcolor(g.color)}"></span>${esc(g.name)}${isMine ? '<span class="msg-mine">Your guild</span>' : ''} ${copied}</div>
           <div class="msg-body">${esc(text)}</div>
           <div class="msg-count${over ? ' over' : ''}" title="Characters used, of the game's ${GAME_LIMIT}">${len} / ${GAME_LIMIT}${over ? ': too long for the game' : ''}</div>
         </div>`;

@@ -105,7 +105,7 @@
   border: none;
   border-radius: 50%;
   background: var(--guild-color);
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+  box-shadow: var(--dot-ring);
   cursor: pointer;
   transition:
     box-shadow 0.15s,
@@ -221,7 +221,7 @@
   position: absolute;
   inset: 34%;
   border-radius: 50%;
-  background: rgba(25, 20, 37, 0.7);
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
 }
 .cp-taken-key {
   position: relative;
@@ -301,7 +301,7 @@
   height: 12px;
   border-radius: 50%;
   flex-shrink: 0;
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+  box-shadow: var(--dot-ring);
 }
 
 .guild-name-inp {
@@ -466,7 +466,7 @@
 }
 
 .section.view-only .sec-title.view-only-title {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .view-only-msg {

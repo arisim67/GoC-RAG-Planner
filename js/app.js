@@ -84,8 +84,12 @@ import {
 } from './map-view.js';
 import { initWhatsNew, whatsNewAfterTour } from './whats-new.js';
 import './grid-keys.js'; // keyboard editing for the Planning Grid
+import { initThemePicker } from './theme.js';
 
 load();
+initThemePicker();
+// Guild colors are drawn as a different shade on the Light theme, so redraw when the theme changes
+document.addEventListener('themechange', () => renderAll());
 // Old address: shared plan links go straight to the new site; everything else gets the banner.
 if (!forwardSharedLink()) {
   if (isOldSite()) showMovedBanner();

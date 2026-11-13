@@ -33,7 +33,7 @@
   font-size: 24px;
   font-weight: 700;
   font-family: var(--font-head);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  text-shadow: var(--text-shadow);
 }
 
 .sc-sub {
@@ -113,7 +113,7 @@ table.ptbl th.ktype {
 
 table.ptbl td {
   padding: 3px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--hairline);
   vertical-align: middle;
 }
 
@@ -127,7 +127,7 @@ table.ptbl td.kname {
   white-space: nowrap;
   padding-left: 14px;
   font-size: 12px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: var(--text-shadow-sm);
 }
 
 table.ptbl td.ktype {
@@ -135,7 +135,7 @@ table.ptbl td.ktype {
 }
 
 table.ptbl tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--hover);
 }
 
 table.ptbl tr:last-child td {
@@ -247,7 +247,7 @@ table.ptbl td.kb-cursor .cname {
 
 td.cell-err .cname {
   color: var(--text) !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  text-shadow: var(--text-shadow-err);
 }
 
 .dtbl {
@@ -267,7 +267,7 @@ td.cell-err .cname {
 
 .dtbl td {
   padding: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--hairline);
   vertical-align: top;
 }
 
@@ -301,7 +301,7 @@ td.cell-err .cname {
 .otbl td {
   padding: 8px 12px;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--hairline);
 }
 
 @media (max-width: 700px) {
@@ -542,7 +542,7 @@ table.dtbl tbody tr:last-child td.is-today {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #0a1a14;
+  color: var(--on-accent);
   background: var(--accent);
   border-radius: 4px;
   padding: 1px 5px;
@@ -662,7 +662,7 @@ th .today-tag {
 .map-day.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #191425;
+  color: var(--on-accent);
 }
 
 .map-wrap {

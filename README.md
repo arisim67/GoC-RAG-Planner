@@ -66,7 +66,8 @@ Commit messages are short and say what changed, in the imperative:
 │   ├── messages.css        Daily messages and the template editor
 │   ├── dialogs.css         Dialogs, toasts and the "We've moved" banner
 │   ├── responsive.css      Phone layout and screenshot mode (loaded last)
-│   └── tour.css            Interactive tutorial
+│   ├── tour.css            Interactive tutorial
+│   └── themes.css          Light and house themes, and the theme menu (loaded after the rest)
 ├── js/
 │   ├── app.js              Entry point: startup, and what each button and field does
 │   ├── actions.js          Connects buttons and fields to their functions (data-action etc.)
@@ -97,6 +98,7 @@ Commit messages are short and say what changed, in the imperative:
 │   ├── ui.js               Small helpers (toasts, escaping, date labels)
 │   ├── config.js           Deployment settings (cloud sync URL)
 │   ├── tour.js             Interactive first-visit tutorial
+│   ├── theme.js            Theme menu: switches and remembers the theme
 │   ├── maps/               Towns and roads for each map; layouts.js, roads.js and art.js place them for the Map view
 │   └── solver/
 │       ├── worker.js       Runs HiGHS in a Web Worker so the page stays responsive

@@ -3,7 +3,7 @@
 .app-header {
   padding: 16px 24px 0;
   border-bottom: 1px solid var(--bg);
-  background: linear-gradient(180deg, #1f1930 0%, var(--bg) 100%);
+  background: linear-gradient(180deg, var(--header-top) 0%, var(--bg) 100%);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
@@ -16,7 +16,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: var(--text-shadow-title);
   flex-wrap: wrap;
 }
 
@@ -62,7 +62,7 @@
 }
 
 .tab-btn.active {
-  color: var(--accent);
+  color: var(--accent-ink);
   border-bottom: 3px solid var(--accent);
   text-shadow: 0 0 8px var(--accent-glow);
 }
@@ -374,7 +374,7 @@
 .site-footer .site-footer-fine {
   margin-top: 6px;
   font-size: 11px;
-  opacity: 0.75;
+  opacity: 0.9;
 }
 
 .site-footer .site-footer-link {
@@ -396,7 +396,7 @@
   z-index: 50;
   margin: 0 0 16px;
   padding: 8px 10px;
-  background: rgba(25, 20, 37, 0.88);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--border);

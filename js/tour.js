@@ -479,6 +479,13 @@ function buildSteps(srv) {
       place: 'top',
     },
     {
+      target: 'theme',
+      title: 'Themes',
+      body: `Prefer a different look? Pick <b>Dark</b>, <b>Light</b> or one of the eight house themes here. It is
+             saved in this browser and also changes the background of your Screenshots.`,
+      place: 'bottom',
+    },
+    {
       target: null,
       title: "You're all set!",
       body: () => `${
@@ -535,7 +542,7 @@ function pickFlow(which) {
   } else {
     // Setup first, then the parts of the walkthrough that only make sense once a plan exists. The Map
     // was already shown with Day 0, so its walkthrough step is left out here.
-    const after = ['optimize', 'stats', 'share', 'messages'];
+    const after = ['optimize', 'stats', 'share', 'messages', 'theme'];
     // The server does not exist yet, so Auto-Optimize gets its own steps, which look it up as they go.
     const tail = buildSteps(hooks.getActiveServer())
       .filter(s => after.includes(s.target))

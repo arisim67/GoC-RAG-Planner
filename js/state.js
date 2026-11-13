@@ -103,7 +103,7 @@ export function save() {
     const ss = document.getElementById('save-status');
     if (ss) {
       ss.textContent = 'Saving...';
-      ss.style.color = 'var(--accent)';
+      ss.style.color = 'var(--accent-ink)';
       clearTimeout(window.saveTimer);
       window.saveTimer = setTimeout(() => {
         const s = activeSrv();
