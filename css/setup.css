@@ -349,17 +349,23 @@
 }
 
 .settings-meta {
-  margin-top: 10px;
-  font-size: 10px;
-  color: var(--text3);
-}
-
-/* Toolbar: groups of buttons set apart by extra space (which wraps cleanly onto new rows); one primary action */
-.toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 22px;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* Toolbar: labeled groups (Plan / Files / Share) with one primary action; the destructive Clear Plan
+   sits apart, in the line under it */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px 32px;
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
@@ -372,8 +378,23 @@
   gap: 6px;
 }
 
-.tb-group.tb-end {
-  margin-left: auto;
+.tb-section {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.tb-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+
+.toolbar .btn-tool.btn-primary {
+  padding: 8px 18px;
+  font-size: 13px;
 }
 
 .btn-tool {
@@ -441,6 +462,22 @@
   color: var(--red);
 }
 
+.btn-tool.btn-danger-ghost {
+  padding: 5px 10px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--red);
+}
+
+.btn-tool.btn-danger-ghost .icon {
+  color: var(--red);
+}
+
+.btn-tool.btn-danger-ghost:hover {
+  background: var(--red-glow);
+  border-color: var(--red);
+}
+
 .btn-tool.btn-danger-outline .icon {
   color: var(--red);
 }
@@ -452,10 +489,10 @@
 
 @media (max-width: 720px) {
   .toolbar {
-    gap: 8px;
+    gap: 14px;
   }
-  .tb-group.tb-end {
-    margin-left: 0;
+  .tb-section {
+    width: 100%;
   }
 }
 

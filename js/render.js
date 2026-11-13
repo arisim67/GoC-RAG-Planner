@@ -358,27 +358,34 @@ function renderSettings(srv) {
         <input class="settings-input" type="date" value="${srv.endDate || ''}" data-change="server-end"></div>
     </div>
     <div class="toolbar">
-      <div class="tb-group">
-        ${tbBtn('zap', 'Auto-Optimize', 'id="opt-btn" data-tour="optimize" data-action="optimize"', 'btn-primary')}
-        ${srv.lastSolveTime ? `<span class="solve-badge">Last solve: ${srv.lastSolveTime}s</span>` : ''}
+      <div class="tb-section">
+        <div class="tb-label">Plan</div>
+        <div class="tb-group">
+          ${tbBtn('zap', 'Auto-Optimize', 'id="opt-btn" data-tour="optimize" data-action="optimize"', 'btn-primary')}
+          ${srv.lastSolveTime ? `<span class="solve-badge">Last solve: ${srv.lastSolveTime}s</span>` : ''}
+          ${tbBtn('history', 'History', 'data-action="versions" title="Saved versions of this server"')}
+        </div>
       </div>
-      <div class="tb-group">
-        ${tbBtn('upload', 'Import', 'data-action="open-import" data-tour="import"')}
-        ${tbBtn('download', 'Export Server', 'data-action="export-server"')}
-        ${tbBtn('camera', 'Screenshots', 'data-action="screenshots"')}
-        ${tbBtn('history', 'History', 'data-action="versions" title="Saved versions of this server"')}
+      <div class="tb-section">
+        <div class="tb-label">Files</div>
+        <div class="tb-group">
+          ${tbBtn('upload', 'Import', 'data-action="open-import" data-tour="import"')}
+          ${tbBtn('download', 'Export Server', 'data-action="export-server"')}
+        </div>
       </div>
-      <div class="tb-group">
-        ${tbBtn('cloud-upload', 'Save to Cloud', 'id="btn-share-cloud" data-tour="share" data-action="save-cloud"')}
-        ${tbBtn('refresh-cw', 'Sync from Cloud', 'id="btn-sync-cloud" data-action="sync-cloud"')}
-        ${todayDay(srv, days) ? tbBtn('copy', "Copy Today's Message", 'id="btn-copy-today" data-action="copy-today"') : ''}
-      </div>
-      <div class="tb-group tb-end">
-        ${tbBtn('trash-2', 'Clear Plan', 'data-action="clear-plan"', 'btn-danger-outline')}
+      <div class="tb-section">
+        <div class="tb-label">Share</div>
+        <div class="tb-group">
+          ${tbBtn('camera', 'Screenshots', 'data-action="screenshots"')}
+          ${tbBtn('cloud-upload', 'Save to Cloud', 'id="btn-share-cloud" data-tour="share" data-action="save-cloud"')}
+          ${tbBtn('refresh-cw', 'Sync from Cloud', 'id="btn-sync-cloud" data-action="sync-cloud"')}
+          ${todayDay(srv, days) ? tbBtn('copy', "Copy Today's Message", 'id="btn-copy-today" data-action="copy-today"') : ''}
+        </div>
       </div>
     </div>
     <div class="settings-meta">
-      ${days} days planned · ${getMapData(srv.mode, srv.mapKey).kingdoms.length} kingdoms · ${srv.guilds.length} guilds
+      <span>${days} days planned · ${getMapData(srv.mode, srv.mapKey).kingdoms.length} kingdoms · ${srv.guilds.length} guilds</span>
+      ${tbBtn('trash-2', 'Clear Plan', 'data-action="clear-plan"', 'btn-danger-ghost')}
     </div>
   </div>`;
 }
