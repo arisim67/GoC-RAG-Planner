@@ -8,6 +8,8 @@ import {
   validateWipes,
   validateStarts,
   startingTownLimit,
+  isMidEvent,
+  hasMidEventNumbers,
   kPts,
 } from '../js/calc.js';
 import { numDays } from '../js/state.js';
@@ -85,4 +87,18 @@ test('starting towns: only plain towns on Day 0, unless planning from mid-event'
   assert.deepEqual(validateStarts(rag), [{ guild: g, kingdom: 'Darkwick' }]);
   rag.guilds[1].basePoints = 120; // mid-event: Day 0 is wherever things stand
   assert.deepEqual(validateStarts(rag), []);
+});
+
+test('Planning mid-event on its own (all boxes 0) also lifts the Day 0 rules', () => {
+  const rag = fixture('ragnarok-poseidon');
+  const g = rag.guilds[0].id;
+  rag.plan[0].Darkwick = g; // five towns, one of them the castle
+  assert.ok(validateStarts(rag).length > 0);
+  assert.equal(isMidEvent(rag), false);
+  rag.showMidEvent = true;
+  assert.equal(isMidEvent(rag), true);
+  assert.equal(hasMidEventNumbers(rag), false, 'no numbers entered: the switch can still be turned off');
+  assert.deepEqual(validateStarts(rag), []);
+  rag.showMidEvent = false;
+  assert.ok(validateStarts(rag).length > 0, 'switched off: checked again');
 });

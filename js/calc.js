@@ -170,10 +170,15 @@ export function startingTownLimit(srv, gid) {
   return rank < 0 ? 0 : rank < top ? 2 : rank === top ? 1 : 0;
 }
 
-// Planning from the middle of an event: some guild already has points or days held entered in the
-// guild settings. Day 0 is then wherever things stand, not the event's start.
-export const isMidEvent = srv =>
+// Some guild already has points or days held entered in the guild settings (Points / Castle / Dorms /
+// Towns). The Planning mid-event switch can't be turned off while it does.
+export const hasMidEventNumbers = srv =>
   (srv.guilds || []).some(g => ['basePoints', 'baseLv1', 'baseLv2', 'baseLv3'].some(f => Number(g[f]) > 0));
+
+// Planning from the middle of an event: Planning mid-event is on under Guilds (or numbers are already
+// entered). Day 0 is then wherever things stand, not the event's start: any guild can be on any town,
+// dorm or castle, and the starting towns aren't counted.
+export const isMidEvent = srv => !!srv.showMidEvent || hasMidEventNumbers(srv);
 
 // Day 0 at the start of an event: every guild on exactly its starting towns (only plain towns, no
 // dorms or castle). Only checked once Day 0 has been started (a new, empty plan isn't flagged), and

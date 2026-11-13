@@ -100,6 +100,10 @@ body.tour-active .modal-bg.open {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* A scrolling box clips what's drawn past its edges: room for the choices' borders and focus rings
+     (2px outline + 2px offset), taken back with the margin so nothing moves */
+  padding: 5px;
+  margin: -5px;
 }
 .tour-card-center {
   left: 50% !important;
@@ -367,4 +371,15 @@ body.tour-active .modal-bg.open {
     animation: none;
     opacity: 0.8;
   }
+}
+
+/* While the tutorial shows the Map, keep it within the window so the spotlight has a visible frame */
+body.tour-active .map-svg {
+  max-height: calc(100vh - 220px);
+  max-height: calc(100dvh - 220px);
+}
+
+/* What the tutorial scrolls to stays clear of the sticky bar of section links */
+body.tour-active [data-tour] {
+  scroll-margin-top: 64px;
 }

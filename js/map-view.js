@@ -194,7 +194,7 @@ export function renderMapView(srv, mapData, days) {
   // Day 0 can be filled in by tapping towns on the map (not on view-only copies).
   const editing = day === 0 && !srv.isViewOnly;
   // From the start of an event, guilds begin on plain towns only, and a set number of them. From the
-  // middle (points or days entered in the guild settings), Day 0 can be anything.
+  // middle (Planning mid-event on under Guilds), Day 0 can be anything.
   const mid = isMidEvent(srv);
   const tally = id => (mid ? `${startingCount(srv, id)}` : `${startingCount(srv, id)}/${startingTownLimit(srv, id)}`);
   const cur = picked.get(srv.id);
@@ -286,22 +286,28 @@ export function renderMapView(srv, mapData, days) {
 
   return `<div class="section" id="sec-map" data-sec="map">
     <div class="sec-title">Map <span class="sec-note">${esc(mapData.name)} · ${day === 0 ? 'Day 0 (start)' : esc(dateLabelShort(srv, day))}</span></div>
+    <div class="map-main" data-tour="map">
     <div class="map-days" role="group" aria-label="Day to show">${Array.from({ length: days + 1 }, (_, d) => dayBtn(d)).join('')}</div>
     ${pickBar}
     <div class="map-wrap">
       <svg class="map-svg${layout.bg ? ' has-bg' : ''}" viewBox="0 0 ${layout.w} ${layout.h}" role="img"
         aria-label="${esc(mapData.name)} on day ${day}: who holds each town">
-        ${layout.bg ? `<image class="map-bg" href="${layout.bg.src}" x="${layout.bg.x}" y="${layout.bg.y}" width="${layout.bg.size}" height="${layout.bg.size}"/>` : ''}
+        ${layout.bg ? `<image class="map-bg" href="${layout.bg.src}" x="${layout.bg.x}" y="${layout.bg.y}" width="${layout.bg.w ?? layout.bg.size}" height="${layout.bg.h ?? layout.bg.size}"/>` : ''}
         <g class="map-roads">${roads.join('')}</g>
         <g class="map-attacks">${attacks.join('')}</g>
         <g class="map-towns">${towns}</g>
       </svg>
     </div>
+    </div>
     <div class="map-legend">${legend}<span class="map-key-note"><span class="map-ring taken"></span>Taken this day</span>${
       attacks.length ? `<span class="map-key-note"><span class="map-line"></span>Road it was taken from</span>` : ''
     }</div>
     <p class="map-disclaimer">${
-      layout.bg ? '' : 'This map’s artwork isn’t in yet and will be added in a future update.<br>'
+      !layout.bg
+        ? 'This map’s artwork isn’t in yet and will be added in a future update.<br>'
+        : layout.bg.placeholder
+          ? 'This map’s background was cleaned up from a screenshot and will be replaced with the original artwork in a future update.<br>'
+          : ''
     }
       The cats and ghouls on the towns, dorms and Darkwick are picked at random and won’t match your in-game map.<br>
       Map artwork, buildings and characters are official Tokyo Debunker artwork and belong to its creators.</p>

@@ -186,10 +186,11 @@ function setupSteps() {
     {
       target: 'guilds',
       title: 'Name the guilds',
-      body: `Type each guild's real name over <b>Guild 1</b>, <b>Guild 2</b> and so on. Use
+      body: () => `Type each guild's real name over <b>Guild 1</b>, <b>Guild 2</b> and so on. Use
              <b>+ Add Guild</b> or the <b>×</b> to match however many are taking part — up to 15.
              <br><br>Drag the <b>⋮⋮</b> handle to reorder them. When something cannot be split evenly,
-             the guilds nearer the top get the extra point, dorm day or castle day.`,
+             the guilds nearer the top get the extra point, dorm day or castle day.
+             <br><br>${guildFlags(hooks.getActiveServer()?.mode === 'goc')}`,
       wait: {
         snap: guildSig,
         done: s0 => guildSig() !== s0,
@@ -212,7 +213,7 @@ function setupSteps() {
       place: 'top',
     },
     {
-      target: '#sec-map',
+      target: 'map',
       title: '…or tap them on the map',
       before: () => hooks.showMapDay0 && hooks.showMapDay0(),
       body: () => `The second way: the <b>Map</b> shows Day 0 too. Pick a guild in the <b>Starting towns</b> row
@@ -283,7 +284,7 @@ function optimizeSteps() {
 
   return [
     {
-      target: () => (finishOnGrid() ? 'grid' : '#sec-map'),
+      target: () => (finishOnGrid() ? 'grid' : 'map'),
       title: 'Finish Day 0 first',
       skip: () => !srv() || ready(),
       before: () => !finishOnGrid() && hooks.showMapDay0 && hooks.showMapDay0(),
@@ -317,7 +318,9 @@ function optimizeSteps() {
       place: 'top',
     },
     {
-      target: 'optimize',
+      // The button, then the panel showing the run once it starts (it opens in the corner, and would
+      // otherwise sit dimmed under the card).
+      target: () => (document.querySelector('.solve-panel.open') ? '.solve-panel' : 'optimize'),
       title: 'Try Auto-Optimize',
       skip: () => !ready(),
       body: () =>
@@ -354,6 +357,18 @@ function optimizeSteps() {
   ];
 }
 
+// The switches on each guild row. Small guild is Game of Claws only.
+function guildFlags(goc) {
+  return `${
+    goc
+      ? `<b>Small guild</b> is for a guild that has trouble staying in the top 8 for kudos: it limits that guild to
+         1 declare a day.<br><br>`
+      : ''
+  }<b>Exclude guild</b> is for a guild that drops out: it keeps the towns it holds, nobody can take them, it
+     declares nothing more, and what's left to win is shared out between the other guilds. Days already played
+     stay as they are.`;
+}
+
 function buildSteps(srv) {
   const goc = srv && srv.mode === 'goc';
   return [
@@ -383,12 +398,8 @@ function buildSteps(srv) {
       body: `Type each guild's real name. Drag the <b>⋮⋮</b> handle to reorder them; the order decides who gets
              extra points, dorm time or castle time when things can't be split evenly. Click a guild's colored dot
              to change its color.
-             <br><br>${
-               goc
-                 ? '<b>Small Guild</b> limits a guild to 1 declare a day.'
-                 : "<b>Exclude Guild</b> keeps a guild's Day 0 towns but leaves it out of declares and point balancing."
-             }
-             Planning mid-event? Turn on <b>Planning mid-event</b> under the list, then enter each guild's current points and the days it has already held the castle, dorms and towns.`,
+             <br><br>${guildFlags(goc)}
+             <br><br>Planning mid-event? Turn on <b>Planning mid-event</b> under the list, then enter each guild's current points and the days it has already held the castle, dorms and towns.`,
     },
     {
       target: 'import',
@@ -411,7 +422,7 @@ function buildSteps(srv) {
       place: 'top',
     },
     {
-      target: '#sec-map',
+      target: 'map',
       title: 'See it on the map',
       body: `The <b>Map</b> shows any day the way it looks in the game: each town in the color of the guild
              holding it. Pick a day with the buttons above it.
@@ -755,8 +766,9 @@ function show(i, dir) {
   const el = targetEl(step);
   if (el) {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // Tall sections (grid, stats) are scrolled to their top; short ones are centered.
-    const tall = el.getBoundingClientRect().height > window.innerHeight * 0.6;
+    // Anything that fits in the window is centered, so the spotlight frames it; taller sections (grid,
+    // stats) are scrolled to their top, clear of the bar of section links (scroll-margin in tour.css).
+    const tall = el.getBoundingClientRect().height > window.innerHeight - 140;
     el.scrollIntoView({ block: tall ? 'start' : 'center', inline: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
   }
   // Brief slide of the highlight to the new target, then instant tracking while the page scrolls.

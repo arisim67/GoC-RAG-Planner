@@ -45,7 +45,7 @@ export const SHORT_NAMES = {
 // the buildings' short names in it (otherwise only when it would be too long).
 export const DEFAULT_TEMPLATE = {
   header: '## {label}',
-  guild: '### {guild}\n- Declares: {declares}\n- Giveaways: {giveaways}\n- Place def on {def}',
+  guild: '### {guild}\n- Declare: {declares}\n- Giveaway: {giveaways}\n- Place def on {def}',
   empty: 'none',
   quiet: '',
   weekday: 'short',
@@ -350,7 +350,7 @@ export function formatGuildMessage(srv, dayPlan, gid, tpl = getTemplate()) {
         : '',
       'def-town': x.defTown ? nm(x.defTown) : '',
       // The guild may not have its def town in time (it's declaring on it, and keeps no town of its
-      // own): what to do then, spelled out for members who don't see the leaders' plan.
+      // own): what to do then.
       backup: x.defNote
         ? `Smallest team${x.backup ? ` on ${nm(x.backup)}` : ''} if not available for battle phase`
         : '',

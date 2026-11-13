@@ -182,6 +182,23 @@
   white-space: pre-wrap;
 }
 
+/* The whole server's message, shown the way Discord displays it (what's copied is the Markdown) */
+.msg-discord {
+  color: #dbdee1;
+  font:
+    13px/1.375 'gg sans',
+    'Noto Sans',
+    'Helvetica Neue',
+    Helvetica,
+    Arial,
+    sans-serif;
+  word-break: break-word;
+}
+
+.msg-discord .dmd-blank:last-child {
+  display: none; /* the blank line that spaces guilds apart in Discord; the columns do that here */
+}
+
 .tpl-discord strong {
   font-weight: 700;
 }

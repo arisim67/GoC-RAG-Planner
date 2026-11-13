@@ -4,7 +4,11 @@
 // the Map view; the rest just don't show it.
 //
 // bg (optional): the map's own artwork, without towns, placed so it lines up with the towns: its
-// top-left corner (x, y) and its width and height (size), in the same units.
+// top-left corner (x, y) and its width and height (size for square art, or w and h), in the same
+// units. Galaxy and Wetland use the game's own artwork; the others are the screenshots the towns were
+// taken from, with the towns, labels and road lines painted out (so they line up exactly), marked
+// placeholder: true, which shows a note under the map. When the real artwork for one comes in, replace
+// the file, fix x / y / size to line it up, and drop placeholder.
 //
 // Taken from screenshots of the in-game maps. Where a dorm has since been replaced by Dionysia, it
 // takes the old dorm's spot and roads:
@@ -17,6 +21,7 @@ export const LAYOUTS = {
   poseidon: {
     w: 1933,
     h: 1745,
+    bg: { src: 'images/map/bg/poseidon.webp', x: 0, y: 0, w: 1933, h: 1745, placeholder: true },
     at: {
       A: [908, 138],
       B: [1366, 190],
@@ -77,6 +82,7 @@ export const LAYOUTS = {
   floating: {
     w: 2000,
     h: 1745,
+    bg: { src: 'images/map/bg/floating.webp', x: 0, y: 0, w: 2000, h: 1745, placeholder: true },
     at: {
       C: [1117, 160],
       D: [1582, 175],
@@ -109,6 +115,7 @@ export const LAYOUTS = {
   forest: {
     w: 1969,
     h: 1720,
+    bg: { src: 'images/map/bg/forest.webp', x: 0, y: 0, w: 1969, h: 1720, placeholder: true },
     at: {
       Mortkranken: [1487, 156],
       D: [879, 224],
@@ -165,6 +172,7 @@ export const LAYOUTS = {
   badlands: {
     w: 1969,
     h: 1720,
+    bg: { src: 'images/map/bg/badlands.webp', x: 0, y: 0, w: 1969, h: 1720, placeholder: true },
     at: {
       K: [1046, 171],
       O: [1635, 297],
@@ -194,6 +202,7 @@ export const LAYOUTS = {
   snowfield: {
     w: 1969,
     h: 1720,
+    bg: { src: 'images/map/bg/snowfield.webp', x: 0, y: 0, w: 1969, h: 1720, placeholder: true },
     at: {
       L: [1392, 168],
       A: [352, 177],
@@ -222,6 +231,7 @@ export const LAYOUTS = {
   woodlands: {
     w: 1969,
     h: 1720,
+    bg: { src: 'images/map/bg/woodlands.webp', x: 0, y: 0, w: 1969, h: 1720, placeholder: true },
     at: {
       B: [729, 155],
       C: [1093, 210],

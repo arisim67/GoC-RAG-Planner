@@ -10,6 +10,7 @@ import {
   validateWipes,
   validateStarts,
   isMidEvent,
+  hasMidEventNumbers,
   calcDec,
   kPts,
   getEligibleGuilds,
@@ -29,6 +30,7 @@ import {
   GAME_LIMIT,
 } from './messages.js';
 import { icon } from './icons.js';
+import { renderDiscord } from './discord-md.js';
 import { canUndo, canRedo, undoLabel, redoLabel } from './history.js';
 import { applySpotlight } from './spotlight.js';
 import { renderMapView, hasMapView } from './map-view.js';
@@ -386,8 +388,8 @@ function renderGuilds(srv) {
   // Points / Castle / Dorms / Towns are only for plans started partway through an event, so they stay
   // hidden until "Planning mid-event" is turned on. Numbers already in them always show, and the switch
   // can't be turned off until they are all back to 0, so nothing counted is ever out of sight.
-  const midLocked = isMidEvent(srv);
-  const showMid = !!srv.showMidEvent || midLocked;
+  const midLocked = hasMidEventNumbers(srv);
+  const showMid = isMidEvent(srv);
 
   return `<div class="section" id="sec-guilds" data-sec="guilds" data-tour="guilds">
     <div class="sec-title">Guilds</div>
@@ -795,11 +797,11 @@ function renderDecTable(srv, days, dec, give) {
             </div>
           </td>
           ${Array.from({ length: days }, (_, d) => {
-            // Days with nothing declared are left blank (just any giveaways), so declares stand out.
             const cnt = dec[g.id][d].length;
-            const cls = cnt > maxDecl ? 'dc-bad' : 'dc-warn';
+            const cls = cnt > maxDecl ? 'dc-bad' : cnt > 0 ? 'dc-warn' : 'dc-ok';
             return `<td${d + 1 === today ? ' class="is-today"' : ''}>
-              ${cnt ? `<div class="${cls} dec-count">${cnt}▲</div><div class="dec-towns">${dec[g.id][d].join(', ')}</div>` : ''}
+              <div class="${cls} dec-count">${cnt}▲</div>
+              <div class="dec-towns">${dec[g.id][d].join(', ') || '—'}</div>
               ${give[g.id][d].length ? `<div class="dec-give">↓${give[g.id][d].join(',')}</div>` : ''}
             </td>`;
           }).join('')}
@@ -812,8 +814,9 @@ function renderDecTable(srv, days, dec, give) {
 }
 
 // Daily Messages: one day at a time (day buttons, like the Map), opening on today. Either the whole
-// server's message, for Discord, laid out across the width in columns (one block per guild; it copies
-// as one message), or every guild's message for the in-game chat side by side, each with its length
+// server's message, for Discord, shown the way Discord displays it (headings, bold, lists...) and laid
+// out across the width in columns (one block per guild); clicking copies the Markdown text, as one
+// message, or every guild's message for the in-game chat side by side, each with its length
 // against the game's limit and copied on its own. The guild picked ("your guild") comes first, and is
 // the one Copy Today's Message copies. Click a message to copy it.
 function renderMsgs(srv) {
@@ -839,8 +842,8 @@ function renderMsgs(srv) {
     const text = [parts.head, ...parts.blocks].join('\n').trim();
     content = `<div class="msg-card msg-card-server${d + 1 === today ? ' is-today' : ''}" data-action="copy-message" data-day="${d}" data-msg="${esc(text)}" role="button" tabindex="0" aria-label="Copy Day ${d + 1}'s message">
         <div class="msg-date">${d + 1 === today ? '<span class="today-tag">Today</span>' : ''}<span class="msg-hint">Click to copy</span> ${copied}</div>
-        ${parts.head.trim() ? `<div class="msg-body msg-head">${esc(parts.head.trim())}</div>` : ''}
-        ${parts.blocks.length ? `<div class="msg-cols">${parts.blocks.map(b => `<div class="msg-block msg-body">${esc(b.trim())}</div>`).join('')}</div>` : ''}
+        ${parts.head.trim() ? `<div class="msg-discord tpl-discord msg-head">${renderDiscord(parts.head.trim())}</div>` : ''}
+        ${parts.blocks.length ? `<div class="msg-cols">${parts.blocks.map(b => `<div class="msg-block msg-discord tpl-discord">${renderDiscord(b.trim())}</div>`).join('')}</div>` : ''}
       </div>`;
   } else {
     const order = [...plan.guilds].sort((a, b) => (b.g.id === mine?.id) - (a.g.id === mine?.id));

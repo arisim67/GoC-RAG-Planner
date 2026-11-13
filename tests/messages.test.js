@@ -85,7 +85,7 @@ test('the backup town is the one taken by the highest-listed guild (worked examp
 test('default template keeps the original format', () => {
   const srv = fixture('ragnarok-poseidon');
   const [day1] = formatMessages(srv, dailyPlans(srv), DEFAULT_TEMPLATE);
-  assert.match(day1, /^## Day 1 Wed 10\/21\n### Guild 1\n- Declares: .+\n- Giveaways: .+\n- Place def on .+/);
+  assert.match(day1, /^## Day 1 Wed 10\/21\n### Guild 1\n- Declare: .+\n- Giveaway: .+\n- Place def on .+/);
 });
 
 test('custom templates fill every placeholder', () => {
