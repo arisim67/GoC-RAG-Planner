@@ -292,7 +292,7 @@ function optimizeSteps() {
         const mid = srv() && isMidEvent(srv());
         const how = finishOnGrid()
           ? 'Click a cell under <b>Day 0</b> and pick the guild.'
-          : 'Pick a guild above the Map, then tap its towns.';
+          : 'On the Map, tap a town to select it, then tap its guild above the map.';
         return `${
           mid
             ? `<b>Auto-Optimize</b> plans every day after Day 0, so it needs to know where things stand: put
