@@ -911,7 +911,7 @@ function renderDecTable(srv, days, dec, give) {
             return `<td${d + 1 === today ? ' class="is-today"' : ''}>
               <div class="${cls} dec-count">${cnt}▲</div>
               <div class="dec-towns">${dec[g.id][d].join(', ') || '—'}</div>
-              ${give[g.id][d].length ? `<div class="dec-give">↓${give[g.id][d].join(',')}</div>` : ''}
+              ${give[g.id][d].length ? `<div class="dec-give">↓${give[g.id][d].join(',<wbr>')}</div>` : ''}
             </td>`;
           }).join('')}
         </tr>`;

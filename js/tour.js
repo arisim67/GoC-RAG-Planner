@@ -476,8 +476,8 @@ function buildSteps(srv) {
       before: () => hooks.showMessages && hooks.showMessages('server'),
       after: () => hooks.restoreMessages && hooks.restoreMessages(),
       body: `Ready-made instructions for each day, one day at a time (it opens on today). Click the message to copy it.
-             <b>Whole server</b> is every guild's part in one message, for Discord. <b>Copy Today's Message</b> in the
-             toolbar copies today's in one click.
+             <b>Whole server</b> is every guild's part in one message, for Discord. <b>Copy Today's Message</b> in
+             <b>Server &amp; Guild Setup</b> copies today's.
              <br><br>Want them in your own style? <b>Template</b> changes the format, and lets you give guilds
              emoji names just for messages. <b>Share</b> in there copies a link to your templates for other planners.`,
       place: 'top',
@@ -490,8 +490,8 @@ function buildSteps(srv) {
       body: `<b>Each guild</b> gives every guild its own message, short enough for Tokyo Debunker's in-game guild chat.
              Each one shows how many of the game's 150 characters it uses, and turns red if it is too long. Click a
              guild's message to copy it, then paste it into the game.
-             <br><br>Pick <b>Your guild</b> to put yours first. Under this view, <b>Copy Today's Message</b> in the
-             toolbar copies your guild's message.`,
+             <br><br>Pick <b>Your guild</b> to put yours first. Under this view, <b>Copy Today's Message</b> in
+             <b>Server &amp; Guild Setup</b> copies your guild's message.`,
       place: 'top',
     },
     {

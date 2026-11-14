@@ -122,7 +122,7 @@ It works on view-only shared plans too, so guild members can check their own rou
 
 ### Today
 
-While an event is running, today's column is highlighted in the grid and the Declares & Giveaways table, and the grid opens scrolled to it. Today's daily message card is highlighted too, and **Copy Today's Message** in the toolbar copies it without scrolling down.
+While an event is running, today's column is highlighted in the grid and the Declares & Giveaways table, and the grid opens scrolled to it. Today's daily message card is highlighted too, and **Copy Today's Message** in **Server & Guild Setup** copies it without opening Daily Messages.
 
 "Today" moves on to the next day as soon as that day's battle phase ends: **10:45 pm Eastern Standard Time** in Game of Claws and **11:45 pm** in Ragnarok. So after the battle, the highlight is already on tomorrow, ready for planning. Everyone sees the same day, wherever they are.
 
@@ -155,7 +155,7 @@ In Game of Claws, "top" follows the order of the guild list (drag guilds to reor
 
 The **Map** section, under the grid, shows the event map the way it looks in the game, for one day at a time. Each town shows its building standing on a base in the color of the guild holding it, with its name below in the same color, and the roads follow the paths on the in-game map.
 
-- **Pick a day** with the buttons above the map. It opens on today while an event is running, and on Day 1 otherwise.
+- **Pick a day** with the buttons above the map. It opens on today while an event is running. Before that, a new server opens on Day 0 so you can place the starting towns, and once later days are planned it opens on Day 1.
 - **White dashes around the base** mark a town that changed hands that day, and **a glowing road in the taker's color** shows which of its towns (as of the day before) it was taken from.
 - **Set Day 0 on the map.** On Day 0, tap a plain town to select it (it gets a white outline; dorms and the castle can't be picked at the start), then tap the guild that starts there in the **Starting towns** row above the map. That matches how you scroll through the in-game map, placing guilds as you see their towns. Each guild's button counts its towns (like 3/4), a guild that already has all of them can't take another, and **Clear** empties the selected town. Tap the selected town again to let go of it. It fills in the grid's Day 0 just as typing there would, and **Undo** takes it back.
 - **Hover a town** (or press and hold on a phone) to see its name, who holds it and whether it was taken that day.
@@ -266,7 +266,7 @@ The planner writes each day's instructions: what to declare, what to give away a
 3. **Day buttons:** pick the day. It opens on today (or Day 1 before the event starts).
 4. **The message:** click it to copy it, then paste it into Discord or the game. Each guild message shows how many of the game's 150 characters it uses, and turns red if it's too long.
 
-During an event, **Copy Today's Message** in the toolbar copies today's message: the whole server's, or your guild's when **Each guild** is showing.
+During an event, **Copy Today's Message** in **Server & Guild Setup** copies today's message: the whole server's, or your guild's when **Each guild** is showing.
 
 ### Message template
 
@@ -341,7 +341,7 @@ GoC:
 ## Saving, backups and support
 
 - **Automatic saving:** every change is saved in your browser straight away. You can reload or close the tab and your plan will be exactly as you left it.
-- **History:** **History** in the toolbar keeps the last 10 saved copies of each server in this browser: one every 15 minutes while you edit, and one just before anything big (Clear Plan, Auto-Optimize, an import, Sync from Cloud, changing the mode or map, or deleting the server). Click **Restore** to put the server back as it was; the current version is kept first, so a restore can be undone the same way. Deleted servers are listed at the bottom so you can bring them back.
+- **History:** **History** in **Server & Guild Setup** keeps the last 10 saved copies of each server in this browser: one every 15 minutes while you edit, and one just before anything big (Clear Plan, Auto-Optimize, an import, Sync from Cloud, changing the mode or map, or deleting the server). Click **Restore** to put the server back as it was; the current version is kept first, so a restore can be undone the same way. Deleted servers are listed at the bottom so you can bring them back.
 
   <img src="images/history.png" width="480" alt="The History window, with numbered parts">
 

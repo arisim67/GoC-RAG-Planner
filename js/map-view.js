@@ -250,7 +250,7 @@ export function renderMapView(srv, mapData, days) {
         editing && (k.type === 'lv1' || mid)
           ? ` data-action="map-town" data-k="${esc(k.id)}" tabindex="0" role="button" aria-label="${esc(tip)}"`
           : '';
-      return `<g class="map-town ${k.type}${g ? '' : ' empty'}${taken ? ' taken' : ''}${editing ? ' pickable' : ''}${editing && selected.get(srv.id) === k.id ? ' selected' : ''}"
+      return `<g class="map-town ${k.type}${g ? '' : ' empty'}${taken ? ' taken' : ''}${pick ? ' pickable' : ''}${pick && selected.get(srv.id) === k.id ? ' selected' : ''}"
         ${g ? `data-g="${g.id}" style="--c:${gcolor(g.color)}"` : ''}${pick}>
         <title>${esc(tip)}</title>
         ${pic}

@@ -36,7 +36,7 @@ const ITEMS = [
   [
     'calendar',
     'Today at a glance',
-    "Today's column is highlighted, and Copy Today's Message is one click in the toolbar.",
+    "Today's column is highlighted, and Copy Today's Message in Server & Guild Setup copies today's message.",
   ],
   [
     'crosshair',
