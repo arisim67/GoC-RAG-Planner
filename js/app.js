@@ -4,6 +4,7 @@
 
 import { state, load, activeSrv, setAfterSave, save, numDays } from './state.js';
 
+let messagesBefore = null; // the message view they had before the tutorial's message steps changed it
 let demoCell = null; // the broken move put in for the tutorial's Status step
 import { closeModal, showToast, usingTouch } from './ui.js';
 import { renderTabs, renderAll } from './render.js';
@@ -63,6 +64,7 @@ import {
   setMessagesRerender,
   receiveSharedTemplate,
   hasSharedTemplate,
+  getMsgView,
   setMsgView,
   setMsgDay,
 } from './messages.js';
@@ -85,9 +87,12 @@ import {
 import { initWhatsNew, whatsNewAfterTour } from './whats-new.js';
 import './grid-keys.js'; // keyboard editing for the Planning Grid
 import { initThemePicker } from './theme.js';
+import { openSetup, closePanels, initSidebarResize, initTabs } from './sidebar.js';
 
 load();
 initThemePicker();
+initSidebarResize();
+initTabs();
 // Guild colors are drawn as a different shade on the Light theme, so redraw when the theme changes
 document.addEventListener('themechange', () => renderAll());
 // Old address: shared plan links go straight to the new site; everything else gets the banner.
@@ -118,6 +123,18 @@ if (!forwardSharedLink()) {
         showMapDay0: () => {
           const s = activeSrv();
           if (s) showMapDay(s.id, 0);
+          renderAll();
+        },
+        // The tutorial's message steps show each message view, then put the person's own choice back.
+        showMessages: view => {
+          if (messagesBefore === null) messagesBefore = getMsgView();
+          setMsgView(view);
+          renderAll();
+        },
+        restoreMessages: () => {
+          if (messagesBefore === null) return;
+          setMsgView(messagesBefore);
+          messagesBefore = null;
           renderAll();
         },
         removeDemoServer: removeTutorialServer,
@@ -212,6 +229,8 @@ registerActions('click', {
   spotlight: el => toggleSpotlight(el.dataset.id),
   versions: openVersions,
   'status-jump': statusJump,
+  'open-setup': () => openSetup(),
+  'close-setup': () => closePanels(),
   'map-pick': btn => {
     setMapPick(btn);
     renderAll();

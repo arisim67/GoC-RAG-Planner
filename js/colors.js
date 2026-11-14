@@ -11,6 +11,22 @@
 // default color → the color drawn for it on Light: its own palette of 15, chosen to be clearly
 // different from each other and readable on the pale page (the first few are the most different)
 export const LIGHT_SHADES = {
+  '#abf95f': '#3e8201',
+  '#ed7ef8': '#8b17ae',
+  '#25d2fc': '#611af8',
+  '#fc9e47': '#cd4805',
+  '#fab6b9': '#d71f75',
+  '#0af2cd': '#197cb3',
+  '#fbd509': '#d70e3a',
+  '#b4c0ff': '#6d69b8',
+  '#b2b77b': '#954029',
+  '#f6c4f9': '#ca06db',
+  '#27d271': '#098356',
+  '#bfedbd': '#1a54f0',
+  '#65c3c0': '#8a50ea',
+  '#f48aba': '#81427f',
+  '#b9cb11': '#9f6700',
+  // The earlier default colors: plans saved with them keep the Light colors they always had
   '#a08cff': '#2263bb', // blue
   '#6bffb4': '#c3171b', // red
   '#ffb86b': '#2d5e3c', // green

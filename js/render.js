@@ -34,6 +34,7 @@ import { icon } from './icons.js';
 import { renderDiscord } from './discord-md.js';
 import { canUndo, canRedo, undoLabel, redoLabel } from './history.js';
 import { applySpotlight } from './spotlight.js';
+import { renderSidebar, openSetup, setupIsPanel, setTab, syncTabs, TAB_OF_JUMP } from './sidebar.js';
 import { renderMapView, hasMapView } from './map-view.js';
 // Each mode's targets come from that mode's own model: Game of Claws has rules Ragnarok does not
 // (Darkwick needs a dorm or two lv1 towns behind it), so the GoC model is the only one that knows
@@ -97,7 +98,7 @@ const scrolledToToday = new Set();
 function scrollToToday(mc, srv) {
   if (scrolledToToday.has(srv.id)) return; // only once per server, so it doesn't fight your own scrolling
   const th = mc.querySelector('table.ptbl thead th.is-today');
-  if (!th) return;
+  if (!th || th.offsetParent === null) return; // on another tab for now: lined up when the Grid tab opens
   scrolledToToday.add(srv.id);
   const wrap = th.closest('.tbl-wrap');
   // Sit just right of the Town column, which sticks to the grid's left edge once it's scrolled (the
@@ -156,6 +157,16 @@ function wireJumpBar(mc) {
     const a = e.target.closest('[data-jump]');
     if (!a) return;
     e.preventDefault(); // scroll without putting #section in the address bar
+    // With the sidebar, the Server Settings and the Guilds are one panel that slides in, not parts of the page
+    if ((a.dataset.jump === 'sec-settings' || a.dataset.jump === 'sec-guilds') && setupIsPanel()) {
+      openSetup();
+      return;
+    }
+    // ...and the other links are tabs: show that one
+    if (setupIsPanel() && TAB_OF_JUMP[a.dataset.jump]) {
+      setTab(TAB_OF_JUMP[a.dataset.jump], { scroll: true });
+      return;
+    }
     const el = document.getElementById(a.dataset.jump);
     expandSection(el);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -167,6 +178,7 @@ function wireJumpBar(mc) {
   jumpObserver = new IntersectionObserver(
     entries => {
       entries.forEach(en => visible.set(en.target.id, en.isIntersecting));
+      if (setupIsPanel()) return; // tabs: the bar shows the open tab (syncTabs)
       // Sections can nest (Declares is inside the Scores block), so the last one in page order wins.
       const current = JUMPS.map(([id]) => id)
         .filter(id => visible.get(id))
@@ -219,11 +231,46 @@ function renderWelcome() {
   </div>`;
 }
 
+// Dynamically set pts-row sticky offset to match the actual first header row height
+function fixPtsRow() {
+  const firstTh = document.querySelector('table.ptbl thead tr:first-child th');
+  const ptsRow = document.querySelector('table.ptbl tr.pts-row');
+  if (firstTh && ptsRow) {
+    const h = firstTh.getBoundingClientRect().height;
+    if (h) ptsRow.querySelectorAll('th').forEach(th => (th.style.top = h + 'px'));
+  }
+}
+
+// Tabs hide a section with display:none, which drops its sideways scroll position and its measurements:
+// remember the scroll as a tab is left, and put it (and the grid's header offset) back as one opens.
+let lastH = [];
+const SCROLL_SEL = '.tbl-wrap, .guild-list';
+document.addEventListener('goc:tab', e => {
+  const mc = document.getElementById('main-content');
+  if (!mc) return;
+  if (e.detail.phase === 'before') {
+    const wraps = [...mc.querySelectorAll(SCROLL_SEL)];
+    lastH = wraps.map((w, i) => (w.offsetParent === null ? lastH[i] || 0 : w.scrollLeft));
+    return;
+  }
+  mc.querySelectorAll(SCROLL_SEL).forEach((w, i) => {
+    if (w.offsetParent !== null && lastH[i]) w.scrollLeft = lastH[i];
+  });
+  const srv = activeSrv();
+  if (srv) scrollToToday(mc, srv);
+  centerDays(mc);
+  requestAnimationFrame(fixPtsRow);
+});
+
 export function renderAll() {
   const srv = activeSrv();
   const mc = document.getElementById('main-content');
+  const sidebar = document.getElementById('sidebar');
+  const appBody = document.querySelector('.app-body');
   if (!srv) {
     mc.innerHTML = renderWelcome();
+    if (sidebar) sidebar.innerHTML = '';
+    if (appBody) appBody.classList.remove('has-sidebar');
     return;
   }
   const days = numDays(srv);
@@ -236,17 +283,25 @@ export function renderAll() {
   const totalPts = mapData.kingdoms.reduce((s, k) => s + kPts(k.type), 0) * days;
   const totalBase = srv.guilds.reduce((s, g) => s + (parseInt(g.basePoints || 0, 10) || 0), 0);
   const targets = (srv.mode === 'goc' ? getGocTargets : getRagnarokTargets)(srv, mapData);
+  const starts = validateStarts(srv);
 
   // Remember scroll positions so editing a cell doesn't snap the grid back to the left
-  const scrollSel = '.tbl-wrap, .guild-list';
-  const hScroll = [...mc.querySelectorAll(scrollSel)].map(w => w.scrollLeft);
+  const scrollSel = SCROLL_SEL;
+  // (a list on a tab that is not showing has no scroll position to read: keep what it had)
+  const hScroll = [...mc.querySelectorAll(scrollSel)].map((w, i) =>
+    w.offsetParent === null ? lastH[i] || 0 : w.scrollLeft,
+  );
+  lastH = hScroll;
   const pageY = window.scrollY;
+  const sidebarY = sidebar ? sidebar.scrollTop : 0;
 
   mc.innerHTML = `
     ${renderJumpBar(srv)}
-    ${renderSettings(srv)}
-    ${renderGuilds(srv)}
-    ${renderStatus(srv, issues, wipes, validateStarts(srv))}
+    <div class="setup-panel">
+      ${renderSettings(srv)}
+      ${renderGuilds(srv)}
+    </div>
+    ${renderStatus(srv, issues, wipes, starts)}
     
     <!-- WRAPPER 1: The Grid -->
     <div class="capture-wrap" id="capture-grid">
@@ -267,22 +322,20 @@ export function renderAll() {
   mc.querySelectorAll(scrollSel).forEach((w, i) => {
     w.scrollLeft = hScroll[i] || 0;
   });
+  if (sidebar) {
+    sidebar.innerHTML = renderSidebar(srv, { scores, targets, occ });
+    sidebar.scrollTop = sidebarY;
+  }
+  if (appBody) appBody.classList.add('has-sidebar');
   applyCollapse(mc);
   window.scrollTo(0, pageY);
   wireJumpBar(mc);
+  syncTabs();
   applySpotlight(mc);
   scrollToToday(mc, srv);
   centerDays(mc);
 
-  // Dynamically set pts-row sticky offset to match the actual first header row height
-  requestAnimationFrame(() => {
-    const firstTh = document.querySelector('table.ptbl thead tr:first-child th');
-    const ptsRow = document.querySelector('table.ptbl tr.pts-row');
-    if (firstTh && ptsRow) {
-      const h = firstTh.getBoundingClientRect().height;
-      ptsRow.querySelectorAll('th').forEach(th => (th.style.top = h + 'px'));
-    }
-  });
+  requestAnimationFrame(fixPtsRow);
 
   // Drag and drop to reorder guilds
   const guildListEl = document.getElementById('guild-list');
@@ -318,6 +371,7 @@ function renderSettings(srv) {
   if (srv.isViewOnly) {
     return `<div class="section view-only" id="sec-settings">
       <div class="sec-title view-only-title">${icon('eye')} View-Only Mode</div>
+      <button type="button" class="setup-close" data-action="close-setup" aria-label="Close server settings">${icon('x')}</button>
       <div class="view-only-msg">
         You are viewing a shared plan: <strong>${esc(srv.name)}</strong>. To make your own changes, you must copy it.
       </div>
@@ -340,6 +394,7 @@ function renderSettings(srv) {
   // STANDARD EDIT DASHBOARD
   return `<div class="section" id="sec-settings" data-sec="settings" data-tour="settings">
     <div class="sec-title">Server Settings</div>
+    <button type="button" class="setup-close" data-action="close-setup" aria-label="Close server settings">${icon('x')}</button>
     <div class="row">
       <div class="fg"><label>Server Name</label>
         <input class="settings-input" type="text" value="${esc(srv.name)}" data-change="server-name"></div>
@@ -531,6 +586,28 @@ function renderScores(srv, scores, targets) {
   </div>`;
 }
 
+// The day pills: days with problems get a red pill each (D5 (2) jumps to them); the days that are fine
+// share one green pill, so thirteen days no longer fill the row.
+function dayPills(byDay, pill) {
+  const bad = byDay.map((list, i) => ({ list, day: i + 1 })).filter(x => x.list.length);
+  const okCount = byDay.length - bad.length;
+  const out = bad.map(({ list, day }) =>
+    pill(false, `D${day} (${list.length})`, 'day', `data-day="${day}"`, 'Show the problems on this day in the grid'),
+  );
+  if (okCount)
+    out.push(
+      pill(
+        true,
+        bad.length
+          ? `${okCount} other ${okCount === 1 ? 'day' : 'days'} OK`
+          : byDay.length === 1
+            ? 'Day OK'
+            : `All ${okCount} days OK`,
+      ),
+    );
+  return out.join('');
+}
+
 function renderStatus(srv, issues, wipes, starts) {
   const days = numDays(srv);
   const baseMaxDecl = srv.mode === 'goc' ? 2 : 3;
@@ -591,20 +668,10 @@ function renderStatus(srv, issues, wipes, starts) {
       : jump(kind, `${attrs} title="${title}"`, inner, 'pill pill-fail pill-jump');
   };
 
-  return `<div class="section" data-sec="status" data-tour="status">
+  return `<div class="section" id="sec-status" data-sec="status" data-tour="status">
     <div class="sec-title">Status</div>
     <div class="pills">
-      ${byDay
-        .map((list, i) =>
-          pill(
-            list.length === 0,
-            `D${i + 1}${list.length ? ` (${list.length})` : ''}`,
-            'day',
-            `data-day="${i + 1}"`,
-            'Show the problems on this day in the grid',
-          ),
-        )
-        .join('')}
+      ${dayPills(byDay, pill)}
       ${pill(
         !starts.length,
         starts.length ? `Starting Towns (${starts.length})` : 'Starting Towns',

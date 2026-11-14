@@ -15,12 +15,16 @@ and auto-balance points, Darkwick and dorm time across guilds with a built-in MI
 
 ## Features
  
-- **Planning grid** for every town and day, with adjacency shown inline and drag-to-copy across days
-- **Live validation** of adjacency, daily declare limits (2 for GoC, 3 for Ragnarok) and map wipes
+- **Planning grid** for every town and day, with adjacency shown inline, drag-to-copy across days, keyboard editing, and undo, redo and saved history
+- **Map view** of the event map for any day, with starting towns set right on it
+- **Live validation** of adjacency, daily declare limits (2 for GoC, 3 for Ragnarok), starting towns and map wipes, with Status pills that jump to the problem
 - **Auto-Optimize**: proposes a full, legal plan that balances final points, Darkwick and dorm counts
+- **Guild spotlight** to follow one guild's towns across every day
 - **Import / export**: paste guild lists or daily placements; back up a whole server as JSON
-- **Save to Cloud**: share a live link with server leadership
-- **Screenshots and daily messages** ready to paste into Discord
+- **Save to Cloud**: share a live link with server leadership, with a preview card of scores and occupation
+- **Screenshots and daily messages** ready to paste into Discord, plus a short message per guild for the in-game guild chat
+- **Wide-screen layout**: a summary sidebar with guild scores, and the page's sections as tabs (Grid, Map, Scores, Declares, Messages)
+- **Themes**: Dark, Light and eight house themes, each with its crest
 - **Interactive tutorial** on first visit, replayable from the Tutorial button
 - Runs entirely in the browser and saves automatically to local storage
 
@@ -67,11 +71,13 @@ Commit messages are short and say what changed, in the imperative:
 │   ├── dialogs.css         Dialogs, toasts and the "We've moved" banner
 │   ├── responsive.css      Phone layout and screenshot mode (loaded last)
 │   ├── tour.css            Interactive tutorial
+│   ├── sidebar.css         The plan summary sidebar on wide screens
 │   └── themes.css          Light and house themes, and the theme menu (loaded after the rest)
 ├── js/
 │   ├── app.js              Entry point: startup, and what each button and field does
 │   ├── actions.js          Connects buttons and fields to their functions (data-action etc.)
-│   ├── state.js            Servers, active server, guild colors, saving/loading
+│   ├── state.js            Servers, active server, the 15 default guild colors, saving/loading
+│   ├── colors.js           Guild colors on the Light theme (separate set, and darkening for custom colors)
 │   ├── calc.js             Scores, occupation, declares, plan validation
 │   ├── render.js           Builds the page (tabs, settings, guilds, grid, stats, messages)
 │   ├── messages.js         Daily messages and the message template editor
@@ -99,6 +105,7 @@ Commit messages are short and say what changed, in the imperative:
 │   ├── config.js           Deployment settings (cloud sync URL)
 │   ├── tour.js             Interactive first-visit tutorial
 │   ├── theme.js            Theme menu: switches and remembers the theme
+│   ├── sidebar.js          Plan summary sidebar (guild scores), tabs and the settings panel
 │   ├── maps/               Towns and roads for each map; layouts.js, roads.js and art.js place them for the Map view
 │   └── solver/
 │       ├── worker.js       Runs HiGHS in a Web Worker so the page stays responsive

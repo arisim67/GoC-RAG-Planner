@@ -4,24 +4,25 @@
 import { getMapData } from './maps/index.js';
 
 // 15 guild colors, picked to be clearly distinct from each other on the dark background
-// (every pair is at least ~11 apart in CIEDE2000 color difference). The guild limit is
-// GUILD_COLORS.length, so no two guilds on a server ever share a color.
+// (every pair is at least ~11 apart in CIEDE2000 color difference) and clear of the themes' own colors:
+// the status red and coral, the OK green, the titles' gold and cream, and each theme's accent. The guild
+// limit is GUILD_COLORS.length, so no two guilds on a server ever share a color.
 export const GUILD_COLORS = [
-  '#a08cff',
-  '#6bffb4',
-  '#ffb86b',
-  '#ff6b9d',
-  '#6baff5',
-  '#f5e46b',
-  '#ff6b6b',
-  '#6bffe8',
-  '#d46bff',
-  '#b4ff6b',
-  '#ff9f6b',
-  '#26c0d0',
-  '#fec4ff',
-  '#9bb670',
-  '#ff6bda',
+  '#abf95f',
+  '#ed7ef8',
+  '#25d2fc',
+  '#fc9e47',
+  '#fab6b9',
+  '#0af2cd',
+  '#fbd509',
+  '#b4c0ff',
+  '#b2b77b',
+  '#f6c4f9',
+  '#27d271',
+  '#bfedbd',
+  '#65c3c0',
+  '#f48aba',
+  '#b9cb11',
 ];
 export const MAX_GUILDS = GUILD_COLORS.length;
 

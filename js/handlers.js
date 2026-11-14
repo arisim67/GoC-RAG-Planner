@@ -18,6 +18,9 @@ export function updName(v) {
   s.name = v;
   save();
   renderTabs();
+  // The sidebar shows the name too (renaming doesn't redraw the page)
+  const sbName = document.querySelector('.sb-server');
+  if (sbName) sbName.textContent = v;
 }
 export function updMode(v) {
   const s = activeSrv();

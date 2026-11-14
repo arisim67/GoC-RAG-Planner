@@ -36,6 +36,8 @@ export function applySpotlight(root = document.getElementById('main-content')) {
   root
     .querySelectorAll('.spot-chip')
     .forEach(chip => chip.setAttribute('aria-pressed', String(chip.dataset.id === gid)));
+  // The guild list in the sidebar (outside the page it dims) shows which guild is picked too
+  document.querySelectorAll('.sb-guild').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === gid)));
   const summary = root.querySelector('.spot-summary');
   if (summary) {
     const chip = gid && root.querySelector(`.spot-chip[data-id="${gid}"]`);

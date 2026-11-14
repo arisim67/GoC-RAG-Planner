@@ -31,6 +31,7 @@
 // is shown as an ordinary step instead of waiting for something that has already happened.
 
 import { applyCollapse, expandSection } from './collapse.js';
+import { showPanelFor, closePanels, setupIsPanel, isOnTab, currentTab, setTab } from './sidebar.js';
 import { startRule, validateStarts, isMidEvent, startingTownLimit } from './calc.js';
 
 // 2 for the move to the new site (November 2026), so everyone sees the updated tutorial once. Anyone
@@ -452,7 +453,7 @@ function buildSteps(srv) {
       target: 'stats',
       title: 'Check the balance',
       body: `Final scores, total occupation and the daily declares (▲) and giveaways (↓) for every guild.
-             Use these to fine-tune the plan by hand.`,
+             Use these to fine-tune the plan by hand. (With the sidebar, scores and occupation are on the Scores tab and declares on their own.)`,
       place: 'top',
     },
     {
@@ -469,13 +470,29 @@ function buildSteps(srv) {
              <br><br><b>Screenshots</b> saves the grid and tables as images for Discord.`,
     },
     {
+      // The two messages are two views of the same section: the tutorial shows each one, then puts the
+      // view back the way they had it.
       target: 'messages',
       title: 'Daily messages',
+      before: () => hooks.showMessages && hooks.showMessages('server'),
+      after: () => hooks.restoreMessages && hooks.restoreMessages(),
       body: `Ready-made instructions for each day, one day at a time (it opens on today). Click the message to copy it.
-             <b>Whole server</b> is every guild's part, for Discord; <b>Each guild</b> gives every guild its own message,
-             short enough for the in-game guild chat. <b>Copy Today's Message</b> in the toolbar copies today's in one click.
-             <br><br>Want them in your own style? <b>Template</b> changes the format of both, and lets you give guilds
+             <b>Whole server</b> is every guild's part in one message, for Discord. <b>Copy Today's Message</b> in the
+             toolbar copies today's in one click.
+             <br><br>Want them in your own style? <b>Template</b> changes the format, and lets you give guilds
              emoji names just for messages. <b>Share</b> in there copies a link to your templates for other planners.`,
+      place: 'top',
+    },
+    {
+      target: 'messages',
+      title: 'A message for each guild',
+      before: () => hooks.showMessages && hooks.showMessages('guild'),
+      after: () => hooks.restoreMessages && hooks.restoreMessages(),
+      body: `<b>Each guild</b> gives every guild its own message, short enough for Tokyo Debunker's in-game guild chat.
+             Each one shows how many of the game's 150 characters it uses, and turns red if it is too long. Click a
+             guild's message to copy it, then paste it into the game.
+             <br><br>Pick <b>Your guild</b> to put yours first. Under this view, <b>Copy Today's Message</b> in the
+             toolbar copies your guild's message.`,
       place: 'top',
     },
     {
@@ -519,10 +536,12 @@ export function initTour(appHooks) {
   return false;
 }
 
+let tabAtStart = null;
 export function startTour() {
   if (els) return; // already running
   markSeen();
   lastFocus = document.activeElement;
+  tabAtStart = currentTab(); // the tutorial moves between tabs: put it back at the end
   demoState = null;
   flow = null;
   steps = [chooserStep()];
@@ -669,43 +688,62 @@ function onKey(e) {
   }
 }
 
-function targetEl(step) {
+// A [data-tour] name can be on two buttons (Auto-Optimize and Save to Cloud are in the sidebar and in the
+// Server Settings): use the one that is on screen, which is the sidebar's on a wide screen.
+function tourAnchor(name) {
+  const all = [...document.querySelectorAll(`[data-tour="${name}"]`)];
+  const shown = all.find(e => {
+    const r = e.getBoundingClientRect();
+    return r.width || r.height;
+  });
+  return shown || all[0] || null;
+}
+
+function findTarget(step) {
   const t = typeof step.target === 'function' ? step.target() : step.target;
   if (!t) return null;
   // A plain name is one of the [data-tour] anchors; anything starting with '#' or '.' is a selector,
   // which is how a step points at a dialog that has no anchor of its own.
-  let el = null;
   try {
-    el =
-      t instanceof Element
-        ? t
-        : /^[#.]/.test(t)
-          ? document.querySelector(t)
-          : document.querySelector(`[data-tour="${t}"]`);
+    return t instanceof Element ? t : /^[#.]/.test(t) ? document.querySelector(t) : tourAnchor(t);
   } catch (_) {
     return null;
   }
+}
+
+// The step's element, if it is on screen.
+function targetEl(step) {
+  const el = findTarget(step);
   if (!el) return null;
   expandSection(el, { all: true, remember: false }); // a folded section opens while the tutorial shows it
   const r = el.getBoundingClientRect();
   return r.width || r.height ? el : null;
 }
 
+// Is the step's part of the page there? One on another tab is: the step opens that tab.
+function targetThere(step) {
+  const el = findTarget(step);
+  return !!el && (!!targetEl(step) || isOnTab(el));
+}
+
 // dir: +1 forward, -1 back. Steps whose target is missing are skipped in that direction.
 function show(i, dir) {
-  const gone = s => (s.skip && s.skip()) || (s.target && !targetEl(s));
+  const gone = s => (s.skip && s.skip()) || (s.target && !targetThere(s));
   while (i > 0 && i < steps.length - 1 && gone(steps[i])) i += dir;
   i = Math.max(0, Math.min(steps.length - 1, i));
   if (steps[index] && steps[index] !== steps[i] && steps[index].after) steps[index].after();
   index = i;
   const step = steps[i];
   if (step.before) step.before();
+  // With the sidebar, the Server Settings slide in as a panel and the sections are tabs: show the panel
+  // or tab a step points into, and put the panel away for the other steps.
+  showPanelFor(findTarget(step));
 
   // The walkthrough hides steps whose part of the page is not there. The guided setup must not do
   // that: almost none of the app exists on step one, and counting only what is on screen would
   // promise a two-step tour that is really nine.
   const visible =
-    flow === 'setup' ? steps.filter(s => !(s.skip && s.skip())) : steps.filter(s => !s.target || targetEl(s));
+    flow === 'setup' ? steps.filter(s => !(s.skip && s.skip())) : steps.filter(s => !s.target || targetThere(s));
   const pos = visible.indexOf(step) + 1;
   els.count.textContent = flow ? `${pos} of ${visible.length}` : '';
   els.fill.style.width = flow ? `${(pos / visible.length) * 100}%` : '0';
@@ -774,9 +812,14 @@ function show(i, dir) {
   if (el) {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // Anything that fits in the window is centered, so the spotlight frames it; taller sections (grid,
-    // stats) are scrolled to their top, clear of the bar of section links (scroll-margin in tour.css).
+    // stats) are scrolled to their top, clear of the bar of section links (scroll-margin in tour.css). On a
+    // phone the card is a sheet over the bottom of the screen, so everything goes to the top, above it.
     const tall = el.getBoundingClientRect().height > window.innerHeight - 140;
-    el.scrollIntoView({ block: tall ? 'start' : 'center', inline: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+    el.scrollIntoView({
+      block: tall || window.innerWidth < 640 ? 'start' : 'center',
+      inline: 'nearest',
+      behavior: reduce ? 'auto' : 'smooth',
+    });
   }
   // Brief slide of the highlight to the new target, then instant tracking while the page scrolls.
   els.root.classList.add('tour-anim');
@@ -878,6 +921,15 @@ function stopWatch() {
   tracked = null;
 }
 
+function setMapSide(on) {
+  const root = document.documentElement;
+  root.classList.toggle('tour-map-side', on);
+  if (!on) {
+    root.style.removeProperty('--tour-map-w');
+    root.style.removeProperty('--tour-map-ratio');
+  }
+}
+
 function reposition() {
   if (!els) return;
   const step = steps[index];
@@ -886,6 +938,27 @@ function reposition() {
     vh = window.innerHeight;
   const card = els.card;
   const mobile = vw < 640;
+
+  // The Map is nearly as tall as the window on wide screens, so a card above or below it has nowhere to
+  // go and would sit on top of the towns. Instead the map moves to the left and shrinks just enough
+  // for the card to stand beside it (tour-map-side in css/tables.css).
+  let side = false;
+  const sec =
+    !mobile && el && el.matches('.map-main, #sec-map') && setupIsPanel() && !document.querySelector('.modal-bg.open')
+      ? el
+      : null;
+  const svgEl = sec && sec.querySelector('.map-svg');
+  const ar = svgEl && /aspect-ratio:\s*([\d.]+)\s*\/\s*([\d.]+)/.exec(svgEl.getAttribute('style') || '');
+  if (ar) {
+    const ratio = Number(ar[1]) / Number(ar[2]);
+    const room = sec.getBoundingClientRect().width - card.offsetWidth - 48;
+    if (room >= 300 * ratio) {
+      side = true;
+      document.documentElement.style.setProperty('--tour-map-w', room + 'px');
+      document.documentElement.style.setProperty('--tour-map-ratio', String(ratio));
+    }
+  }
+  setMapSide(side);
 
   // A dialog dims the page itself and is what the person is looking at, so the spotlight would only
   // fight with it. Drop the highlight and put the card out of the dialog's way instead.
@@ -957,6 +1030,22 @@ function reposition() {
   const cw = card.offsetWidth,
     ch = card.offsetHeight,
     gap = 14;
+  if (side) {
+    const sr = svgEl.getBoundingClientRect();
+    card.style.left = Math.min(sr.right + 24, vw - cw - 16) + 'px';
+    card.style.top = Math.min(Math.max(sr.top, 8), vh - ch - 16) + 'px';
+    return;
+  }
+  // A target in the Server Settings panel (against the right edge): the card goes to the panel's left
+  const panel = el.closest('.setup-panel');
+  if (panel && setupIsPanel()) {
+    const pl = panel.getBoundingClientRect().left;
+    if (pl > cw + 40) {
+      card.style.left = pl - cw - 24 + 'px';
+      card.style.top = Math.min(Math.max(top, 8), vh - ch - 16) + 'px';
+      return;
+    }
+  }
   let y;
   const below = bottom + gap,
     above = top - gap - ch;
@@ -981,6 +1070,7 @@ function reposition() {
 
 function endTour(finished = false) {
   if (!els) return;
+  setMapSide(false);
   if (steps[index] && steps[index].after) steps[index].after();
   stopWatch();
   waiting = false;
@@ -992,6 +1082,9 @@ function endTour(finished = false) {
   els.root.remove();
   els = null;
   document.body.classList.remove('tour-active');
+  closePanels({ focus: false });
+  if (tabAtStart && setupIsPanel()) setTab(tabAtStart, { remember: false });
+  tabAtStart = null;
   if (demoState && demoState.created) hooks.removeDemoServer(demoState.prevId);
   demoState = null;
   applyCollapse(); // sections opened for the tour fold back the way they were

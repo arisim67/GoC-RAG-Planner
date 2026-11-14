@@ -9,11 +9,12 @@
   --bg4: #483a6b;
   --border: #423563;
   --border2: #5c4b8a;
-  --accent: #45d6a8;
-  --accent-glow: rgba(69, 214, 168, 0.2);
-  --accent2: #6bf2c7;
+  --accent: #a5a0ff;
+  --accent-glow: rgba(165, 160, 255, 0.22);
+  --accent2: #c4c0ff;
   --gold: #e2c883;
   --gold2: #f2deb0;
+  --title: var(--gold); /* section and dialog titles (a few themes use a paler color so gold can mean "active") */
   --red: #ff6b88;
   --red-glow: rgba(255, 94, 126, 0.15);
   --green: #45d6a8;
@@ -28,7 +29,7 @@
   --lv3: #e2c883;
 
   /* Theme hooks: css/themes.css overrides these along with the colors above */
-  --on-accent: #0a1a14; /* text on top of --accent buttons */
+  --on-accent: #14102a; /* text on top of --accent buttons */
   --accent-ink: var(--accent); /* the accent color when used as text (themes with a dark accent lighten it) */
   --header-top: #1f1930; /* top of the header gradient */
   --hairline: rgba(255, 255, 255, 0.03); /* table row dividers */
@@ -103,7 +104,7 @@ body {
   font-family: var(--font-head);
   font-size: 14px;
   font-weight: 600;
-  color: var(--gold);
+  color: var(--title);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 16px;
@@ -166,9 +167,12 @@ body {
   transform: rotate(-90deg);
 }
 
-/* Screenshots always show every section in full */
-html:not(.capturing) .section.collapsed > :not(.sec-title) {
-  display: none;
+/* Screenshots always show every section in full. (Not on wide screens, where the sections are tabs
+   and nothing folds: see css/sidebar.css.) */
+@media (max-width: 1359.98px) {
+  html:not(.capturing) .section.collapsed > :not(.sec-title) {
+    display: none;
+  }
 }
 
 html.capturing .sec-toggle {

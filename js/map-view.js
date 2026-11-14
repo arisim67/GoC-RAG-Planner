@@ -291,7 +291,7 @@ export function renderMapView(srv, mapData, days) {
     <div class="map-days" role="group" aria-label="Day to show">${Array.from({ length: days + 1 }, (_, d) => dayBtn(d)).join('')}</div>
     ${pickBar}
     <div class="map-wrap">
-      <svg class="map-svg${layout.bg ? ' has-bg' : ''}" viewBox="0 0 ${layout.w} ${layout.h}" role="img"
+      <svg class="map-svg${layout.bg ? ' has-bg' : ''}" viewBox="0 0 ${layout.w} ${layout.h}" style="aspect-ratio:${layout.w}/${layout.h}" role="img"
         aria-label="${esc(mapData.name)} on day ${day}: who holds each town">
         ${layout.bg ? `<image class="map-bg" href="${layout.bg.src}" x="${layout.bg.x}" y="${layout.bg.y}" width="${layout.bg.w ?? layout.bg.size}" height="${layout.bg.h ?? layout.bg.size}"/>` : ''}
         <g class="map-roads">${roads.join('')}</g>

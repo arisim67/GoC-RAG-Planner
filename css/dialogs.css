@@ -29,7 +29,7 @@
 
 .modal h3 {
   font-family: var(--font-head);
-  color: var(--gold);
+  color: var(--title);
   margin-bottom: 20px;
   font-size: 18px;
   text-align: center;
@@ -810,7 +810,7 @@
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 2px;
-  color: var(--gold);
+  color: var(--title);
   font-family: var(--font-head);
   font-size: 13px;
   font-weight: 600;

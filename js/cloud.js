@@ -16,9 +16,16 @@ export async function publishToCloud() {
   const srv = activeSrv();
   if (!srv) return;
 
-  const btn = document.getElementById('btn-share-cloud');
-  const originalText = setBtnLabel(btn, 'Saving...');
-  btn.disabled = true;
+  // Save to Cloud is in the Setup toolbar and in the sidebar; both show the progress. Look the buttons
+  // up each time, since renderAll() replaces them.
+  const btns = () => [...document.querySelectorAll('[data-action="save-cloud"]')];
+  const setBtns = (text, disabled) =>
+    btns().forEach(b => {
+      setBtnLabel(b, text);
+      b.disabled = disabled;
+    });
+  const originalText = setBtnLabel(btns()[0], 'Saving...');
+  setBtns('Saving...', true);
 
   try {
     // Link-preview image for Discord etc. If it can't be drawn, the plan still saves.
@@ -53,11 +60,8 @@ export async function publishToCloud() {
       } catch (e) {
         console.warn('Clipboard blocked', e);
       }
-      setBtnLabel(btn, copied ? '✓ Saved & Copied!' : '✓ Saved!');
-      setTimeout(() => {
-        setBtnLabel(btn, originalText);
-        btn.disabled = false;
-      }, 2500);
+      setBtns(copied ? '✓ Saved & Copied!' : '✓ Saved!', true);
+      setTimeout(() => setBtns(originalText, false), 2500);
       if (!copied) setTimeout(() => window.prompt('Saved! Copy this share link:', shareUrl), 50);
     } else {
       throw new Error('Failed to save to cloud');
@@ -65,8 +69,7 @@ export async function publishToCloud() {
   } catch (err) {
     console.error(err);
     alert('Failed to sync to cloud. Check your connection or Worker URL.');
-    setBtnLabel(btn, originalText);
-    btn.disabled = false;
+    setBtns(originalText, false);
   }
 }
 

@@ -5,6 +5,7 @@
 
 import { expandSection } from './collapse.js';
 import { usingTouch } from './ui.js';
+import { setTab, setupIsPanel } from './sidebar.js';
 
 const FLASH_MS = 2400;
 
@@ -33,6 +34,8 @@ function focusCell(td) {
 
 export function statusJump(btn) {
   const { kind, day, k, g } = btn.dataset;
+  // With tabs, show the one the problem is on: declares have their own, everything else is in the grid
+  if (setupIsPanel()) setTab(kind === 'declares' ? 'declares' : 'grid', { remember: false });
 
   if (kind === 'declares') {
     const sec = document.getElementById('sec-declares');

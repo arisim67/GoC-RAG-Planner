@@ -18,9 +18,9 @@ html[data-theme='light'] {
   --bg4: #dad3c2;
   --border: #d6d0c4;
   --border2: #afa79c;
-  --accent: #237460;
-  --accent-glow: rgba(35, 116, 96, 0.22);
-  --accent2: #1f6f5b;
+  --accent: #5148b8;
+  --accent-glow: rgba(81, 72, 184, 0.22);
+  --accent2: #453da6;
   --gold: #795808;
   --gold2: #6f5008;
   --red: #b3304b;
@@ -127,6 +127,7 @@ html[data-theme='dionysia'] {
   --accent-glow: rgba(220, 167, 67, 0.2);
   --accent2: #f2c779;
   --header-top: var(--bg2);
+  --title: #f1e8d2;
 }
 html[data-theme='frostheim'] {
   --bg: #0b132b;
@@ -151,6 +152,7 @@ html[data-theme='hotarubi'] {
   --accent-glow: rgba(157, 123, 176, 0.2);
   --accent2: #bca4c9;
   --header-top: var(--bg2);
+  --accent-ink: #c4a8d6;
 }
 html[data-theme='jabberwock'] {
   --bg: #0b110d;
@@ -159,11 +161,11 @@ html[data-theme='jabberwock'] {
   --bg4: #223529;
   --border: #2d4334;
   --border2: #395542;
-  --accent: #c03c3c;
-  --accent-glow: rgba(192, 60, 60, 0.2);
-  --accent2: #d66c6c;
+  --accent: #cc6a2c;
+  --accent-glow: rgba(204, 106, 44, 0.22);
+  --accent2: #ea9561;
   --header-top: var(--bg2);
-  --on-accent: #fff;
+  --on-accent: #1c0d04;
   --accent-ink: var(--accent2);
 }
 html[data-theme='mortkranken'] {
@@ -173,10 +175,12 @@ html[data-theme='mortkranken'] {
   --bg4: #0f304a;
   --border: #153952;
   --border2: #1d4e70;
-  --accent: #63b8d9;
-  --accent-glow: rgba(99, 184, 217, 0.2);
-  --accent2: #92cde6;
+  --accent: #5f9fae;
+  --accent-glow: rgba(95, 159, 174, 0.22);
+  --accent2: #8cc3cf;
   --header-top: var(--bg2);
+  --on-accent: #04141a;
+  --accent-ink: var(--accent2);
 }
 html[data-theme='obscuary'] {
   --bg: #14030b;
@@ -191,6 +195,8 @@ html[data-theme='obscuary'] {
   --header-top: var(--bg2);
   --on-accent: #fff;
   --accent-ink: var(--accent2);
+  --red: #ff8052;
+  --red-glow: rgba(255, 128, 82, 0.16);
 }
 html[data-theme='sinostra'] {
   --bg: #050101;
@@ -204,7 +210,9 @@ html[data-theme='sinostra'] {
   --accent2: #d64949;
   --header-top: var(--bg2);
   --on-accent: #fff;
-  --accent-ink: var(--accent2);
+  --accent-ink: #e86363;
+  --red: #ff8052;
+  --red-glow: rgba(255, 128, 82, 0.16);
 }
 html[data-theme='vagastrom'] {
   --bg: #050505;
@@ -217,6 +225,7 @@ html[data-theme='vagastrom'] {
   --accent-glow: rgba(212, 175, 55, 0.2);
   --accent2: #ebd076;
   --header-top: var(--bg2);
+  --title: #f1e8d2;
 }
 
 /* ── Theme picker (header) ── */

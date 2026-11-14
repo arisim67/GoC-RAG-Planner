@@ -282,7 +282,7 @@
   font-family: var(--font-head);
   font-size: 20px;
   font-weight: 600;
-  color: var(--gold);
+  color: var(--title);
 }
 
 .welcome-sub {

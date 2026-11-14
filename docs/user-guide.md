@@ -4,7 +4,7 @@ The GoC / Ragnarok Planner, made by ari (EA-4, 43, 45) and gharial (EA-44), help
 
 ![The planner with a Game of Claws server open](images/overview.png)
 
-**New here?** The first time you open the app, a short interactive tutorial walks you through it. You can skip it, and replay it any time with the **Tutorial** button at the top of the page.
+**New here?** The first time you open the app, a short interactive tutorial walks you through it. It covers setting up a server, the grid and Map, Status, Auto-Optimize, sharing, each day's messages (the whole server's and each guild's) and themes. You can skip it, and replay it any time with the **Tutorial** button at the top of the page.
 
 ## Contents
 
@@ -34,9 +34,10 @@ The GoC / Ragnarok Planner, made by ari (EA-4, 43, 45) and gharial (EA-44), help
 
 ## Getting around
 
-- **Section links:** the bar of links at the top (Setup, Guilds, Grid, Map, Scores, Declares, Messages) stays on screen as you scroll and jumps to each part of the page.
+- **Section links:** the bar of links at the top (Setup, Guilds, Grid, Map, Scores, Declares, Messages; on wide screens the Setup and Guilds links are replaced by the settings panel and the rest are tabs, see below) stays on screen as you scroll and jumps to each part of the page.
+- **Summary sidebar and tabs:** on screens at least 1360 pixels wide, a flat panel beside the page stays in view as you scroll. It shows the server's name and details, a **Server & guild setup** button, **Auto-Optimize** (with how long the last solve took) and **Save to Cloud** side by side, and a tile for each guild with its final points, castle and dorm counts, and difference from its target (one line per guild in Ragnarok). Click a guild to Spotlight it. Drag the sidebar's right edge to make it wider or narrower (it stops at the narrowest width that still fits the buttons and tiles; double-click the edge to reset it, or focus it and use the arrow keys); the width is remembered in this browser. **Server & guild setup** opens the name, mode, map, dates, the Plan, Files and Share buttons, and the guild list as one panel from the right. Close it with the × button, Esc or a click outside. On these wide screens the page's sections are **tabs**: Grid, Map, Scores (Final Scores and Total Occupation), Declares and Messages, with Status above the Grid. The tab bar stays at the top as you scroll, and the open tab is remembered. The map is sized to your window's height. On narrower screens and phones the sidebar is hidden, Server Settings stay at the top of the page and all sections show on one long page. Screenshots never include the sidebar and always show every section.
 - **Folding sections:** click a section's title, or the arrow beside it, to fold it down to just the title, and again to open it. Hide what you don't need, such as the Guilds list once it's set up. Folded sections are remembered in this browser for every server, open when you jump to them, and are still included in Screenshots.
-- **Themes:** the menu in the header switches between Dark, Light and the eight house themes. Your pick is saved in this browser (not per server), and Screenshots use whichever theme is on. On Light, guilds are drawn in a separate set of colors chosen to read on the pale background. Shared plans and link previews always use the default look.
+- **Themes:** the menu in the header switches between Dark, Light and the eight house themes, each house theme with its crest and an accent color taken from it. Your pick is saved in this browser (not per server), and Screenshots use whichever theme is on. On Light, guilds are drawn in a separate set of bright colors chosen to read on the pale background. Shared plans and link previews always use the default look.
 - **Server tabs:** each server you plan has its own tab along the top. Right-click a tab (or press and hold on a phone) to rename, duplicate or delete it.
 
 ## Servers
@@ -62,7 +63,7 @@ The settings at the top hold the server's name, mode, map and event dates. The t
 ![The guild list, with numbered parts](images/guilds.png)
 
 1. **Drag handle:** press and hold, then drag to reorder the guilds. The order decides which guilds get extra points, dorm time or castle time when things can't be split evenly.
-2. **Color:** click the dot to choose the guild's color. The **Palette** tab has colors that suit the planner and read well on its dark background (a small dark dot marks colors another guild already uses). The **Custom** tab takes any color, from the color chooser or as a hex code like `#45d6a8`. You'll get a warning if a color is very close to another guild's, or too dark to read easily.
+2. **Color:** click the dot to choose the guild's color. The **Palette** tab has colors that suit the planner (the 15 defaults are clearly different from each other and from the status and theme accent colors) and read well on its dark background (a small dark dot marks colors another guild already uses). The **Custom** tab takes any color, from the color chooser or as a hex code like `#45d6a8`. You'll get a warning if a color is very close to another guild's, or too dark to read easily.
 3. **Name:** type the guild's name. To set up every name at once, click **Import**, choose **Import Guild List (Setup)** and paste the names, one per line.
 4. **Small guild (Game of Claws only):** for a guild that has trouble staying in the top 8 for kudos. It limits the guild to 1 declare a day.
 5. **Exclude guild:** for a guild that drops out. It keeps the towns it holds, nobody can take them, it declares nothing more, and what's left to win is shared out between the other guilds. Days already played stay as they are.
@@ -172,7 +173,7 @@ On a phone the whole map shrinks to fit the screen, with bigger name tags so the
 
 **Auto-Optimize** works out a route that follows every adjacency rule, never wipes a guild off the map, and evens out final scores and time on Darkwick and the dorms.
 
-- **Ragnarok:** the route is found in one pass, which can take up to about a minute.
+- **Ragnarok:** the route is found in one pass, which can take up to about a minute. It also keeps the last day tidy: no declare on the final day unless the plan needs it, and a guild with two castle days holds them at the end of the event. A fairer spread always wins over both.
 - **Game of Claws:** around **1 to 3 minutes for 10 guilds**, and up to about **10 minutes for 13**.
 - **Speed it up:** filling in a day or two yourself first makes a real difference, because those are days the optimizer no longer has to work out.
 - **While it runs,** a panel in the corner shows how long it has been going, what it's working on and a tip or two. **Stop** ends the run and leaves your plan exactly as it was.
@@ -194,8 +195,8 @@ The optimizer is still being improved and won't always produce a perfect split. 
 
 The app checks your plan as you go, to make sure it can actually be played out in-game. Look at **Status** above the planning grid:
 
-1. **A red pill** means a rule is broken. Click it to jump straight to the problem: a day's pill shows that day's problem cells in the grid, **Starting Towns** shows a guild with the wrong number of starting towns (see [Starting towns](#starting-towns)) or one starting on a dorm or the castle (not checked when **Planning mid-event** is on under Guilds), **Valid Declares** shows the guilds declaring too many towns, and **No Map Wipes** shows the day a guild is wiped. What it jumps to flashes so it's easy to spot, and a folded section opens.
-2. **A green pill** means that day (or rule) is fine.
+1. **A red pill** means a rule is broken. Click it to jump straight to the problem: a day's pill (only days with problems have one) shows that day's problem cells in the grid, **Starting Towns** shows a guild with the wrong number of starting towns (see [Starting towns](#starting-towns)) or one starting on a dorm or the castle (not checked when **Planning mid-event** is on under Guilds), **Valid Declares** shows the guilds declaring too many towns, and **No Map Wipes** shows the day a guild is wiped. What it jumps to flashes so it's easy to spot, and a folded section opens.
+2. **A green pill** means that rule is fine. The days with no problems share one green pill ("All 13 days OK", or "4 other days OK" when some days are red), so only days that need attention get a pill of their own.
 3. **Each problem** is listed under the pills. Click one to go to it.
 
 The rules it checks:
@@ -236,6 +237,8 @@ A shared link opens a locked copy that can't be edited, with four buttons:
 2. **Pull Latest Updates** fetches your newest saved version.
 3. **Screenshots** saves the images.
 4. **Export Data** downloads the plan as a `.json` backup.
+
+On wide screens the sidebar shows the same notice, with its own **Duplicate to Edit** button, at the top.
 
 ### Link previews
 

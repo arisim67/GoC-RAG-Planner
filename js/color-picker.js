@@ -6,32 +6,30 @@ import { esc } from './ui.js';
 import { GUILD_COLORS } from './state.js';
 import { gcolor } from './colors.js';
 
-// The 15 default guild colors plus tones from the site's own theme, sorted by hue.
+// The 15 default guild colors plus a few more tones that stay clear of the theme colors, sorted by hue.
 export const PALETTE = [
-  '#ff6b6b',
-  '#ffadad',
-  '#ff9f6b',
-  '#ffb86b',
-  '#ffd6a5',
-  '#e2c883',
+  '#fc9e47',
+  '#fbd509',
   '#f5e46b',
-  '#9bb670',
-  '#b4ff6b',
-  '#c3f0ca',
+  '#b2b77b',
+  '#b9cb11',
+  '#abf95f',
+  '#bfedbd',
+  '#27d271',
   '#6bffb4',
-  '#45d6a8',
+  '#0af2cd',
   '#6bffe8',
+  '#65c3c0',
   '#26c0d0',
+  '#25d2fc',
   '#6baff5',
-  '#78a9f0',
-  '#a0c4ff',
-  '#a08cff',
-  '#b886ee',
-  '#e4c1f9',
+  '#b4c0ff',
   '#d46bff',
-  '#fec4ff',
+  '#ed7ef8',
+  '#f6c4f9',
   '#ff6bda',
-  '#ff6b9d',
+  '#f48aba',
+  '#fab6b9',
 ];
 // Every default color is in the palette, so new guilds always start on a palette color.
 GUILD_COLORS.forEach(c => {
@@ -94,7 +92,7 @@ export function openColorPicker({ anchor, guild, others, onPick, onPreview }) {
     <div class="cp-panel" data-panel="custom">
       <div class="cp-custom">
         <label class="cp-native" style="--sw:${esc(current)}" title="Open the color chooser">
-          <input type="color" value="${esc(current || '#a08cff')}" aria-label="Choose any color">
+          <input type="color" value="${esc(current || GUILD_COLORS[0])}" aria-label="Choose any color">
         </label>
         <div class="cp-hexwrap">
           <label class="cp-hexlabel" for="cp-hex">Hex</label>

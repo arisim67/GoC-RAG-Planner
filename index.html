@@ -42,6 +42,7 @@
     <link rel="stylesheet" href="css/dialogs.css" />
     <link rel="stylesheet" href="css/responsive.css" />
     <link rel="stylesheet" href="css/tour.css" />
+    <link rel="stylesheet" href="css/sidebar.css" />
     <link rel="stylesheet" href="css/themes.css" />
     <!-- Apply the saved theme before first paint so the page doesn't flash dark. Keep the list in sync with js/theme.js -->
     <script>
@@ -170,11 +171,25 @@
       <div class="tabs-bar" id="tabs-bar" data-tour="tabs"></div>
     </div>
 
-    <div class="main" id="main-content">
-      <div class="empty-state">
-        No servers yet. Click <strong class="empty-state-cta">+ Add Server</strong> to get started.
+    <div class="app-body">
+      <aside class="sidebar" id="sidebar" aria-label="Plan summary"></aside>
+      <div
+        class="sb-resizer"
+        id="sb-resizer"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize the sidebar"
+        tabindex="0"
+        title="Drag to resize the sidebar (double-click to reset)"
+      ></div>
+      <div class="main" id="main-content">
+        <div class="empty-state">
+          No servers yet. Click <strong class="empty-state-cta">+ Add Server</strong> to get started.
+        </div>
       </div>
     </div>
+    <!-- Dims the page behind the Server Settings panel (css/sidebar.css); click it to close the panel -->
+    <div class="setup-scrim" data-action="close-setup"></div>
 
     <div class="site-footer">
       <p class="site-footer-text">
