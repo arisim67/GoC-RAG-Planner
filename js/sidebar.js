@@ -56,7 +56,7 @@ export function renderSidebar(srv, ctx) {
       </div>`
           : ''
       }
-      <button type="button" class="btn-tool sb-settings" id="sb-settings-btn" data-action="open-setup">${icon('sliders-horizontal')}<span class="btn-label">${srv.isViewOnly ? 'Options &amp; guilds' : 'Server &amp; guild setup'}</span></button>
+      <button type="button" class="btn-tool sb-settings" id="sb-settings-btn" data-action="open-setup">${icon('sliders-horizontal')}<span class="btn-label">${srv.isViewOnly ? 'Options &amp; Guilds' : 'Server &amp; Guild Setup'}</span></button>
       ${
         srv.isViewOnly
           ? ''
@@ -74,10 +74,10 @@ export function renderSidebar(srv, ctx) {
 }
 
 // ── Tabs ──
-// With the sidebar showing, the page's sections are tabs (Grid, Map, Scores, Declares, Messages)
-// and only one shows at a time; the stylesheet does the hiding from the "data-tab" attribute on <html>.
-// Status sits above the Grid. Narrower screens keep one long page, and Screenshots
-// always include everything.
+// With the sidebar beside the page (wide screens), its sections are tabs (Grid, Map, Scores, Declares,
+// Messages) and only one shows at a time; the stylesheet does the hiding from the "data-tab" attribute on
+// <html>. Status sits above the Grid. Narrower screens keep one long page, and Screenshots always include
+// everything.
 export const TAB_OF_JUMP = {
   'capture-grid': 'grid',
   'sec-map': 'map',
@@ -95,6 +95,7 @@ export function currentTab() {
 
 // Mark the active tab in the bar (and drop a saved Map tab when this server has no map).
 export function syncTabs() {
+  if (!tabsActive()) return; // one long page: the bar follows the scrolling instead (render.js)
   const root = document.documentElement;
   if (currentTab() === 'map' && !document.getElementById('sec-map')) root.dataset.tab = 'grid';
   const cur = currentTab();
@@ -138,12 +139,12 @@ function tabOf(el) {
 
 // Is the element on one of the tabs (so that it shows when its tab opens)?
 export function isOnTab(el) {
-  return setupIsPanel() && !!tabOf(el);
+  return tabsActive() && !!tabOf(el);
 }
 
-// Show the tab an element is on. Does nothing on narrow screens, where the whole page shows.
+// Show the tab an element is on. Does nothing on narrower screens, where the whole page shows.
 export function showTabFor(el, opts) {
-  if (!setupIsPanel()) return;
+  if (!tabsActive()) return;
   const t = tabOf(el);
   if (t && (t !== currentTab() || document.documentElement.dataset.tab !== t)) setTab(t, opts);
 }
@@ -166,6 +167,12 @@ export function initTabs() {
 export function setupIsPanel() {
   const sb = document.getElementById('sidebar');
   return !!sb && getComputedStyle(sb).display !== 'none';
+}
+
+// Are the sections tabs? Only beside the page, on a wide screen. Narrower ones (phones, tablets) keep one
+// long page, in the same order, with the summary above it; the bar of links jumps down the page.
+export function tabsActive() {
+  return setupIsPanel() && window.matchMedia('(min-width: 1360px)').matches;
 }
 
 export function openSetup({ focus = true } = {}) {

@@ -52,6 +52,7 @@
 
 .tbl-wrap {
   overflow-x: auto;
+  overscroll-behavior-x: contain; /* the end of the table does not start the browser's back swipe */
   -webkit-overflow-scrolling: touch;
   border-radius: 8px;
   border: 1px solid var(--border);
@@ -463,7 +464,23 @@ table.ptbl th.pts-cell {
   text-align: center;
 }
 
-/* Declares & giveaways table */
+/* Declares & giveaways table. Scrolled sideways on a narrow screen, the guild names stay in view like
+   the Town column in the grid, so a row is never anonymous. */
+@media (max-width: 1359px) {
+  .dtbl th:first-child,
+  .dtbl td.dec-guild {
+    position: sticky;
+    left: 0;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.3);
+  }
+  .dtbl th:first-child {
+    z-index: 2;
+  }
+  .dtbl td.dec-guild {
+    z-index: 1;
+    background: var(--bg2);
+  }
+}
 .dtbl td.dec-guild {
   vertical-align: middle;
   font-weight: 500;
@@ -498,6 +515,7 @@ table.ptbl th.pts-cell {
 
 #sec-settings,
 #sec-guilds,
+#sec-map,
 #capture-grid,
 #capture-stats,
 #sec-declares,

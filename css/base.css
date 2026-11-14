@@ -120,69 +120,6 @@ body {
   background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
 }
 
-/* Collapsible sections (collapse.js): the arrow, and a folded section showing only its title */
-.sec-title.sec-title-fold {
-  cursor: pointer;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.sec-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  margin: -3px 0 -3px -4px;
-  padding: 0;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text2);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition:
-    color 0.15s,
-    background 0.15s;
-}
-
-.sec-toggle .icon {
-  width: 16px;
-  height: 16px;
-  transition: transform 0.2s;
-}
-
-.sec-title-fold:hover .sec-toggle,
-.sec-toggle:focus-visible {
-  color: var(--gold);
-  background: var(--bg3);
-}
-
-.section.collapsed > .sec-title {
-  margin-bottom: 0;
-}
-
-.section.collapsed .sec-toggle .icon {
-  transform: rotate(-90deg);
-}
-
-/* Screenshots always show every section in full. (Not on wide screens, where the sections are tabs
-   and nothing folds: see css/sidebar.css.) */
-@media (max-width: 1359.98px) {
-  html:not(.capturing) .section.collapsed > :not(.sec-title) {
-    display: none;
-  }
-}
-
-html.capturing .sec-toggle {
-  display: none;
-}
-
-html.capturing .section.collapsed > .sec-title {
-  margin-bottom: 16px;
-}
-
 .row {
   display: flex;
   gap: 12px;
@@ -218,6 +155,22 @@ input[type='date'] {
   outline: none;
   transition: all 0.2s;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* iPhone Safari gives a date field a width of its own that ignores the container, so two side by side
+   (the server's start and end dates) run past the edge of their card. Taking the native look off lets
+   it size like any other field; tapping it still opens the date picker. */
+input[type='date'] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 36px;
+  text-align: left;
+}
+input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
+  min-width: 0;
 }
 
 select:focus,

@@ -339,4 +339,8 @@ html[data-theme='vagastrom'] {
     padding: 12px 12px;
     font-size: 14px;
   }
+  /* The tutorial's card sits at the bottom of the screen; a shorter menu stays clear of it */
+  body.tour-active .theme-item {
+    padding: 7px 12px;
+  }
 }

@@ -36,6 +36,93 @@
   }
 }
 
+/* Below the wide layout the sidebar is not beside the page but above it, in the same width as the page:
+   the server and its buttons, then the guild tiles. The tabs, flat sections and the Server Settings panel
+   below work just as they do on a wide screen. */
+@media (max-width: 1359.98px) {
+  .app-body.has-sidebar > .sidebar {
+    display: block;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 12px 24px 0;
+  }
+
+  .app-body.has-sidebar > .sidebar .sb-block {
+    padding: 10px 2px 14px;
+  }
+
+  .app-body.has-sidebar > .main {
+    padding-top: 4px;
+  }
+
+  .sb-guilds {
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .app-body.has-sidebar > .sidebar {
+    padding: 8px 10px 0;
+  }
+}
+
+/* Phones: a tighter summary, so the tabs and the grid are not pushed far down the screen */
+@media (max-width: 768px) {
+  .app-body.has-sidebar > .sidebar .sb-block {
+    padding: 6px 2px 10px;
+  }
+
+  .sb-settings {
+    margin-top: 8px;
+    padding: 8px 12px;
+  }
+
+  .sb-guilds {
+    gap: 5px;
+    margin-top: 6px;
+  }
+
+  .sb-guild {
+    min-height: 0;
+    gap: 3px;
+    padding: 6px 9px;
+  }
+
+  .sb-guilds-rows .sb-guild,
+  .sb-guilds-rows.sb-guilds-many .sb-guild {
+    padding: 8px 10px 11px;
+  }
+
+  .sb-guilds-rows .sb-g-name {
+    font-size: 13px;
+  }
+
+  .sb-guilds-rows .sb-g-pts {
+    font-size: 16px;
+  }
+
+  .sb-guilds-rows .sb-guild .bar-track {
+    left: 10px;
+    right: 10px;
+    bottom: 4px;
+    height: 2px;
+  }
+}
+
+/* Tablets: the server on the left, the guilds beside it */
+@media (min-width: 700px) and (max-width: 1359.98px) {
+  .app-body.has-sidebar > .sidebar {
+    display: grid;
+    grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+    column-gap: 28px;
+    align-items: start;
+  }
+
+  .app-body.has-sidebar > .sidebar .sb-block + .sb-block {
+    border-top: none;
+  }
+}
+
 /* The handle to drag the sidebar wider or narrower: sits on the gap between it and the page */
 .sb-resizer {
   display: none;
@@ -347,158 +434,138 @@ html.capturing .app-body.has-sidebar > .main {
   display: contents;
 }
 
-@media (min-width: 1360px) {
-  .app-body.has-sidebar .setup-panel {
-    display: block;
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 200;
-    width: min(580px, 100vw);
-    padding: 22px 22px 28px;
-    overflow-y: auto;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-right: none;
-    border-radius: 16px 0 0 16px;
-    box-shadow: var(--card-shadow);
-    transform: translateX(105%);
-    visibility: hidden;
-    transition:
-      transform 0.2s ease,
-      visibility 0s linear 0.2s;
-  }
+.app-body.has-sidebar .setup-panel {
+  display: block;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  width: min(580px, 100vw);
+  padding: 22px 22px 28px;
+  overflow-y: auto;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-right: none;
+  border-radius: 16px 0 0 16px;
+  box-shadow: var(--card-shadow);
+  transform: translateX(105%);
+  visibility: hidden;
+  transition:
+    transform 0.2s ease,
+    visibility 0s linear 0.2s;
+}
 
-  /* Planning mid-event adds the Points / Castle / Dorms / Towns boxes: the panel widens to hold them */
-  .app-body.has-sidebar .setup-panel:has(#sec-guilds .guild-list:not(.hide-mid)) {
-    width: min(900px, 100vw);
-  }
+/* Planning mid-event adds the Points / Castle / Dorms / Towns boxes: the panel widens to hold them */
+.app-body.has-sidebar .setup-panel:has(#sec-guilds .guild-list:not(.hide-mid)) {
+  width: min(900px, 100vw);
+}
 
-  html.setup-open .app-body.has-sidebar .setup-panel {
-    transform: none;
-    visibility: visible;
-    transition:
-      transform 0.2s ease,
-      visibility 0s;
-  }
+html.setup-open .app-body.has-sidebar .setup-panel {
+  transform: none;
+  visibility: visible;
+  transition:
+    transform 0.2s ease,
+    visibility 0s;
+}
 
-  html.setup-open .app-body.has-sidebar + .setup-scrim {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 190;
-    background: var(--overlay);
-  }
+html.setup-open .app-body.has-sidebar + .setup-scrim {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 190;
+  background: var(--overlay);
+}
 
-  /* The tutorial dims the page itself, and measures the panel right away */
-  body.tour-active .setup-scrim {
-    display: none !important;
-  }
+/* The tutorial dims the page itself, and measures the panel right away */
+body.tour-active .setup-scrim {
+  display: none !important;
+}
 
-  body.tour-active .app-body.has-sidebar .setup-panel {
-    transition: none;
-  }
+body.tour-active .app-body.has-sidebar .setup-panel {
+  transition: none;
+}
 
-  /* The two sections lose their card look: the panel is the card */
-  .app-body.has-sidebar .setup-panel > .section {
-    padding: 0;
-    margin: 0;
-    background: none;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-  }
+/* The two sections lose their card look: the panel is the card */
+.app-body.has-sidebar .setup-panel > .section {
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
 
-  .app-body.has-sidebar .setup-panel > #sec-guilds {
-    margin-top: 28px;
-    padding-top: 22px;
-    border-top: 1px solid var(--border);
-  }
+.app-body.has-sidebar .setup-panel > #sec-guilds {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
 
-  .app-body.has-sidebar .setup-panel .setup-close {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 32px;
-    height: 32px;
-    color: var(--text2);
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
-  }
+.app-body.has-sidebar .setup-panel .setup-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  color: var(--text2);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
 
-  .app-body.has-sidebar .setup-panel .setup-close:hover {
-    color: var(--text);
-    background: var(--bg3);
-  }
+.app-body.has-sidebar .setup-panel .setup-close:hover {
+  color: var(--text);
+  background: var(--bg3);
+}
 
-  /* Auto-Optimize, its last solve time and Save to Cloud are in the sidebar, so the panel leaves them out */
-  .app-body.has-sidebar #sec-settings [data-action='optimize'],
-  .app-body.has-sidebar #sec-settings [data-action='save-cloud'],
-  .app-body.has-sidebar #sec-settings .solve-badge {
-    display: none;
-  }
+/* Auto-Optimize, its last solve time and Save to Cloud are in the sidebar, so the panel leaves them out */
+.app-body.has-sidebar #sec-settings [data-action='optimize'],
+.app-body.has-sidebar #sec-settings [data-action='save-cloud'],
+.app-body.has-sidebar #sec-settings .solve-badge {
+  display: none;
+}
 
-  /* A panel doesn't fold: no arrows, and always open (even if a section was folded in the page) */
-  .app-body.has-sidebar .setup-panel .sec-toggle {
-    display: none;
-  }
+.app-body.has-sidebar .setup-panel > .section > .sec-title {
+  pointer-events: none;
+}
 
-  .app-body.has-sidebar .setup-panel > .section > .sec-title {
-    pointer-events: none;
-  }
+/* The settings fields fit a narrow panel two to a row, with the name across the top */
+.app-body.has-sidebar #sec-settings > .row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
 
-  html:not(.capturing) .app-body.has-sidebar #sec-settings.collapsed > .row,
-  html:not(.capturing) .app-body.has-sidebar #sec-settings.collapsed > .toolbar,
-  html:not(.capturing) .app-body.has-sidebar #sec-settings.collapsed > .settings-meta,
-  html:not(.capturing) .app-body.has-sidebar #sec-guilds.collapsed > .guild-actions {
-    display: flex;
-  }
+.app-body.has-sidebar #sec-settings > .row > .fg:first-child {
+  grid-column: 1 / -1;
+}
 
-  html:not(.capturing) .app-body.has-sidebar #sec-guilds.collapsed > .guild-list {
-    display: grid;
-  }
+.app-body.has-sidebar #sec-settings > .row .fg {
+  min-width: 0;
+}
 
-  html:not(.capturing) .app-body.has-sidebar .setup-panel > .section.collapsed > .sec-title {
-    margin-bottom: 16px;
-  }
+.app-body.has-sidebar #sec-settings > .row .fg select,
+.app-body.has-sidebar #sec-settings > .row .fg input.settings-input {
+  width: 100%;
+  min-width: 0;
+}
 
-  /* The settings fields fit a narrow panel two to a row, with the name across the top */
-  .app-body.has-sidebar #sec-settings > .row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
+.app-body.has-sidebar #sec-settings .tb-section {
+  width: 100%;
+}
 
-  .app-body.has-sidebar #sec-settings > .row > .fg:first-child {
-    grid-column: 1 / -1;
-  }
+/* The guild list is one column in the panel (phones keep their own two-line rows: css/responsive.css) */
+.app-body.has-sidebar #sec-guilds .guild-list.hide-mid {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+  grid-auto-flow: row;
+}
 
-  .app-body.has-sidebar #sec-settings > .row .fg {
-    min-width: 0;
-  }
-
-  .app-body.has-sidebar #sec-settings > .row .fg select,
-  .app-body.has-sidebar #sec-settings > .row .fg input.settings-input {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .app-body.has-sidebar #sec-settings .tb-section {
-    width: 100%;
-  }
-
-  /* The guild list is one column in the panel */
-  .app-body.has-sidebar #sec-guilds .guild-list.hide-mid {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: none;
-    grid-auto-flow: row;
-  }
-
+@media (min-width: 601px) {
   .app-body.has-sidebar #sec-guilds .guild-list.hide-mid .guild-row {
     /* handle | number | dot | name | small | exclude | remove */
     grid-template-columns: 18px 18px 14px minmax(100px, 1fr) auto auto 30px;
@@ -564,10 +631,11 @@ html.capturing .app-body.has-sidebar > .main {
   text-align: center;
 }
 
-/* ── Tabs ──
-   With the sidebar showing, the sections are tabs: html[data-tab] says which one is open (js/sidebar.js).
-   Status shows above the Grid; Final Scores and Total Occupation are the Scores tab. The sections hide with display:none, so Screenshots
-   (html.capturing) show them all, and a folded section stays open: the fold arrows are hidden. */
+/* ── Tabs (wide screens) ──
+   Beside the page, the sections are tabs: html[data-tab] says which one is open (js/sidebar.js). Status shows
+   above the Grid; Final Scores and Total Occupation are the Scores tab. The sections hide with display:none,
+   so Screenshots (html.capturing) show them all. Below this width the page is one long page, in the same
+   order. */
 @media (min-width: 1360px) {
   html:not(.capturing)
     .app-body.has-sidebar
@@ -598,42 +666,52 @@ html.capturing .app-body.has-sidebar > .main {
   html[data-tab='declares']:not(.capturing) .app-body.has-sidebar #capture-stats > #sec-declares {
     display: block;
   }
+}
 
-  /* Setup and Guilds are the sidebar's settings panel now; the other links are tabs */
-  .app-body.has-sidebar .jump-link:is([data-jump='sec-settings'], [data-jump='sec-guilds']) {
-    display: none;
-  }
+/* Setup and Guilds are the sidebar's settings panel now; the other links are tabs (or, on a narrower screen, jumps down the page) */
+.app-body.has-sidebar .jump-link:is([data-jump='sec-settings'], [data-jump='sec-guilds']) {
+  display: none;
+}
 
-  /* One section per tab (and Status above the Grid): it sits straight on the page instead of in a card of
+/* One section per tab (and Status above the Grid): it sits straight on the page instead of in a card of
      its own. Screenshots keep the cards. */
+html:not(.capturing)
+  .app-body.has-sidebar
+  #main-content
+  :is(#sec-status, #capture-grid > .section, #sec-map, #capture-stats > .section, #sec-messages) {
+  padding: 4px 0 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+html:not(.capturing) .app-body.has-sidebar #main-content #capture-stats > .section {
+  margin-bottom: 32px;
+}
+
+/* the grid and score sections sit in a wrapper with 2px of its own: line the others up with them */
+html:not(.capturing) .app-body.has-sidebar #main-content > :is(#sec-status, #sec-map, #sec-messages) {
+  padding-inline: 2px;
+}
+
+/* One long page below the wide layout: a line and some air between the sections, as the cards used to give */
+@media (max-width: 1359.98px) {
   html:not(.capturing)
     .app-body.has-sidebar
     #main-content
-    :is(#sec-status, #capture-grid > .section, #sec-map, #capture-stats > .section, #sec-messages) {
-    padding: 4px 0 0;
-    background: none;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
+    :is(#sec-map, #capture-stats > .section, #sec-messages, #capture-grid) {
+    margin-top: 8px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
   }
 
   html:not(.capturing) .app-body.has-sidebar #main-content #capture-stats > .section {
-    margin-bottom: 32px;
+    margin-bottom: 8px;
   }
 
-  /* the grid and score sections sit in a wrapper with 2px of its own: line the others up with them */
-  html:not(.capturing) .app-body.has-sidebar #main-content > :is(#sec-status, #sec-map, #sec-messages) {
-    padding-inline: 2px;
-  }
-
-  /* Nothing folds in a tab (the section is the whole page): css/base.css leaves folded sections open
-     on these screens, so just keep the gap under the title */
-  .app-body.has-sidebar #main-content .section[data-sec] > .sec-title .sec-toggle {
-    display: none;
-  }
-
-  .app-body.has-sidebar #main-content .section.collapsed > .sec-title {
-    margin-bottom: 16px;
+  html:not(.capturing) .app-body.has-sidebar #main-content #sec-messages {
+    margin-bottom: 8px;
   }
 }
 
@@ -676,57 +754,55 @@ html.capturing .app-body.has-sidebar > .main {
 }
 
 /* ── Tab bar and spotlight row: flat, tab bar stays at the top while you scroll (wide screens) ── */
-@media (min-width: 1360px) {
-  html:not(.capturing) .app-body.has-sidebar .jump-bar {
-    margin: 0 0 14px;
-    padding: 6px 0 0;
-    background: var(--bg);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border: none;
-    border-bottom: 1px solid var(--border);
-    border-radius: 0;
-  }
+html:not(.capturing) .app-body.has-sidebar .jump-bar {
+  margin: 0 0 14px;
+  padding: 6px 0 0;
+  background: var(--bg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+}
 
-  html:not(.capturing) .app-body.has-sidebar .jump-links {
-    gap: 2px;
-  }
+html:not(.capturing) .app-body.has-sidebar .jump-links {
+  gap: 2px;
+}
 
-  html:not(.capturing) .app-body.has-sidebar .jump-link {
-    padding: 8px 16px 9px;
-    border-radius: 0;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    background: none;
-  }
+html:not(.capturing) .app-body.has-sidebar .jump-link {
+  padding: 8px 16px 9px;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+}
 
-  html:not(.capturing) .app-body.has-sidebar .jump-link:hover {
-    background: none;
-    color: var(--text);
-    border-bottom-color: var(--border2);
-  }
+html:not(.capturing) .app-body.has-sidebar .jump-link:hover {
+  background: none;
+  color: var(--text);
+  border-bottom-color: var(--border2);
+}
 
-  html:not(.capturing) .app-body.has-sidebar .jump-link.active {
-    background: none;
-    color: var(--accent2);
-    border-bottom-color: var(--accent2);
-  }
+html:not(.capturing) .app-body.has-sidebar .jump-link.active {
+  background: none;
+  color: var(--accent2);
+  border-bottom-color: var(--accent2);
+}
 
-  .app-body.has-sidebar .spot-bar {
-    gap: 8px;
-    margin: 14px 0 16px;
-  }
+.app-body.has-sidebar .spot-bar {
+  gap: 8px;
+  margin: 14px 0 16px;
+}
 
-  .app-body.has-sidebar .spot-label {
-    margin-right: 6px;
-  }
+.app-body.has-sidebar .spot-label {
+  margin-right: 6px;
+}
 
-  .app-body.has-sidebar .spot-chip {
-    padding: 5px 12px;
-    font-size: 12px;
-  }
+.app-body.has-sidebar .spot-chip {
+  padding: 5px 12px;
+  font-size: 12px;
+}
 
-  .app-body.has-sidebar .spot-summary {
-    margin: -6px 0 16px;
-  }
+.app-body.has-sidebar .spot-summary {
+  margin: -6px 0 16px;
 }

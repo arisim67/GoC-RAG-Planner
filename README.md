@@ -23,7 +23,7 @@ and auto-balance points, Darkwick and dorm time across guilds with a built-in MI
 - **Import / export**: paste guild lists or daily placements; back up a whole server as JSON
 - **Save to Cloud**: share a live link with server leadership, with a preview card of scores and occupation
 - **Screenshots and daily messages** ready to paste into Discord, plus a short message per guild for the in-game guild chat
-- **Wide-screen layout**: a summary sidebar with guild scores, and the page's sections as tabs (Grid, Map, Scores, Declares, Messages)
+- **Layout**: a summary with guild scores (a sidebar on wide screens, above the page on phones and tablets); on wide screens the sections are tabs (Grid, Map, Scores, Declares, Messages), elsewhere one long page
 - **Themes**: Dark, Light and eight house themes, each with its crest
 - **Interactive tutorial** on first visit, replayable from the Tutorial button
 - Runs entirely in the browser and saves automatically to local storage
@@ -71,7 +71,7 @@ Commit messages are short and say what changed, in the imperative:
 │   ├── dialogs.css         Dialogs, toasts and the "We've moved" banner
 │   ├── responsive.css      Phone layout and screenshot mode (loaded last)
 │   ├── tour.css            Interactive tutorial
-│   ├── sidebar.css         The plan summary sidebar on wide screens
+│   ├── sidebar.css         The plan summary (sidebar or top of page), flat sections, tabs and settings panel
 │   └── themes.css          Light and house themes, and the theme menu (loaded after the rest)
 ├── js/
 │   ├── app.js              Entry point: startup, and what each button and field does
@@ -86,7 +86,6 @@ Commit messages are short and say what changed, in the imperative:
 │   ├── history.js          Undo and redo for changes to the plan
 │   ├── versions.js         Version history: saved copies of each server, and restoring them
 │   ├── spotlight.js        Guild spotlight: highlight one guild's towns
-│   ├── collapse.js         Folding sections down to their titles
 │   ├── status-jump.js      Status pills that jump to the problem
 │   ├── solve-panel.js      The panel shown while Auto-Optimize runs
 │   ├── map-view.js         The Map view: the event map for one day
@@ -98,6 +97,8 @@ Commit messages are short and say what changed, in the imperative:
 │   ├── optimize.js         Auto-Optimize (runs the solver in a Web Worker)
 │   ├── grid-fill.js        Select cells and drag to copy across days
 │   ├── grid-keys.js        Editing the Planning Grid from the keyboard
+│   ├── swipe-lock.js       Keeps up-and-down swipes from nudging a sideways-scrolling table
+│   ├── morph.js            Updates the page by changing only what differs after each edit
 │   ├── screenshots.js      Screenshots
 │   ├── cloud.js            Save to Cloud / Sync and shared plan links
 │   ├── preview.js          Draws the link-preview image for a shared plan

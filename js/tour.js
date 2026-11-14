@@ -30,8 +30,7 @@
 // If what the step asks for is already true when it opens (replaying the tour on a finished plan), it
 // is shown as an ordinary step instead of waiting for something that has already happened.
 
-import { applyCollapse, expandSection } from './collapse.js';
-import { showPanelFor, closePanels, setupIsPanel, isOnTab, currentTab, setTab } from './sidebar.js';
+import { showPanelFor, closePanels, setupIsPanel, tabsActive, isOnTab, currentTab, setTab } from './sidebar.js';
 import { startRule, validateStarts, isMidEvent, startingTownLimit } from './calc.js';
 
 // 2 for the move to the new site (November 2026), so everyone sees the updated tutorial once. Anyone
@@ -453,7 +452,7 @@ function buildSteps(srv) {
       target: 'stats',
       title: 'Check the balance',
       body: `Final scores, total occupation and the daily declares (▲) and giveaways (↓) for every guild.
-             Use these to fine-tune the plan by hand. (With the sidebar, scores and occupation are on the Scores tab and declares on their own.)`,
+             Use these to fine-tune the plan by hand. (On a wide screen, scores and occupation are on the Scores tab and declares on their own.)`,
       place: 'top',
     },
     {
@@ -715,7 +714,6 @@ function findTarget(step) {
 function targetEl(step) {
   const el = findTarget(step);
   if (!el) return null;
-  expandSection(el, { all: true, remember: false }); // a folded section opens while the tutorial shows it
   const r = el.getBoundingClientRect();
   return r.width || r.height ? el : null;
 }
@@ -932,6 +930,10 @@ function setMapSide(on) {
 
 function reposition() {
   if (!els) return;
+  // A step too long for the card scrolls its text; fade the bottom edge while there is more below, so
+  // a line is not left cut in half with nothing to say it goes on.
+  const tb = els.body;
+  tb.classList.toggle('tour-body-more', tb.scrollHeight - tb.scrollTop - tb.clientHeight > 4);
   const step = steps[index];
   const el = targetEl(step);
   const vw = window.innerWidth,
@@ -1007,8 +1009,20 @@ function reposition() {
   els.root.classList.remove('tour-dim');
 
   // Spotlight: the target's box, padded, clipped to the screen.
-  const pad = 8,
-    r = el.getBoundingClientRect();
+  const pad = 8;
+  let r = el.getBoundingClientRect();
+  // The Themes step: the person may open the menu, which hangs below the button. Light it up with the
+  // button instead of leaving it dimmed under the shadow.
+  const tmenu = el.id === 'theme-picker' ? el.querySelector('#theme-menu:not([hidden])') : null;
+  if (tmenu) {
+    const m = tmenu.getBoundingClientRect();
+    r = {
+      top: Math.min(r.top, m.top),
+      left: Math.min(r.left, m.left),
+      right: Math.max(r.right, m.right),
+      bottom: Math.max(r.bottom, m.bottom),
+    };
+  }
   const top = Math.max(r.top - pad, 4),
     left = Math.max(r.left - pad, 4);
   const bottom = Math.min(r.bottom + pad, vh - 4),
@@ -1083,11 +1097,10 @@ function endTour(finished = false) {
   els = null;
   document.body.classList.remove('tour-active');
   closePanels({ focus: false });
-  if (tabAtStart && setupIsPanel()) setTab(tabAtStart, { remember: false });
+  if (tabAtStart && tabsActive()) setTab(tabAtStart, { remember: false });
   tabAtStart = null;
   if (demoState && demoState.created) hooks.removeDemoServer(demoState.prevId);
   demoState = null;
-  applyCollapse(); // sections opened for the tour fold back the way they were
   window.scrollTo({ top: 0 });
   if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
   if (hooks.onEnd) hooks.onEnd({ finished });

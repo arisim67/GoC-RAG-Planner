@@ -105,6 +105,10 @@ body.tour-active .modal-bg.open {
   padding: 5px;
   margin: -5px;
 }
+.tour-card > .tour-body.tour-body-more {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+}
 .tour-card-center {
   left: 50% !important;
   top: 50% !important;

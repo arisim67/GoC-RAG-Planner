@@ -1,6 +1,7 @@
 // js/render.js
 // Builds the page: server tabs, settings, guilds, status, planning grid, stats and daily messages.
 
+import { morph } from './morph.js';
 import { state, activeSrv, numDays, save, numDisplayDays, GUILD_COLORS } from './state.js';
 import { gcolor } from './colors.js';
 import { esc, dateLabel, dateLabelShort, todayDay } from './ui.js';
@@ -18,7 +19,6 @@ import {
 } from './calc.js';
 import { openTabCtx, openAdd } from './servers.js';
 import { renderFillSel } from './grid-fill.js';
-import { applyCollapse, expandSection } from './collapse.js';
 import { getMapData, getMapList } from './maps/index.js';
 import {
   dailyPlans,
@@ -34,7 +34,7 @@ import { icon } from './icons.js';
 import { renderDiscord } from './discord-md.js';
 import { canUndo, canRedo, undoLabel, redoLabel } from './history.js';
 import { applySpotlight } from './spotlight.js';
-import { renderSidebar, openSetup, setupIsPanel, setTab, syncTabs, TAB_OF_JUMP } from './sidebar.js';
+import { renderSidebar, openSetup, setupIsPanel, tabsActive, setTab, syncTabs, TAB_OF_JUMP } from './sidebar.js';
 import { renderMapView, hasMapView } from './map-view.js';
 // Each mode's targets come from that mode's own model: Game of Claws has rules Ragnarok does not
 // (Darkwick needs a dorm or two lv1 towns behind it), so the GoC model is the only one that knows
@@ -150,40 +150,48 @@ function renderJumpBar(srv) {
   </div></nav>`;
 }
 let jumpObserver = null;
+let jumpCurrent = null; // the section at the top of the screen, for the bar's highlight on a long page
+const markJump = bar =>
+  bar.querySelectorAll('.jump-link').forEach(l => l.classList.toggle('active', l.dataset.jump === jumpCurrent));
 function wireJumpBar(mc) {
   const bar = mc.querySelector('.jump-bar');
   if (!bar) return;
-  bar.addEventListener('click', e => {
-    const a = e.target.closest('[data-jump]');
-    if (!a) return;
-    e.preventDefault(); // scroll without putting #section in the address bar
-    // With the sidebar, the Server Settings and the Guilds are one panel that slides in, not parts of the page
-    if ((a.dataset.jump === 'sec-settings' || a.dataset.jump === 'sec-guilds') && setupIsPanel()) {
-      openSetup();
-      return;
-    }
-    // ...and the other links are tabs: show that one
-    if (setupIsPanel() && TAB_OF_JUMP[a.dataset.jump]) {
-      setTab(TAB_OF_JUMP[a.dataset.jump], { scroll: true });
-      return;
-    }
-    const el = document.getElementById(a.dataset.jump);
-    expandSection(el);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+  // The bar is the same element from one render to the next now: listen once
+  if (!bar._wired) {
+    bar._wired = true;
+    bar.addEventListener('click', e => {
+      const a = e.target.closest('[data-jump]');
+      if (!a) return;
+      e.preventDefault(); // scroll without putting #section in the address bar
+      // With the sidebar, the Server Settings and the Guilds are one panel that slides in, not parts of the page
+      if ((a.dataset.jump === 'sec-settings' || a.dataset.jump === 'sec-guilds') && setupIsPanel()) {
+        openSetup();
+        return;
+      }
+      // ...and the other links are tabs: show that one
+      if (tabsActive() && TAB_OF_JUMP[a.dataset.jump]) {
+        setTab(TAB_OF_JUMP[a.dataset.jump], { scroll: true });
+        return;
+      }
+      const el = document.getElementById(a.dataset.jump);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
   // Highlight the section currently at the top of the screen.
   if (jumpObserver) jumpObserver.disconnect();
+  if (!tabsActive()) markJump(bar); // the redraw cleared the highlight: put it back before anyone sees it
   if (typeof IntersectionObserver === 'undefined') return;
   const visible = new Map();
   jumpObserver = new IntersectionObserver(
     entries => {
       entries.forEach(en => visible.set(en.target.id, en.isIntersecting));
-      if (setupIsPanel()) return; // tabs: the bar shows the open tab (syncTabs)
+      if (tabsActive()) return; // tabs: the bar shows the open tab (syncTabs)
       // Sections can nest (Declares is inside the Scores block), so the last one in page order wins.
-      const current = JUMPS.map(([id]) => id)
-        .filter(id => visible.get(id))
-        .pop();
-      bar.querySelectorAll('.jump-link').forEach(l => l.classList.toggle('active', l.dataset.jump === current));
+      jumpCurrent =
+        JUMPS.map(([id]) => id)
+          .filter(id => visible.get(id))
+          .pop() || jumpCurrent;
+      markJump(bar);
     },
     { rootMargin: '-56px 0px -60% 0px' },
   );
@@ -262,6 +270,12 @@ document.addEventListener('goc:tab', e => {
   requestAnimationFrame(fixPtsRow);
 });
 
+// Set by tests: the next render builds the page from scratch, to compare with the updated one
+let coldNext = false;
+export function forceColdRender() {
+  coldNext = true;
+}
+
 export function renderAll() {
   const srv = activeSrv();
   const mc = document.getElementById('main-content');
@@ -269,6 +283,8 @@ export function renderAll() {
   const appBody = document.querySelector('.app-body');
   if (!srv) {
     mc.innerHTML = renderWelcome();
+    delete mc.dataset.rendered;
+    if (sidebar) delete sidebar.dataset.rendered;
     if (sidebar) sidebar.innerHTML = '';
     if (appBody) appBody.classList.remove('has-sidebar');
     return;
@@ -295,7 +311,7 @@ export function renderAll() {
   const pageY = window.scrollY;
   const sidebarY = sidebar ? sidebar.scrollTop : 0;
 
-  mc.innerHTML = `
+  const pageHtml = `
     ${renderJumpBar(srv)}
     <div class="setup-panel">
       ${renderSettings(srv)}
@@ -319,16 +335,32 @@ export function renderAll() {
     
     ${renderMsgs(srv)}
   `;
+  // The same server as last time: change only what differs. A different server (or the welcome panel
+  // before it) starts from scratch, so nothing of the old one can carry over.
+  const key = srv.id + (srv.isViewOnly ? ':view' : '');
+  if (coldNext || mc.dataset.rendered !== key) {
+    mc.innerHTML = pageHtml;
+    mc.dataset.rendered = key;
+  } else {
+    morph(mc, pageHtml);
+  }
   mc.querySelectorAll(scrollSel).forEach((w, i) => {
     w.scrollLeft = hScroll[i] || 0;
   });
   if (sidebar) {
-    sidebar.innerHTML = renderSidebar(srv, { scores, targets, occ });
+    const sbHtml = renderSidebar(srv, { scores, targets, occ });
+    if (coldNext || sidebar.dataset.rendered !== key) {
+      sidebar.innerHTML = sbHtml;
+      sidebar.dataset.rendered = key;
+    } else {
+      morph(sidebar, sbHtml);
+    }
     sidebar.scrollTop = sidebarY;
   }
   if (appBody) appBody.classList.add('has-sidebar');
-  applyCollapse(mc);
   window.scrollTo(0, pageY);
+  fixPtsRow();
+  coldNext = false;
   wireJumpBar(mc);
   syncTabs();
   applySpotlight(mc);
@@ -340,7 +372,9 @@ export function renderAll() {
   // Drag and drop to reorder guilds
   const guildListEl = document.getElementById('guild-list');
   if (guildListEl && !srv.isViewOnly && typeof Sortable !== 'undefined') {
-    new Sortable(guildListEl, {
+    // (the list can be the same element as last time, still holding the old plan's handler)
+    if (guildListEl._sortable) guildListEl._sortable.destroy();
+    guildListEl._sortable = new Sortable(guildListEl, {
       handle: '.drag-handle', // Prevents accidental dragging when typing in inputs
       draggable: '.guild-row[data-id]', // the column header row stays put
       animation: 150,

@@ -86,6 +86,7 @@ import {
 } from './map-view.js';
 import { initWhatsNew, whatsNewAfterTour } from './whats-new.js';
 import './grid-keys.js'; // keyboard editing for the Planning Grid
+import './swipe-lock.js'; // up-and-down swipes no longer nudge a sideways-scrolling table
 import { initThemePicker } from './theme.js';
 import { openSetup, closePanels, initSidebarResize, initTabs } from './sidebar.js';
 

@@ -3,9 +3,8 @@
 // every problem on a day, the guilds declaring too many towns, or the day a guild is wiped. The
 // section opens if it was folded, and the cells flash so they're easy to spot.
 
-import { expandSection } from './collapse.js';
 import { usingTouch } from './ui.js';
-import { setTab, setupIsPanel } from './sidebar.js';
+import { setTab, tabsActive } from './sidebar.js';
 
 const FLASH_MS = 2400;
 
@@ -35,11 +34,10 @@ function focusCell(td) {
 export function statusJump(btn) {
   const { kind, day, k, g } = btn.dataset;
   // With tabs, show the one the problem is on: declares have their own, everything else is in the grid
-  if (setupIsPanel()) setTab(kind === 'declares' ? 'declares' : 'grid', { remember: false });
+  if (tabsActive()) setTab(kind === 'declares' ? 'declares' : 'grid', { remember: false });
 
   if (kind === 'declares') {
     const sec = document.getElementById('sec-declares');
-    expandSection(sec);
     const cells = [...sec.querySelectorAll('.dc-bad')].map(el => el.closest('td'));
     if (!cells.length) return;
     bringIntoView(cells[0]);
@@ -48,7 +46,6 @@ export function statusJump(btn) {
   }
 
   const grid = document.getElementById('capture-grid');
-  expandSection(grid);
   const table = grid.querySelector('table.ptbl');
   if (!table) return;
 
