@@ -698,6 +698,11 @@ th .today-tag {
   height: auto;
 }
 
+/* Names stay the size you read them at while the map zooms (phones draw them bigger, below) */
+.map-label-in {
+  transform: scale(calc(1 / var(--zs, 1)));
+}
+
 /* Wide screens (the sections are tabs): the map shrinks to fit the height of the window, so when you
    scroll to the Map section the whole map shows (it may be cut off while the page is at the top). Its width follows its shape (the aspect-ratio set on the svg), and
    it stays centered; the frame is drawn on the svg itself, so it hugs the map. */
@@ -750,7 +755,7 @@ th .today-tag {
     overflow: visible;
   }
   .map-label-in {
-    transform: translateY(14px) scale(1.7);
+    transform: translateY(calc(14px / var(--zs, 1))) scale(calc(1.7 / var(--zs, 1)));
   }
 }
 
@@ -970,6 +975,76 @@ th .today-tag {
 .map-town.pickable:focus-visible .map-base {
   stroke: #fff;
   stroke-width: 10;
+}
+
+/* The town picked on Day 0, waiting for a guild */
+.map-town.selected .map-base {
+  stroke: #fff;
+  stroke-width: 12;
+  stroke-dasharray: none;
+}
+
+.map-town.selected .map-label rect {
+  stroke: #fff;
+  stroke-width: 4;
+}
+
+/* Zooming the map (js/map-zoom.js): + / - / Fit in the corner; one finger still scrolls the page until
+   the map is zoomed in, then it moves around the map */
+.map-frame {
+  position: relative;
+  touch-action: pan-y;
+}
+
+.map-frame.zoomed {
+  touch-action: none;
+  cursor: grab;
+}
+
+.map-svg.zoomed {
+  overflow: hidden;
+}
+
+.map-zoomctl {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  gap: 4px;
+}
+
+.map-zoomctl button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: color-mix(in srgb, var(--bg2) 88%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.map-zoomctl button[hidden] {
+  display: none;
+}
+
+.map-zoomctl .icon {
+  width: 16px;
+  height: 16px;
+}
+
+@media (hover: hover) {
+  .map-zoomctl button:hover {
+    background: var(--bg3);
+  }
 }
 
 .map-disclaimer {

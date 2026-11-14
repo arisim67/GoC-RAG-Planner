@@ -1,7 +1,7 @@
 // js/handlers.js
 // Edits made in the page: server settings, guild fields, grid cells, clearing days, copying messages.
 
-import { activeSrv, save, numDays, nextGuildColor, MAX_GUILDS } from './state.js';
+import { activeSrv, save, numDays, nextGuildColor, MAX_GUILDS, defaultGuildCount } from './state.js';
 import { renderTabs, renderAll } from './render.js';
 import { showToast, todayDay } from './ui.js';
 import { todayMessage } from './messages.js';
@@ -22,6 +22,16 @@ export function updName(v) {
   const sbName = document.querySelector('.sb-server');
   if (sbName) sbName.textContent = v;
 }
+// Add or drop guilds (from the end of the list) until there are n
+function fitGuilds(s, n) {
+  while (s.guilds.length < n)
+    s.guilds.push({
+      id: 'g' + Date.now() + '_' + s.guilds.length,
+      name: `Guild ${s.guilds.length + 1}`,
+      color: nextGuildColor(s.guilds),
+    });
+  while (s.guilds.length > n) s.guilds.pop();
+}
 export function updMode(v) {
   const s = activeSrv();
   if (!s) return;
@@ -30,14 +40,7 @@ export function updMode(v) {
   const maps = getMapList(v);
   s.mapKey = maps[0].key;
   // reset guilds to mode default
-  const n = v === 'ragnarok' ? 4 : 8;
-  while (s.guilds.length < n)
-    s.guilds.push({
-      id: 'g' + Date.now() + '_' + s.guilds.length,
-      name: `Guild ${s.guilds.length + 1}`,
-      color: nextGuildColor(s.guilds),
-    });
-  while (s.guilds.length > n) s.guilds.pop();
+  fitGuilds(s, defaultGuildCount(v, s.mapKey));
   resetPlan(s);
   clearHistory(s);
   save();
@@ -47,7 +50,10 @@ export function updMap(v) {
   const s = activeSrv();
   if (!s) return;
   takeVersion(s, 'Before changing the map');
+  // A guild list still at the old map's default size follows the new map's default
+  const was = s.guilds.length === defaultGuildCount(s.mode, s.mapKey);
   s.mapKey = v;
+  if (was) fitGuilds(s, defaultGuildCount(s.mode, v));
   resetPlan(s);
   clearHistory(s);
   save();

@@ -4,6 +4,38 @@
 import { activeSrv } from './state.js';
 import { setBtnLabel } from './icons.js';
 
+// html2canvas can't read the CSS color() form that browsers report for color-mix() (the Today column
+// uses it), and gives up on the whole capture. In its cloned page, rewrite those colors as rgba().
+const COLOR_FN = /color\(srgb ([\d.e+-]+) ([\d.e+-]+) ([\d.e+-]+)(?: \/ ([\d.e+-]+))?\)/g;
+const toRgba = v =>
+  v.replace(
+    COLOR_FN,
+    (_, r, g, b, a) => `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${a ?? 1})`,
+  );
+function fixColors(doc) {
+  const props = [
+    'background-color',
+    'color',
+    'border-top-color',
+    'border-right-color',
+    'border-bottom-color',
+    'border-left-color',
+    'box-shadow',
+    'text-shadow',
+    'outline-color',
+    'fill',
+    'stroke',
+  ];
+  const win = doc.defaultView;
+  doc.querySelectorAll('*').forEach(el => {
+    const cs = win.getComputedStyle(el);
+    for (const p of props) {
+      const v = cs.getPropertyValue(p);
+      if (v.includes('color(')) el.style.setProperty(p, toRgba(v), 'important');
+    }
+  });
+}
+
 export async function takeScreenshots(e) {
   const evt = e || window.event;
   const btn =
@@ -146,6 +178,7 @@ export async function takeScreenshots(e) {
       windowHeight: gridH + 200,
       scrollX: 0,
       scrollY: 0,
+      onclone: fixColors,
     });
 
     const canvasStats = await html2canvas(statsEl, {
@@ -157,6 +190,7 @@ export async function takeScreenshots(e) {
       windowHeight: statsH + 200,
       scrollX: 0,
       scrollY: 0,
+      onclone: fixColors,
     });
 
     // Instantly restore the UI back to normal

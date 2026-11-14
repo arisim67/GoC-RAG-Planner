@@ -101,7 +101,7 @@ export function showWhatsNew() {
   bg.innerHTML = `
     <div class="modal modal-whatsnew" role="dialog" aria-modal="true" aria-labelledby="wn-title">
       <h3 id="wn-title">${icon('sparkles')} What's new</h3>
-      <p class="wn-intro">The planner has a new home and a lot of new features. Here are the highlights:</p>
+      <p class="wn-intro">The planner has a new home, new look, and a lot of new features! Here are the highlights:</p>
       <ul class="wn-list">
         ${ITEMS.filter(([, , , extra]) => !(extra === 'desktop' && touchOnly()))
           .map(

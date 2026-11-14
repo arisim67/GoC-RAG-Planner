@@ -24,7 +24,7 @@ The GoC / Ragnarok Planner, made by ari (EA-4, 43, 45) and gharial (EA-44), help
 
 ## Quick start
 
-1. **Add a server.** Click **+ Add Server** and fill in the server name, mode, map and event dates. The mode sets the declare limits and which maps you can pick.
+1. **Add a server.** Click **+ Add Server** and fill in the server name, mode, map and event dates. The mode sets the declare limits and which maps you can pick, and a new Game of Claws server starts with as many guilds as start with towns on that map (9 on Forest, Snowfield and Badlands, 7 on Wetland, 6 on Woodlands). Ragnarok starts with 4.
 2. **Add your guilds.** Type their names in the Guilds list, or click **Import** and paste the whole list.
 3. **Plan the grid.** Pick who holds each town on each day, starting with Day 0 (set the starting towns in the grid or by tapping them on the [Map](#map)), or click **Auto-Optimize** to have the planner work it out.
 4. **Check it.** Every pill under **Status** should be green. A red one takes you straight to the problem.
@@ -35,25 +35,23 @@ The GoC / Ragnarok Planner, made by ari (EA-4, 43, 45) and gharial (EA-44), help
 ## Getting around
 
 - **Section links:** the bar of links at the top (Grid, Map, Scores, Declares and Messages; Setup and Guilds are in the settings panel, see below) stays on screen as you scroll. On a phone or tablet it jumps down the page and highlights the section you're in; on a wide screen the links are tabs.
-- **Summary and settings panel:** at the top of the page (on screens at least 1360 pixels wide, in a flat panel beside the page that stays in view as you scroll) is a summary. It shows the server's name and details, a **Server & guild setup** button, **Auto-Optimize** (with how long the last solve took) and **Save to Cloud** side by side, and a tile for each guild with its final points, castle and dorm counts, and difference from its target (one line per guild in Ragnarok). Click a guild to Spotlight it. On a wide screen, drag the sidebar's right edge to make it wider or narrower (it stops at the narrowest width that still fits the buttons and tiles; double-click the edge to reset it, or focus it and use the arrow keys); the width is remembered in this browser. **Server & guild setup** opens the name, mode, map, dates, the Plan, Files and Share buttons, and the guild list as one panel from the right. Close it with the × button, Esc or a click outside. On a wide screen the page's sections are **tabs**: Grid, Map, Scores (Final Scores and Total Occupation), Declares and Messages, with Status above the Grid. The tab bar stays at the top as you scroll, the open tab is remembered, and the map is sized to your window's height. On a phone or tablet the summary sits above one long page with the same sections in the same order (Status, Grid, Map, Scores, Declares, Messages), and the bar of links stays at the top as you scroll. Screenshots never include the summary and always show every section.
+- **Summary and settings panel:** at the top of the page (on screens at least 1360 pixels wide, in a flat panel beside the page that stays in view as you scroll) is a summary. It shows the server's name and details, a **Server & Guild Setup** button, **Auto-Optimize** (with how long the last solve took) and **Save to Cloud** side by side, and a tile for each guild with its final points, castle and dorm counts, and difference from its target (one line per guild in Ragnarok). Click a guild to Spotlight it. On a wide screen, drag the sidebar's right edge to make it wider or narrower (it stops at the narrowest width that still fits the buttons and tiles; double-click the edge to reset it, or focus it and use the arrow keys); the width is remembered in this browser. **Server & Guild Setup** opens the name, mode, map, dates, the Plan, Files and Share buttons, and the guild list as one panel from the right. Close it with the × button, Esc or a click outside. On a wide screen the page's sections are **tabs**: Grid, Map, Scores (Final Scores and Total Occupation), Declares and Messages, with Status above the Grid. The tab bar stays at the top as you scroll, the open tab is remembered, and the map is sized to your window's height. On a phone or tablet the summary sits above one long page with the same sections in the same order (Status, Grid, Map, Scores, Declares, Messages), and the bar of links stays at the top as you scroll. Screenshots never include the summary and always show every section.
 - **Themes:** the menu in the header switches between Dark, Light and the eight house themes, each house theme with its crest and an accent color taken from it. Your pick is saved in this browser (not per server), and Screenshots use whichever theme is on. On Light, guilds are drawn in a separate set of bright colors chosen to read on the pale background. Shared plans and link previews always use the default look.
 - **Server tabs:** each server you plan has its own tab along the top. Right-click a tab (or press and hold on a phone) to rename, duplicate or delete it.
 
 ## Servers
 
-![The server settings and toolbar, with numbered buttons](images/toolbar.png)
+![The server settings panel, with numbered buttons](images/toolbar.png)
 
-The settings at the top hold the server's name, mode, map and event dates. The toolbar under them:
+**Server & Guild Setup** (in the summary beside the page) opens the server's name, mode, map and event dates, and the buttons below. **Auto-Optimize** and **Save to Cloud** stay in the summary, where they're always in reach. See [Auto-Optimize](#auto-optimize) and [Sharing the plan](#sharing-the-plan).
 
-1. **Auto-Optimize:** works out a whole plan for you. See [Auto-Optimize](#auto-optimize).
+1. **History:** saved copies of this server that you can go back to. See [Saving, backups and support](#saving-backups-and-support).
 2. **Import:** paste a guild list or a day's town owners, or load a server backup file.
 3. **Export Server:** downloads a backup of this server as a `.json` file.
 4. **Screenshots:** saves images of the grid and tables to share in Discord.
-5. **History:** saved copies of this server that you can go back to. See [Saving, backups and support](#saving-backups-and-support).
-6. **Save to Cloud:** saves the plan online and copies a link to share. See [Sharing the plan](#sharing-the-plan).
-7. **Sync from Cloud:** brings back the version saved online.
-8. **Copy Today's Message:** copies today's daily message. It only appears while the event is running.
-9. **Clear Plan:** empties every day of the grid. A copy is kept in History first, and **Undo** brings it back.
+5. **Sync from Cloud:** brings back the version saved online.
+6. **Copy Today's Message:** copies today's daily message. It only appears while the event is running.
+7. **Clear Plan:** empties every day of the grid. A copy is kept in History first, and **Undo** brings it back.
 
 **Deleting a server** asks you to confirm first. A copy is kept in **History**, so a server deleted by mistake can be brought back.
 
@@ -159,10 +157,12 @@ The **Map** section, under the grid, shows the event map the way it looks in the
 
 - **Pick a day** with the buttons above the map. It opens on today while an event is running, and on Day 1 otherwise.
 - **White dashes around the base** mark a town that changed hands that day, and **a glowing road in the taker's color** shows which of its towns (as of the day before) it was taken from.
-- **Set Day 0 on the map.** On Day 0, pick a guild in the **Starting towns** row above the map, then tap the towns it starts with, plain towns only (dorms and the castle can't be picked at the start). Each button counts them (like 3/4), and once a guild has all of its towns the next guild is picked for you. Tap a town again to clear it, or pick **Clear** and tap towns to empty them. It fills in the grid's Day 0 just as typing there would, and **Undo** takes it back.
+- **Set Day 0 on the map.** On Day 0, tap a plain town to select it (it gets a white outline; dorms and the castle can't be picked at the start), then tap the guild that starts there in the **Starting towns** row above the map. That matches how you scroll through the in-game map, placing guilds as you see their towns. Each guild's button counts its towns (like 3/4), a guild that already has all of them can't take another, and **Clear** empties the selected town. Tap the selected town again to let go of it. It fills in the grid's Day 0 just as typing there would, and **Undo** takes it back.
 - **Hover a town** (or press and hold on a phone) to see its name, who holds it and whether it was taken that day.
 - **Spotlight** works here too: pick a guild above the grid and the other guilds' towns fade.
 - As in the game, each town has a cat in front of it, and each dorm and Darkwick a ghoul, picked at random for each server (a dorm only gets its own house's members), so they won't match your in-game map.
+
+- **Zoom and move.** Pinch to zoom and drag with one finger to move around once zoomed in (a swipe on the unzoomed map still scrolls the page). The **+** and **−** buttons on the map's corner do the same, **Fit** shows the whole map again, and on a computer Ctrl or ⌘ plus the scroll wheel zooms. Your zoom is kept when you change days.
 
 On a phone the whole map shrinks to fit the screen, with bigger name tags so they stay readable.
 

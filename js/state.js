@@ -58,12 +58,17 @@ export function numDisplayDays(srv) {
   return numDays(srv) + 1;
 }
 
+// Game of Claws: how many guilds start with 2 towns on each map (the next guild starts with 1 and the
+// rest with none). Maps not listed here use 8.
+export const GOC_TWO_TOWNS = { forest: 8, wetland: 6, snowfield: 8, woodlands: 5, badlands: 8 };
+
+// How many guilds a new server starts with: Ragnarok always has 4; in Game of Claws it is the guilds
+// that start with towns on the map (the two-town guilds plus the one that starts with 1).
+export const defaultGuildCount = (mode, mapKey) => (mode === 'ragnarok' ? 4 : (GOC_TWO_TOWNS[mapKey] ?? 8) + 1);
+
 export function mkSrv(name, mode, mapKey, startDate, endDate) {
   const mapData = getMapData(mode, mapKey);
-  const defGuilds =
-    mode === 'ragnarok'
-      ? ['Guild 1', 'Guild 2', 'Guild 3', 'Guild 4']
-      : Array.from({ length: 8 }, (_, i) => `Guild ${i + 1}`);
+  const defGuilds = Array.from({ length: defaultGuildCount(mode, mapKey) }, (_, i) => `Guild ${i + 1}`);
   const guilds = defGuilds.map((n, i) => ({
     id: 'g' + i,
     name: n,

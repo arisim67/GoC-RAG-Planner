@@ -78,12 +78,13 @@ import { statusJump } from './status-jump.js';
 import {
   setMapDay,
   showMapDay,
-  setMapPick,
-  getMapPick,
+  getSelectedTown,
+  selectTown,
+  clearSelectedTown,
   startingTownLimit,
   startingCount,
-  advanceMapPick,
 } from './map-view.js';
+import { zoomButton } from './map-zoom.js';
 import { initWhatsNew, whatsNewAfterTour } from './whats-new.js';
 import './grid-keys.js'; // keyboard editing for the Planning Grid
 import './swipe-lock.js'; // up-and-down swipes no longer nudge a sideways-scrolling table
@@ -185,6 +186,34 @@ if (!forwardSharedLink()) {
 
 setMessagesRerender(renderAll);
 
+// Give a town to a guild on Day 0 ('' clears it), unless that guild already has all its starting towns
+function setStartingTown(srv, k, next) {
+  const cur = (srv.plan[0] || {})[k] || '';
+  if (cur === next) {
+    clearSelectedTown(srv.id);
+    renderAll();
+    return;
+  }
+  const max = startingTownLimit(srv, next);
+  if (next && !isMidEvent(srv) && startingCount(srv, next) >= max) {
+    const g = srv.guilds.find(x => x.id === next);
+    showToast(
+      `${g ? g.name : 'That guild'} ${max ? `already has ${max} starting town${max === 1 ? '' : 's'}. Tap one of them to clear it first.` : 'doesn’t start with any towns on this map.'}`,
+      false,
+      3500,
+    );
+    return;
+  }
+  recordChange(srv, 'Starting towns on the map');
+  if (!srv.plan[0]) srv.plan[0] = {};
+  srv.plan[0][k] = next;
+  clearSelectedTown(srv.id);
+  save();
+  renderAll();
+  const again = document.querySelector(`#sec-map .map-town[data-k="${CSS.escape(k)}"]`);
+  if (again) again.focus({ preventScroll: true });
+}
+
 // ── What each button and field does ──────────────────────────────
 const guildId = el => el.dataset.guildId || el.dataset.id;
 
@@ -232,44 +261,26 @@ registerActions('click', {
   'status-jump': statusJump,
   'open-setup': () => openSetup(),
   'close-setup': () => closePanels(),
-  'map-pick': btn => {
-    setMapPick(btn);
-    renderAll();
-  },
-  // Day 0 on the map: give the tapped town to the picked guild, or clear it (tapping a town the
-  // picked guild already has also clears it).
+  // Day 0 on the map: tap a town to select it, then tap a guild (or Clear) to place it there.
   'map-town': el => {
     const srv = activeSrv();
     if (!srv || srv.isViewOnly) return;
-    const pick = getMapPick(srv.id);
-    if (pick === undefined) {
-      showToast('Pick a guild above the map first, then tap its towns.', false, 3000);
-      return;
-    }
-    const k = el.dataset.k;
-    const cur = (srv.plan[0] || {})[k] || '';
-    const next = pick && cur !== pick ? pick : '';
-    if (cur === next) return;
-    const max = startingTownLimit(srv, next);
-    if (next && !isMidEvent(srv) && startingCount(srv, next) >= max) {
-      const g = srv.guilds.find(x => x.id === next);
-      showToast(
-        `${g ? g.name : 'That guild'} ${max ? `already has ${max} starting town${max === 1 ? '' : 's'}. Tap one of them to clear it first.` : 'doesn’t start with any towns on this map.'}`,
-        false,
-        3500,
-      );
-      return;
-    }
-    recordChange(srv, 'Starting towns on the map');
-    if (!srv.plan[0]) srv.plan[0] = {};
-    srv.plan[0][k] = next;
-    advanceMapPick(srv);
-    save();
+    selectTown(srv.id, el.dataset.k);
     renderAll();
-    const again = document.querySelector(`#sec-map .map-town[data-k="${CSS.escape(k)}"]`);
-    if (again) again.focus({ preventScroll: true });
   },
+  'map-pick': btn => {
+    const srv = activeSrv();
+    if (!srv || srv.isViewOnly) return;
+    const k = getSelectedTown(srv.id);
+    if (!k) {
+      showToast('Tap a town on the map first, then tap its guild.', false, 2500);
+      return;
+    }
+    setStartingTown(srv, k, btn.dataset.g);
+  },
+  'map-zoom': zoomButton,
   'map-day': btn => {
+    clearSelectedTown(activeSrv()?.id);
     setMapDay(btn);
     renderAll();
   },

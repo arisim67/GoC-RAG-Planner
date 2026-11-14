@@ -11,6 +11,7 @@ import { gcolor } from './colors.js';
 import { LAYOUTS } from './maps/layouts.js';
 import { ROADS } from './maps/roads.js';
 import { BUILDINGS, GHOULS, TOWN_SIZE, TOWN_CATS } from './maps/art.js';
+import { zoomView } from './map-zoom.js';
 
 const chosen = new Map(); // server id -> day being shown
 
@@ -24,30 +25,21 @@ export function showMapDay(srvId, day) {
   chosen.set(srvId, day);
 }
 
-// Setting Day 0 on the map: the guild picked above the map (per server). '' is the eraser; no entry
-// means nothing is picked yet, so taps on towns do nothing.
-const picked = new Map();
-export function setMapPick(btn) {
-  const id = btn.dataset.srv;
-  picked.set(id, picked.get(id) === btn.dataset.g ? undefined : btn.dataset.g);
+// Setting Day 0 on the map: tap a town to select it (per server), then tap a guild's button above the
+// map to place that guild on it. Tapping the selected town again lets go of it.
+const selected = new Map();
+export const getSelectedTown = srvId => selected.get(srvId);
+export function selectTown(srvId, k) {
+  selected.set(srvId, selected.get(srvId) === k ? undefined : k);
 }
-export const getMapPick = srvId => picked.get(srvId);
+export const clearSelectedTown = srvId => selected.delete(srvId);
 
 export { startingTownLimit };
 export const startingCount = (srv, gid) => Object.values(srv.plan[0] || {}).filter(v => v === gid).length;
 
-// After a guild's last starting town, move the picker on to the next guild still short of towns.
-export function advanceMapPick(srv) {
-  if (isMidEvent(srv)) return;
-  const cur = picked.get(srv.id);
-  if (!cur || startingCount(srv, cur) < startingTownLimit(srv, cur)) return;
-  const order = srv.guilds.map(g => g.id);
-  const at = order.indexOf(cur);
-  const next = [...order.slice(at + 1), ...order.slice(0, at)].find(
-    id => startingCount(srv, id) < startingTownLimit(srv, id),
-  );
-  picked.set(srv.id, next);
-}
+// The guilds that can be given starting towns (not ones that start with nothing)
+const startGuilds = (srv, mid) =>
+  srv.guilds.filter(g => mid || startingTownLimit(srv, g.id) > 0 || startingCount(srv, g.id) > 0);
 
 const FONT = 34;
 const PILL_H = 54;
@@ -198,32 +190,30 @@ export function renderMapView(srv, mapData, days) {
   // middle (Planning mid-event on under Guilds), Day 0 can be anything.
   const mid = isMidEvent(srv);
   const tally = id => (mid ? `${startingCount(srv, id)}` : `${startingCount(srv, id)}/${startingTownLimit(srv, id)}`);
-  const cur = picked.get(srv.id);
+  const sel = editing ? selected.get(srv.id) : undefined;
+  const holder = sel ? (srv.plan[0] || {})[sel] || '' : '';
   const pickBar = editing
-    ? `<div class="map-pick" role="group" aria-label="Guild to place on the map">
+    ? `<div class="map-pick" role="group" aria-label="Guild to place on the selected town">
         <span class="map-pick-label">Starting towns</span>
-        ${srv.guilds
-          .filter(g => mid || startingTownLimit(srv, g.id) > 0 || startingCount(srv, g.id) > 0) // not guilds that start with nothing
+        ${startGuilds(srv, mid)
           .map(
             g => `<button type="button" class="map-pick-btn" data-action="map-pick" data-srv="${esc(srv.id)}" data-g="${g.id}"
-              aria-pressed="${cur === g.id}" style="--c:${gcolor(g.color)}"><span class="map-key-dot" style="background:${gcolor(g.color)}"></span>${esc(g.name)}
+              aria-pressed="${!!sel && holder === g.id}" style="--c:${gcolor(g.color)}"><span class="map-key-dot" style="background:${gcolor(g.color)}"></span>${esc(g.name)}
               <span class="map-pick-count${!mid && startingCount(srv, g.id) >= startingTownLimit(srv, g.id) ? ' full' : ''}">${tally(g.id)}</span></button>`,
           )
           .join('')}
-        <button type="button" class="map-pick-btn eraser" data-action="map-pick" data-srv="${esc(srv.id)}" data-g=""
-          aria-pressed="${cur === ''}">${icon('eraser')} Clear</button>
+        <button type="button" class="map-pick-btn eraser" data-action="map-pick" data-srv="${esc(srv.id)}" data-g="">${icon('eraser')} Clear</button>
         <span class="map-pick-hint">${
-          cur === undefined
-            ? mid
-              ? 'Pick a guild, then tap what it holds now on the map.'
-              : `Pick a guild, then tap its starting towns on the map (towns only, no dorms or castle). ${startRule(srv)}`
+          sel
+            ? `${esc(sel)} is selected. Tap a guild to place it there, or Clear to empty it.`
             : mid
-              ? 'Tap towns, dorms or the castle to give them to this guild; tap one again to clear it.'
-              : `Tap towns to give them to this guild; tap one again to clear it. ${startRule(srv)}`
+              ? 'Tap a town, dorm or the castle, then tap the guild that holds it.'
+              : `Tap a town, then tap the guild that starts there (towns only, no dorms or castle). ${startRule(srv)}`
         }</span>
       </div>`
     : '';
 
+  const zv = zoomView(srv.id, layout.w, layout.h);
   const onDorms = dormGhouls(srv, mapData);
   const held = {};
   const towns = mapData.kingdoms
@@ -260,7 +250,7 @@ export function renderMapView(srv, mapData, days) {
         editing && (k.type === 'lv1' || mid)
           ? ` data-action="map-town" data-k="${esc(k.id)}" tabindex="0" role="button" aria-label="${esc(tip)}"`
           : '';
-      return `<g class="map-town ${k.type}${g ? '' : ' empty'}${taken ? ' taken' : ''}${editing ? ' pickable' : ''}"
+      return `<g class="map-town ${k.type}${g ? '' : ' empty'}${taken ? ' taken' : ''}${editing ? ' pickable' : ''}${editing && selected.get(srv.id) === k.id ? ' selected' : ''}"
         ${g ? `data-g="${g.id}" style="--c:${gcolor(g.color)}"` : ''}${pick}>
         <title>${esc(tip)}</title>
         ${pic}
@@ -291,13 +281,21 @@ export function renderMapView(srv, mapData, days) {
     <div class="map-days" role="group" aria-label="Day to show">${Array.from({ length: days + 1 }, (_, d) => dayBtn(d)).join('')}</div>
     ${pickBar}
     <div class="map-wrap">
-      <svg class="map-svg${layout.bg ? ' has-bg' : ''}" viewBox="0 0 ${layout.w} ${layout.h}" style="aspect-ratio:${layout.w}/${layout.h}" role="img"
+      <div class="map-frame${zv.zoomed ? ' zoomed' : ''}">
+      <div class="map-zoomctl" role="group" aria-label="Zoom the map">
+        <button type="button" data-action="map-zoom" data-dir="in" aria-label="Zoom in" title="Zoom in (or pinch)">${icon('plus')}</button>
+        <button type="button" data-action="map-zoom" data-dir="out" aria-label="Zoom out" title="Zoom out">${icon('minus')}</button>
+        <button type="button" data-action="map-zoom" data-dir="reset" class="map-zoom-fit"${zv.zoomed ? '' : ' hidden'} title="Show the whole map">Fit</button>
+      </div>
+      <svg class="map-svg${layout.bg ? ' has-bg' : ''}${zv.zoomed ? ' zoomed' : ''}" viewBox="${zv.viewBox}" data-w="${layout.w}" data-h="${layout.h}" data-srv="${esc(srv.id)}"
+        style="aspect-ratio:${layout.w}/${layout.h}${zv.zoomed ? `;--zs:${zv.scale}` : ''}" role="img"
         aria-label="${esc(mapData.name)} on day ${day}: who holds each town">
         ${layout.bg ? `<image class="map-bg" href="${layout.bg.src}" x="${layout.bg.x}" y="${layout.bg.y}" width="${layout.bg.w ?? layout.bg.size}" height="${layout.bg.h ?? layout.bg.size}"/>` : ''}
         <g class="map-roads">${roads.join('')}</g>
         <g class="map-attacks">${attacks.join('')}</g>
         <g class="map-towns">${towns}</g>
       </svg>
+      </div>
     </div>
     </div>
     <div class="map-legend">${legend}<span class="map-key-note"><span class="map-ring taken"></span>Taken this day</span>${

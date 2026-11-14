@@ -216,15 +216,15 @@ function setupSteps() {
       target: 'map',
       title: '…or tap them on the map',
       before: () => hooks.showMapDay0 && hooks.showMapDay0(),
-      body: () => `The second way: the <b>Map</b> shows Day 0 too. Pick a guild in the <b>Starting towns</b> row
-             above it, then tap its towns. Each button counts them (like 1/2), and once a guild has
-             all of its towns the next one is picked for you. Tap a town again to clear it.
+      body: () => `The second way: the <b>Map</b> shows Day 0 too. Tap a town to select it, then tap its
+             guild in the <b>Starting towns</b> row above the map to place it there. Each guild's button
+             counts its towns (like 1/2), and <b>Clear</b> empties the selected town.
              <br><br>Both ways fill in the same Day 0, so use whichever is easier — or mix them.
              Later, the day buttons above the Map show any day of the plan, with each day's attacks drawn as glowing roads.`,
       wait: {
         snap: day0,
         done: s0 => day0() !== s0,
-        hint: 'Pick a guild, then tap one of its towns…',
+        hint: 'Tap a town, then tap its guild…',
       },
       place: 'top',
     },
@@ -427,7 +427,7 @@ function buildSteps(srv) {
       body: `The <b>Map</b> shows any day the way it looks in the game: each town in the color of the guild
              holding it. Pick a day with the buttons above it.
              <br><br>A dashed ring marks a town taken that day, and a glowing road shows where it was taken from.
-             <br><br>On <b>Day 0</b> you can set the starting towns here: pick a guild above the map, then tap its towns.`,
+             <br><br>On <b>Day 0</b> you can set the starting towns here: tap a town to select it, then tap its guild above the map to place it there. Pinch to zoom in on a phone.`,
       place: 'top',
     },
     statusStep(

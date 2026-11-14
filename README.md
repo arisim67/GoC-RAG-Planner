@@ -89,6 +89,7 @@ Commit messages are short and say what changed, in the imperative:
 │   ├── status-jump.js      Status pills that jump to the problem
 │   ├── solve-panel.js      The panel shown while Auto-Optimize runs
 │   ├── map-view.js         The Map view: the event map for one day
+│   ├── map-zoom.js         Pinch, drag and button zoom for the Map
 │   ├── whats-new.js        The one-time What's new card for returning visitors
 │   ├── discord-md.js       Shows message text the way Discord displays it (template preview)
 │   ├── handlers.js         Edits made in the page (settings, guilds, grid cells)

@@ -1,7 +1,7 @@
 // js/calc.js
 // Pure calculations: scores, occupation, declares, and plan validation (adjacency, wipes).
 
-import { numDays } from './state.js';
+import { numDays, GOC_TWO_TOWNS } from './state.js';
 import { getMapData } from './maps/index.js';
 
 export function kPts(type) {
@@ -162,7 +162,6 @@ export function startRule(srv) {
   const top = GOC_TWO_TOWNS[srv.mapKey] ?? 8;
   return `The top ${top} guilds start with 2, the ${top + 1}th with 1, the rest with none.`;
 }
-const GOC_TWO_TOWNS = { forest: 8, wetland: 6, snowfield: 8, woodlands: 5, badlands: 8 };
 export function startingTownLimit(srv, gid) {
   if (srv.mode !== 'goc') return 4;
   const top = GOC_TWO_TOWNS[srv.mapKey] ?? 8;
