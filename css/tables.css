@@ -33,7 +33,7 @@
   font-size: 24px;
   font-weight: 700;
   font-family: var(--font-head);
-  text-shadow: var(--text-shadow);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .sc-sub {
@@ -52,7 +52,6 @@
 
 .tbl-wrap {
   overflow-x: auto;
-  overscroll-behavior-x: contain; /* the end of the table does not start the browser's back swipe */
   -webkit-overflow-scrolling: touch;
   border-radius: 8px;
   border: 1px solid var(--border);
@@ -114,7 +113,7 @@ table.ptbl th.ktype {
 
 table.ptbl td {
   padding: 3px;
-  border-bottom: 1px solid var(--hairline);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   vertical-align: middle;
 }
 
@@ -128,7 +127,7 @@ table.ptbl td.kname {
   white-space: nowrap;
   padding-left: 14px;
   font-size: 12px;
-  text-shadow: var(--text-shadow-sm);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 table.ptbl td.ktype {
@@ -136,7 +135,7 @@ table.ptbl td.ktype {
 }
 
 table.ptbl tr:hover td {
-  background: var(--hover);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 table.ptbl tr:last-child td {
@@ -248,7 +247,7 @@ table.ptbl td.kb-cursor .cname {
 
 td.cell-err .cname {
   color: var(--text) !important;
-  text-shadow: var(--text-shadow-err);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .dtbl {
@@ -268,7 +267,7 @@ td.cell-err .cname {
 
 .dtbl td {
   padding: 6px;
-  border-bottom: 1px solid var(--hairline);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   vertical-align: top;
 }
 
@@ -302,7 +301,7 @@ td.cell-err .cname {
 .otbl td {
   padding: 8px 12px;
   text-align: center;
-  border-bottom: 1px solid var(--hairline);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 @media (max-width: 700px) {
@@ -464,23 +463,7 @@ table.ptbl th.pts-cell {
   text-align: center;
 }
 
-/* Declares & giveaways table. Scrolled sideways on a narrow screen, the guild names stay in view like
-   the Town column in the grid, so a row is never anonymous. */
-@media (max-width: 1359px) {
-  .dtbl th:first-child,
-  .dtbl td.dec-guild {
-    position: sticky;
-    left: 0;
-    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.3);
-  }
-  .dtbl th:first-child {
-    z-index: 2;
-  }
-  .dtbl td.dec-guild {
-    z-index: 1;
-    background: var(--bg2);
-  }
-}
+/* Declares & giveaways table */
 .dtbl td.dec-guild {
   vertical-align: middle;
   font-weight: 500;
@@ -515,7 +498,6 @@ table.ptbl th.pts-cell {
 
 #sec-settings,
 #sec-guilds,
-#sec-map,
 #capture-grid,
 #capture-stats,
 #sec-declares,
@@ -532,27 +514,27 @@ table.ptbl th.pts-cell {
   opacity: 0.5;
 }
 
-/* Today: highlight the current event day in the grid and the Declares table */
-table.ptbl th.is-today,
-table.dtbl th.is-today {
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
+/* Today: highlight the current event day in the grid and the Declares table (left out of screenshots) */
+html:not(.capturing) table.ptbl th.is-today,
+html:not(.capturing) table.dtbl th.is-today {
+  background: rgba(69, 214, 168, 0.16);
   box-shadow:
     inset 1px 0 0 var(--accent),
     inset -1px 0 0 var(--accent),
     inset 0 2px 0 var(--accent);
 }
-table.ptbl td.is-today,
-table.dtbl td.is-today {
+html:not(.capturing) table.ptbl td.is-today,
+html:not(.capturing) table.dtbl td.is-today {
   box-shadow:
-    inset 1px 0 0 color-mix(in srgb, var(--accent) 55%, transparent),
-    inset -1px 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+    inset 1px 0 0 rgba(69, 214, 168, 0.55),
+    inset -1px 0 0 rgba(69, 214, 168, 0.55);
 }
-table.ptbl tbody tr:last-child td.is-today,
-table.dtbl tbody tr:last-child td.is-today {
+html:not(.capturing) table.ptbl tbody tr:last-child td.is-today,
+html:not(.capturing) table.dtbl tbody tr:last-child td.is-today {
   box-shadow:
-    inset 1px 0 0 color-mix(in srgb, var(--accent) 55%, transparent),
-    inset -1px 0 0 color-mix(in srgb, var(--accent) 55%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--accent) 55%, transparent);
+    inset 1px 0 0 rgba(69, 214, 168, 0.55),
+    inset -1px 0 0 rgba(69, 214, 168, 0.55),
+    inset 0 -1px 0 rgba(69, 214, 168, 0.55);
 }
 .today-tag {
   display: inline-block;
@@ -560,7 +542,7 @@ table.dtbl tbody tr:last-child td.is-today {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--on-accent);
+  color: #0a1a14;
   background: var(--accent);
   border-radius: 4px;
   padding: 1px 5px;
@@ -571,6 +553,9 @@ th .today-tag {
   display: block;
   width: fit-content;
   margin: 0 auto 3px;
+}
+html.capturing .today-tag {
+  display: none;
 }
 
 /* Guild spotlight (js/spotlight.js): chips above the grid; the chosen guild's towns are outlined
@@ -680,7 +665,7 @@ th .today-tag {
 .map-day.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--on-accent);
+  color: #191425;
 }
 
 .map-wrap {
@@ -698,53 +683,6 @@ th .today-tag {
   height: auto;
 }
 
-/* Names stay the size you read them at while the map zooms (phones draw them bigger, below) */
-.map-label-in {
-  transform: scale(calc(1 / var(--zs, 1)));
-}
-
-/* Wide screens (the sections are tabs): the map shrinks to fit the height of the window, so when you
-   scroll to the Map section the whole map shows (it may be cut off while the page is at the top). Its width follows its shape (the aspect-ratio set on the svg), and
-   it stays centered; the frame is drawn on the svg itself, so it hugs the map. */
-@media (min-width: 1360px) {
-  .app-body.has-sidebar .map-wrap {
-    display: flex;
-    justify-content: center;
-    max-width: none;
-    background: none;
-    border: none;
-    border-radius: 0;
-    overflow: visible;
-  }
-
-  .app-body.has-sidebar .map-svg {
-    width: auto;
-    max-width: 100%;
-    /* the room left under the tab bar, the section's title and the day buttons */
-    height: max(300px, calc(100vh - 175px));
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  /* ...and a little less when the "Starting towns" guild buttons sit above it (Day 0) */
-  .app-body.has-sidebar .map-main:has(.map-pick) .map-svg {
-    height: max(300px, calc(100vh - 232px));
-  }
-
-  /* The tutorial's Map steps: the map moves left and shrinks so the card fits beside it (js/tour.js) */
-  html.tour-map-side .app-body.has-sidebar .map-wrap {
-    justify-content: flex-start;
-  }
-  html.tour-map-side .app-body.has-sidebar .map-svg {
-    height: max(300px, min(calc(100vh - 175px), calc(var(--tour-map-w) / var(--tour-map-ratio))));
-  }
-  html.tour-map-side .app-body.has-sidebar .map-main:has(.map-pick) .map-svg {
-    height: max(300px, min(calc(100vh - 232px), calc(var(--tour-map-w) / var(--tour-map-ratio))));
-  }
-}
-
 /* Phones: the whole map shrinks to fit the screen, with the name tags drawn bigger so they stay
    readable (they grow downward, away from the building above them) */
 @media (max-width: 600px) {
@@ -755,7 +693,7 @@ th .today-tag {
     overflow: visible;
   }
   .map-label-in {
-    transform: translateY(calc(14px / var(--zs, 1))) scale(calc(1.7 / var(--zs, 1)));
+    transform: translateY(14px) scale(1.7);
   }
 }
 
@@ -975,76 +913,6 @@ th .today-tag {
 .map-town.pickable:focus-visible .map-base {
   stroke: #fff;
   stroke-width: 10;
-}
-
-/* The town picked on Day 0, waiting for a guild */
-.map-town.selected .map-base {
-  stroke: #fff;
-  stroke-width: 12;
-  stroke-dasharray: none;
-}
-
-.map-town.selected .map-label rect {
-  stroke: #fff;
-  stroke-width: 4;
-}
-
-/* Zooming the map (js/map-zoom.js): + / - / Fit in the corner; one finger still scrolls the page until
-   the map is zoomed in, then it moves around the map */
-.map-frame {
-  position: relative;
-  touch-action: pan-y;
-}
-
-.map-frame.zoomed {
-  touch-action: none;
-  cursor: grab;
-}
-
-.map-svg.zoomed {
-  overflow: hidden;
-}
-
-.map-zoomctl {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 2;
-  display: flex;
-  gap: 4px;
-}
-
-.map-zoomctl button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  padding: 0 8px;
-  border-radius: 8px;
-  border: 1px solid var(--border2);
-  background: color-mix(in srgb, var(--bg2) 88%, transparent);
-  color: var(--text);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.map-zoomctl button[hidden] {
-  display: none;
-}
-
-.map-zoomctl .icon {
-  width: 16px;
-  height: 16px;
-}
-
-@media (hover: hover) {
-  .map-zoomctl button:hover {
-    background: var(--bg3);
-  }
 }
 
 .map-disclaimer {
