@@ -52,7 +52,8 @@
 
 .tbl-wrap {
   overflow-x: auto;
-  overscroll-behavior-x: contain; /* the end of the table does not start the browser's back swipe */
+  overscroll-behavior-x: contain;
+  /* the end of the table does not start the browser's back swipe */
   -webkit-overflow-scrolling: touch;
   border-radius: 8px;
   border: 1px solid var(--border);
@@ -271,8 +272,10 @@ td.cell-err .cname {
   border-bottom: 1px solid var(--hairline);
   vertical-align: top;
 }
+
 /* Beside the sidebar on a smaller laptop screen, a little less padding keeps every day in view */
-@media (min-width: 1360px) and (max-width: 1599px) {
+@media (min-width: 1100px) and (max-width: 1599px) {
+
   .dtbl th,
   .dtbl td {
     padding-left: 4px;
@@ -398,6 +401,25 @@ table.ptbl th.pts-cell {
   overflow-wrap: break-word;
 }
 
+/* Beside the sidebar on a tablet held sideways or a small laptop, the day columns are narrow: one line per
+   guild, the name cut short if it must be (hover for the full name) so the points always show. Screenshots
+   keep full names. */
+@media (min-width: 1100px) and (max-width: 1359px) {
+  html:not(.capturing) .pts-line {
+    display: flex;
+    white-space: nowrap;
+    /* takes the column's width without making it wider */
+    width: 0;
+    min-width: 100%;
+  }
+
+  html:not(.capturing) .pts-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 /* Total occupation table */
 .otbl.otbl-fixed {
   width: 100%;
@@ -475,20 +497,24 @@ table.ptbl th.pts-cell {
 /* Declares & giveaways table. Scrolled sideways on a narrow screen, the guild names stay in view like
    the Town column in the grid, so a row is never anonymous. */
 @media (max-width: 1359px) {
+
   .dtbl th:first-child,
   .dtbl td.dec-guild {
     position: sticky;
     left: 0;
     box-shadow: 2px 0 4px rgba(0, 0, 0, 0.3);
   }
+
   .dtbl th:first-child {
     z-index: 2;
   }
+
   .dtbl td.dec-guild {
     z-index: 1;
     background: var(--bg2);
   }
 }
+
 .dtbl td.dec-guild {
   vertical-align: middle;
   font-weight: 500;
@@ -536,6 +562,7 @@ table.ptbl th.pts-cell {
   display: flex;
   gap: 6px;
 }
+
 .hist-btns .btn-tool:disabled .icon {
   opacity: 0.5;
 }
@@ -549,12 +576,14 @@ html:not(.capturing) table.dtbl th.is-today {
     inset -1px 0 0 var(--accent),
     inset 0 2px 0 var(--accent);
 }
+
 html:not(.capturing) table.ptbl td.is-today,
 html:not(.capturing) table.dtbl td.is-today {
   box-shadow:
     inset 1px 0 0 color-mix(in srgb, var(--accent) 55%, transparent),
     inset -1px 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
 }
+
 html:not(.capturing) table.ptbl tbody tr:last-child td.is-today,
 html:not(.capturing) table.dtbl tbody tr:last-child td.is-today {
   box-shadow:
@@ -562,6 +591,7 @@ html:not(.capturing) table.dtbl tbody tr:last-child td.is-today {
     inset -1px 0 0 color-mix(in srgb, var(--accent) 55%, transparent),
     inset 0 -1px 0 color-mix(in srgb, var(--accent) 55%, transparent);
 }
+
 .today-tag {
   display: inline-block;
   font-size: 9px;
@@ -574,12 +604,14 @@ html:not(.capturing) table.dtbl tbody tr:last-child td.is-today {
   padding: 1px 5px;
   margin-bottom: 3px;
 }
+
 /* In a column header the tag sits on its own line, so the column keeps its usual width */
 th .today-tag {
   display: block;
   width: fit-content;
   margin: 0 auto 3px;
 }
+
 html.capturing .today-tag {
   display: none;
 }
@@ -593,6 +625,7 @@ html.capturing .today-tag {
   gap: 6px;
   margin: -2px 0 10px;
 }
+
 .spot-label {
   font-size: 10px;
   font-weight: 600;
@@ -601,6 +634,7 @@ html.capturing .today-tag {
   color: var(--text2);
   margin-right: 4px;
 }
+
 .spot-chip {
   display: inline-flex;
   align-items: center;
@@ -618,30 +652,36 @@ html.capturing .today-tag {
     border-color 0.15s,
     color 0.15s;
 }
+
 .spot-chip:hover {
   color: var(--text);
   border-color: var(--text3);
 }
+
 .spot-chip:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
 .spot-chip .spot-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--guild-color);
 }
+
 .spot-chip[aria-pressed='true'] {
   color: var(--text);
   border-color: var(--guild-color);
   background: color-mix(in srgb, var(--guild-color) 22%, var(--bg3));
 }
+
 .spot-summary {
   margin: -4px 0 10px;
   font-size: 12px;
   color: var(--text);
 }
+
 .spot-summary[hidden] {
   display: none;
 }
@@ -652,9 +692,11 @@ html.capturing .today-tag {
   opacity: 0.3;
   transition: opacity 0.15s;
 }
+
 .spot-on table.ptbl tbody td.spot-hit {
   box-shadow: inset 0 0 0 2px var(--spot-color);
 }
+
 .score-card[data-action='spotlight'] {
   cursor: pointer;
 }
@@ -717,7 +759,7 @@ html.capturing .today-tag {
 /* Wide screens (the sections are tabs): the map shrinks to fit the height of the window, so when you
    scroll to the Map section the whole map shows (it may be cut off while the page is at the top). Its width follows its shape (the aspect-ratio set on the svg), and
    it stays centered; the frame is drawn on the svg itself, so it hugs the map. */
-@media (min-width: 1360px) {
+@media (min-width: 1100px) {
   .app-body.has-sidebar .map-wrap {
     display: flex;
     justify-content: center;
@@ -748,9 +790,11 @@ html.capturing .today-tag {
   html.tour-map-side .app-body.has-sidebar .map-wrap {
     justify-content: flex-start;
   }
+
   html.tour-map-side .app-body.has-sidebar .map-svg {
     height: max(300px, min(calc(100vh - 175px), calc(var(--tour-map-w) / var(--tour-map-ratio))));
   }
+
   html.tour-map-side .app-body.has-sidebar .map-main:has(.map-pick) .map-svg {
     height: max(300px, min(calc(100vh - 232px), calc(var(--tour-map-w) / var(--tour-map-ratio))));
   }
@@ -762,9 +806,11 @@ html.capturing .today-tag {
   .map-wrap {
     padding: 2% 5% 4%;
   }
+
   .map-svg {
     overflow: visible;
   }
+
   .map-label-in {
     transform: translateY(calc(14px / var(--zs, 1))) scale(calc(1.7 / var(--zs, 1)));
   }
@@ -1071,7 +1117,7 @@ html.capturing .today-tag {
   margin-left: auto;
 }
 
-.map-key-note + .map-key-note {
+.map-key-note+.map-key-note {
   margin-left: 0;
 }
 

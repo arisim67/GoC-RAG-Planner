@@ -791,7 +791,7 @@ function renderGrid(srv, days, mapData, issues, wipes) {
                   } else if (scores.cumul[g.id]) {
                     pts = scores.cumul[g.id][d - 1] || 0;
                   }
-                  return `<div class="pts-line gc-ink" style="--gc:${gcolor(g.color)}">${esc(g.name)}:&nbsp;${pts}</div>`;
+                  return `<div class="pts-line gc-ink" style="--gc:${gcolor(g.color)}" title="${esc(g.name)}: ${pts}"><span class="pts-name">${esc(g.name)}:</span>&nbsp;${pts}</div>`;
                 })
                 .join('')}
             </th>`;

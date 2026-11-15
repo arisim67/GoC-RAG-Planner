@@ -5,23 +5,25 @@
   display: none;
 }
 
-/* Wide enough for the sidebar and still a full-width grid */
-@media (min-width: 1360px) {
+/* Wide enough for the sidebar beside the page: laptops and desktops, and tablets held sideways (an iPad
+   is about 1130 to 1210 pixels wide that way) */
+@media (min-width: 1100px) {
   .app-body.has-sidebar {
     display: flex;
     align-items: flex-start;
     justify-content: center;
   }
 
-  .app-body.has-sidebar > .main {
+  .app-body.has-sidebar>.main {
     flex: 1 1 0;
     min-width: 0;
     margin: 0;
   }
 
-  .app-body.has-sidebar > .sidebar {
+  .app-body.has-sidebar>.sidebar {
     display: block;
-    /* Width: the dragged one (--sb-w), but the page keeps at least about 1000px */
+    /* Width: the dragged one (--sb-w), but the page keeps at least about 1000px (on a screen narrower than
+       about 1300px, the sidebar stays at its narrowest instead) */
     flex: 0 0 clamp(272px, var(--sb-w, 300px), max(272px, calc(100vw - 1000px)));
     position: sticky;
     top: 16px;
@@ -39,19 +41,19 @@
 /* Below the wide layout the sidebar is not beside the page but above it, in the same width as the page:
    the server and its buttons, then the guild tiles. The tabs, flat sections and the Server Settings panel
    below work just as they do on a wide screen. */
-@media (max-width: 1359.98px) {
-  .app-body.has-sidebar > .sidebar {
+@media (max-width: 1099.98px) {
+  .app-body.has-sidebar>.sidebar {
     display: block;
     max-width: 1440px;
     margin: 0 auto;
     padding: 12px 24px 0;
   }
 
-  .app-body.has-sidebar > .sidebar .sb-block {
+  .app-body.has-sidebar>.sidebar .sb-block {
     padding: 10px 2px 14px;
   }
 
-  .app-body.has-sidebar > .main {
+  .app-body.has-sidebar>.main {
     padding-top: 4px;
   }
 
@@ -61,14 +63,14 @@
 }
 
 @media (max-width: 768px) {
-  .app-body.has-sidebar > .sidebar {
+  .app-body.has-sidebar>.sidebar {
     padding: 8px 10px 0;
   }
 }
 
 /* Phones: a tighter summary, so the tabs and the grid are not pushed far down the screen */
 @media (max-width: 768px) {
-  .app-body.has-sidebar > .sidebar .sb-block {
+  .app-body.has-sidebar>.sidebar .sb-block {
     padding: 6px 2px 10px;
   }
 
@@ -110,15 +112,15 @@
 }
 
 /* Tablets: the server on the left, the guilds beside it */
-@media (min-width: 700px) and (max-width: 1359.98px) {
-  .app-body.has-sidebar > .sidebar {
+@media (min-width: 700px) and (max-width: 1099.98px) {
+  .app-body.has-sidebar>.sidebar {
     display: grid;
     grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
     column-gap: 28px;
     align-items: start;
   }
 
-  .app-body.has-sidebar > .sidebar .sb-block + .sb-block {
+  .app-body.has-sidebar>.sidebar .sb-block+.sb-block {
     border-top: none;
   }
 }
@@ -128,8 +130,8 @@
   display: none;
 }
 
-@media (min-width: 1360px) {
-  .app-body.has-sidebar > .sb-resizer {
+@media (min-width: 1100px) {
+  .app-body.has-sidebar>.sb-resizer {
     display: block;
     flex: 0 0 10px;
     align-self: flex-start;
@@ -146,13 +148,13 @@
     transition: opacity 0.15s;
   }
 
-  .app-body.has-sidebar > .sb-resizer:hover,
-  .app-body.has-sidebar > .sb-resizer:focus-visible,
-  html.sb-resizing .app-body.has-sidebar > .sb-resizer {
+  .app-body.has-sidebar>.sb-resizer:hover,
+  .app-body.has-sidebar>.sb-resizer:focus-visible,
+  html.sb-resizing .app-body.has-sidebar>.sb-resizer {
     opacity: 1;
   }
 
-  .app-body.has-sidebar > .sb-resizer:focus-visible {
+  .app-body.has-sidebar>.sb-resizer:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: -2px;
   }
@@ -170,12 +172,12 @@ html.capturing .app-body.has-sidebar {
   display: block;
 }
 
-html.capturing .app-body.has-sidebar > .sidebar,
-html.capturing .app-body.has-sidebar > .sb-resizer {
+html.capturing .app-body.has-sidebar>.sidebar,
+html.capturing .app-body.has-sidebar>.sb-resizer {
   display: none;
 }
 
-html.capturing .app-body.has-sidebar > .main {
+html.capturing .app-body.has-sidebar>.main {
   margin: 0 auto;
 }
 
@@ -184,7 +186,7 @@ html.capturing .app-body.has-sidebar > .main {
   padding: 18px 18px 16px;
 }
 
-.sb-block + .sb-block {
+.sb-block+.sb-block {
   border-top: 1px solid var(--border);
 }
 
@@ -471,7 +473,7 @@ html.setup-open .app-body.has-sidebar .setup-panel {
     visibility 0s;
 }
 
-html.setup-open .app-body.has-sidebar + .setup-scrim {
+html.setup-open .app-body.has-sidebar+.setup-scrim {
   display: block;
   position: fixed;
   inset: 0;
@@ -489,7 +491,7 @@ body.tour-active .app-body.has-sidebar .setup-panel {
 }
 
 /* The two sections lose their card look: the panel is the card */
-.app-body.has-sidebar .setup-panel > .section {
+.app-body.has-sidebar .setup-panel>.section {
   padding: 0;
   margin: 0;
   background: none;
@@ -498,7 +500,7 @@ body.tour-active .app-body.has-sidebar .setup-panel {
   box-shadow: none;
 }
 
-.app-body.has-sidebar .setup-panel > #sec-guilds {
+.app-body.has-sidebar .setup-panel>#sec-guilds {
   margin-top: 28px;
   padding-top: 22px;
   border-top: 1px solid var(--border);
@@ -532,26 +534,26 @@ body.tour-active .app-body.has-sidebar .setup-panel {
   display: none;
 }
 
-.app-body.has-sidebar .setup-panel > .section > .sec-title {
+.app-body.has-sidebar .setup-panel>.section>.sec-title {
   pointer-events: none;
 }
 
 /* The settings fields fit a narrow panel two to a row, with the name across the top */
-.app-body.has-sidebar #sec-settings > .row {
+.app-body.has-sidebar #sec-settings>.row {
   display: grid;
   grid-template-columns: 1fr 1fr;
 }
 
-.app-body.has-sidebar #sec-settings > .row > .fg:first-child {
+.app-body.has-sidebar #sec-settings>.row>.fg:first-child {
   grid-column: 1 / -1;
 }
 
-.app-body.has-sidebar #sec-settings > .row .fg {
+.app-body.has-sidebar #sec-settings>.row .fg {
   min-width: 0;
 }
 
-.app-body.has-sidebar #sec-settings > .row .fg select,
-.app-body.has-sidebar #sec-settings > .row .fg input.settings-input {
+.app-body.has-sidebar #sec-settings>.row .fg select,
+.app-body.has-sidebar #sec-settings>.row .fg input.settings-input {
   width: 100%;
   min-width: 0;
 }
@@ -648,34 +650,28 @@ body.tour-active .app-body.has-sidebar .setup-panel {
    above the Grid; Final Scores and Total Occupation are the Scores tab. The sections hide with display:none,
    so Screenshots (html.capturing) show them all. Below this width the page is one long page, in the same
    order. */
-@media (min-width: 1360px) {
-  html:not(.capturing)
-    .app-body.has-sidebar
-    #main-content
-    > :is(#sec-status, #capture-grid, #sec-map, #capture-stats, #sec-messages) {
+@media (min-width: 1100px) {
+  html:not(.capturing) .app-body.has-sidebar #main-content> :is(#sec-status, #capture-grid, #sec-map, #capture-stats, #sec-messages) {
     display: none;
   }
 
-  html:not([data-tab]):not(.capturing) .app-body.has-sidebar #main-content > :is(#capture-grid, #sec-status),
-  html[data-tab='grid']:not(.capturing) .app-body.has-sidebar #main-content > :is(#capture-grid, #sec-status),
-  html[data-tab='map']:not(.capturing) .app-body.has-sidebar #main-content > #sec-map,
-  html[data-tab='scores']:not(.capturing) .app-body.has-sidebar #main-content > #capture-stats,
-  html[data-tab='declares']:not(.capturing) .app-body.has-sidebar #main-content > #capture-stats,
-  html[data-tab='messages']:not(.capturing) .app-body.has-sidebar #main-content > #sec-messages {
+  html:not([data-tab]):not(.capturing) .app-body.has-sidebar #main-content> :is(#capture-grid, #sec-status),
+  html[data-tab='grid']:not(.capturing) .app-body.has-sidebar #main-content> :is(#capture-grid, #sec-status),
+  html[data-tab='map']:not(.capturing) .app-body.has-sidebar #main-content>#sec-map,
+  html[data-tab='scores']:not(.capturing) .app-body.has-sidebar #main-content>#capture-stats,
+  html[data-tab='declares']:not(.capturing) .app-body.has-sidebar #main-content>#capture-stats,
+  html[data-tab='messages']:not(.capturing) .app-body.has-sidebar #main-content>#sec-messages {
     display: block;
   }
 
   /* Final Scores, Total Occupation and Declares share one block (so Screenshots stay as they were):
      Scores and Occupation are the Scores tab, and Declares has its own */
-  html:not(.capturing) .app-body.has-sidebar #capture-stats > .section {
+  html:not(.capturing) .app-body.has-sidebar #capture-stats>.section {
     display: none;
   }
 
-  html[data-tab='scores']:not(.capturing)
-    .app-body.has-sidebar
-    #capture-stats
-    > :is([data-sec='scores'], [data-sec='occupation']),
-  html[data-tab='declares']:not(.capturing) .app-body.has-sidebar #capture-stats > #sec-declares {
+  html[data-tab='scores']:not(.capturing) .app-body.has-sidebar #capture-stats> :is([data-sec='scores'], [data-sec='occupation']),
+  html[data-tab='declares']:not(.capturing) .app-body.has-sidebar #capture-stats>#sec-declares {
     display: block;
   }
 }
@@ -687,10 +683,7 @@ body.tour-active .app-body.has-sidebar .setup-panel {
 
 /* One section per tab (and Status above the Grid): it sits straight on the page instead of in a card of
      its own. Screenshots keep the cards. */
-html:not(.capturing)
-  .app-body.has-sidebar
-  #main-content
-  :is(#sec-status, #capture-grid > .section, #sec-map, #capture-stats > .section, #sec-messages) {
+html:not(.capturing) .app-body.has-sidebar #main-content :is(#sec-status, #capture-grid > .section, #sec-map, #capture-stats > .section, #sec-messages) {
   padding: 4px 0 0;
   background: none;
   border: none;
@@ -698,27 +691,24 @@ html:not(.capturing)
   box-shadow: none;
 }
 
-html:not(.capturing) .app-body.has-sidebar #main-content #capture-stats > .section {
+html:not(.capturing) .app-body.has-sidebar #main-content #capture-stats>.section {
   margin-bottom: 32px;
 }
 
 /* the grid and score sections sit in a wrapper with 2px of its own: line the others up with them */
-html:not(.capturing) .app-body.has-sidebar #main-content > :is(#sec-status, #sec-map, #sec-messages) {
+html:not(.capturing) .app-body.has-sidebar #main-content> :is(#sec-status, #sec-map, #sec-messages) {
   padding-inline: 2px;
 }
 
 /* One long page below the wide layout: a line and some air between the sections, as the cards used to give */
-@media (max-width: 1359.98px) {
-  html:not(.capturing)
-    .app-body.has-sidebar
-    #main-content
-    :is(#sec-map, #capture-stats > .section, #sec-messages, #capture-grid) {
+@media (max-width: 1099.98px) {
+  html:not(.capturing) .app-body.has-sidebar #main-content :is(#sec-map, #capture-stats > .section, #sec-messages, #capture-grid) {
     margin-top: 8px;
     padding-top: 18px;
     border-top: 1px solid var(--border);
   }
 
-  html:not(.capturing) .app-body.has-sidebar #main-content #capture-stats > .section {
+  html:not(.capturing) .app-body.has-sidebar #main-content #capture-stats>.section {
     margin-bottom: 8px;
   }
 
@@ -728,7 +718,7 @@ html:not(.capturing) .app-body.has-sidebar #main-content > :is(#sec-status, #sec
 }
 
 /* Short windows (or a zoomed-in page): tighter tiles and blocks so the sidebar still fits without scrolling */
-@media (min-width: 1360px) and (max-height: 860px) {
+@media (min-width: 1100px) and (max-height: 860px) {
   .sidebar .sb-block {
     padding: 12px 14px;
   }
@@ -755,7 +745,7 @@ html:not(.capturing) .app-body.has-sidebar #main-content > :is(#sec-status, #sec
 
 /* Very short windows (a laptop with display scaling, say): the progress bars go, which is enough for
    15 guilds to fit */
-@media (min-width: 1360px) and (max-height: 760px) {
+@media (min-width: 1100px) and (max-height: 760px) {
   .sb-guild .bar-track {
     display: none;
   }

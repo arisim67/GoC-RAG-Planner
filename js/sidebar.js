@@ -171,10 +171,10 @@ export function setupIsPanel() {
   return !!sb && getComputedStyle(sb).display !== 'none';
 }
 
-// Are the sections tabs? Only beside the page, on a wide screen. Narrower ones (phones, tablets) keep one
+// Are the sections tabs? Only beside the page, on a wide screen. Narrower ones (phones, tablets held upright) keep one
 // long page, in the same order, with the summary above it; the bar of links jumps down the page.
 export function tabsActive() {
-  return setupIsPanel() && window.matchMedia('(min-width: 1360px)').matches;
+  return setupIsPanel() && window.matchMedia('(min-width: 1100px)').matches;
 }
 
 export function openSetup({ focus = true } = {}) {
@@ -213,7 +213,8 @@ document.addEventListener('keydown', e => {
 // ── Resizing the sidebar ──
 // Drag the thin handle on its right edge (or focus it and press the Left and Right arrow keys; Home and
 // End jump to the smallest and largest; double-click or Enter resets it). The width is kept in this
-// browser, and the stylesheet never lets the page itself get narrower than about 1000 pixels.
+// browser, and the stylesheet never lets the page itself get narrower than about 1000 pixels (on a
+// smaller screen, a tablet held sideways say, the sidebar just stays at its narrowest).
 const WIDTH_KEY = 'goc_sidebar_w';
 const WIDTH_DEFAULT = 300;
 const WIDTH_MIN = 272; // narrower and the Auto-Optimize / Save to Cloud buttons and guild tiles would stack

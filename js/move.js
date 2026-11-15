@@ -164,13 +164,36 @@ export function showMovedBanner() {
 }
 
 // ── New site: receiving servers ──────────────────────────────────
-const same = (a, b) => {
-  const strip = s => {
-    const { cloudSynced, ...rest } = s;
-    return JSON.stringify(rest);
-  };
-  return strip(a) === strip(b);
+// A server's contents, leaving out what a move or a copy changes by itself (and, with ids, its id and name)
+const content = (s, ids = true) => {
+  const { cloudSynced, ...rest } = s;
+  if (!ids) {
+    delete rest.id;
+    rest.name = String(rest.name || '').replace(/ \(moved\)$/, '');
+  }
+  return JSON.stringify(rest);
 };
+const same = (a, b) => content(a) === content(b);
+// The same plan, whatever it is called here (a "(moved)" copy from an earlier move counts)
+const sameButName = (a, b) => content(a, false) === content(b, false);
+
+// What each server looked like when it last came over, by id. Moving again sends it again even if
+// nothing changed on the old site; if it still matches, it is not new, however the copy here has been
+// edited since. A short fingerprint is kept, not the server itself.
+const MOVED_KEY = 'goc_moved_in';
+function fingerprint(s) {
+  const str = content(s);
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+  return (h >>> 0).toString(36) + '.' + str.length.toString(36);
+}
+function movedIn() {
+  try {
+    return JSON.parse(localStorage.getItem(MOVED_KEY) || '{}') || {};
+  } catch (_) {
+    return {};
+  }
+}
 
 function askToImport(servers) {
   return new Promise(resolve => {
@@ -228,17 +251,27 @@ export async function receiveMovedServers() {
 
   let added = 0,
     already = 0;
+  const seen = movedIn();
   for (const s of incoming) {
+    const fp = fingerprint(s);
     const i = state.servers.findIndex(x => x.id === s.id);
     if (i < 0) {
-      state.servers.push(s);
-      added++;
+      // Not here under its id, but maybe as a copy from an earlier move
+      if (state.servers.some(x => sameButName(x, s))) already++;
+      else {
+        state.servers.push(s);
+        added++;
+      }
     } else if (same(state.servers[i], s)) already++;
     else if (state.servers[i].isViewOnly && !s.isViewOnly) {
       state.servers[i] = s;
       added++;
     } // your own copy beats a view-only one
-    else {
+    else if (seen[s.id] === fp || state.servers.some(x => sameButName(x, s))) {
+      // Unchanged on the old site since it last came over (only the copy here was edited), or already
+      // here as a "(moved)" copy: nothing new to bring.
+      already++;
+    } else {
       // Both versions were edited: keep both rather than lose either.
       state.servers.push({
         ...s,
@@ -248,6 +281,12 @@ export async function receiveMovedServers() {
       });
       added++;
     }
+    seen[s.id] = fp;
+  }
+  try {
+    localStorage.setItem(MOVED_KEY, JSON.stringify(seen));
+  } catch (_) {
+    /* not remembered: a later move may keep an extra copy, but nothing is lost */
   }
   if (!state.servers.some(x => x.id === state.activeId)) {
     state.activeId = state.servers.some(x => x.id === payload.activeId)
