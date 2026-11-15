@@ -68,6 +68,16 @@ body.tour-active .modal-bg.open {
     0 0 24px var(--accent-glow);
 }
 
+/* Animate only when moving to another step; while the page scrolls the box follows instantly. The card
+   glides to its new place too, instead of jumping. */
+@media (prefers-reduced-motion: no-preference) {
+  .tour-root.tour-anim .tour-card:not(.tour-card-sheet):not(.tour-card-center) {
+    transition:
+      top 0.25s ease,
+      left 0.25s ease;
+  }
+}
+
 /* Animate only when moving to another step; while the page scrolls the box follows instantly. */
 .tour-root.tour-anim .tour-spot {
   transition:
@@ -98,11 +108,11 @@ body.tour-active .modal-bg.open {
   max-height: calc(100dvh - 24px);
 }
 
-.tour-card > * {
+.tour-card>* {
   flex-shrink: 0;
 }
 
-.tour-card > .tour-body {
+.tour-card>.tour-body {
   flex-shrink: 1;
   min-height: 0;
   overflow-y: auto;
@@ -113,7 +123,7 @@ body.tour-active .modal-bg.open {
   margin: -5px;
 }
 
-.tour-card > .tour-body.tour-body-more {
+.tour-card>.tour-body.tour-body-more {
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
 }
@@ -151,6 +161,7 @@ body.tour-active .modal-bg.open {
 }
 
 @media (max-width: 639px) {
+
   /* a little smaller over a phone's bottom sheet, so it covers less of the page above */
   .tour-ghoul img {
     height: 96px;
@@ -333,6 +344,7 @@ body.tour-active .modal-bg.open {
 }
 
 @keyframes tour-pulse {
+
   0%,
   100% {
     opacity: 0.35;
@@ -457,6 +469,7 @@ body.tour-active .modal-bg.open {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .tour-root.tour-anim .tour-spot,
   .tour-progress-fill {
     transition: none;

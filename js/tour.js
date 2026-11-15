@@ -230,12 +230,6 @@ function setupSteps() {
       },
       place: 'top',
     },
-    statusStep(
-      'The app checks as you go',
-      `Green means the plan is legal. Red names the day and town at fault — a guild declaring a
-       town it is not next to, too many declares in a day, or a guild losing every town it has.
-       Nothing stops you entering it; you just get told.`,
-    ),
   ];
 }
 
@@ -371,6 +365,9 @@ function guildFlags(goc) {
      stay as they are.`;
 }
 
+// The walkthrough, in the order a plan is made: the server and its guilds, Day 0 on the grid or the
+// Map, Auto-Optimize, Status, the points, the link for leadership, then each day's messages. Themes come
+// early, while the header is in view, so the tour moves down the page rather than back and forth.
 function buildSteps(srv) {
   const goc = srv && srv.mode === 'goc';
   return [
@@ -387,6 +384,13 @@ function buildSteps(srv) {
       body: `Each event server gets its own tab. Click <b>+ Add Server</b> to create one and pick its
              <b>mode</b>, <b>map</b> and <b>dates</b>.<br><br>Right-click a tab (or long-press on a phone)
              to rename, duplicate or delete it.`,
+    },
+    {
+      target: 'theme',
+      title: 'Themes',
+      body: `Prefer a different look? Pick <b>Dark</b>, <b>Light</b> or one of the eight house themes here. It is
+             saved in this browser and also changes the background of your Screenshots.`,
+      place: 'bottom',
     },
     {
       target: 'settings',
@@ -432,13 +436,6 @@ function buildSteps(srv) {
              <br><br>On <b>Day 0</b> you can set the starting towns here: tap a town to select it, then tap its guild above the map to place it there. Pinch to zoom in on a phone.`,
       place: 'top',
     },
-    statusStep(
-      'Validation',
-      `The app checks your plan as you go. <b>Green</b> pills mean that day is legal; <b>red</b> ones point
-       to the problem: a town taken without a neighboring town, too many declares, or a guild losing
-       every town.`,
-      { optional: true },
-    ),
     {
       target: 'optimize',
       title: 'Auto-Optimize',
@@ -450,6 +447,13 @@ function buildSteps(srv) {
              }
              <br><br>Not happy with the result? <b>Undo</b> above the grid brings back your previous plan, even after a reload.`,
     },
+    statusStep(
+      'Check Status',
+      `The app checks your plan as you go. <b>Green</b> pills mean that day is legal; <b>red</b> ones point
+       to the problem: a town taken without a neighboring town, too many declares, or a guild losing
+       every town.`,
+      { optional: true },
+    ),
     {
       target: 'stats',
       title: 'Check the balance',
@@ -495,13 +499,6 @@ function buildSteps(srv) {
              <br><br>Pick <b>Your guild</b> to put yours first. Under this view, <b>Copy Today's Message</b> in
              <b>Server &amp; Guild Setup</b> copies your guild's message.`,
       place: 'top',
-    },
-    {
-      target: 'theme',
-      title: 'Themes',
-      body: `Prefer a different look? Pick <b>Dark</b>, <b>Light</b> or one of the eight house themes here. It is
-             saved in this browser and also changes the background of your Screenshots.`,
-      place: 'bottom',
     },
     {
       target: null,
@@ -563,13 +560,31 @@ function pickFlow(which) {
   } else {
     // Setup first, then the parts of the walkthrough that only make sense once a plan exists. The Map
     // was already shown with Day 0, so its walkthrough step is left out here.
-    const after = ['optimize', 'stats', 'share', 'messages', 'theme'];
+    const after = ['optimize', 'stats', 'share', 'messages'];
     // The server does not exist yet, so Auto-Optimize gets its own steps, which look it up as they go.
     const tail = buildSteps(hooks.getActiveServer())
       .filter(s => after.includes(s.target))
-      .flatMap(s => (s.target === 'optimize' ? optimizeSteps() : [s]));
+      .flatMap(s =>
+        s.target === 'optimize'
+          ? [
+              ...optimizeSteps(),
+              statusStep(
+                'Check Status',
+                `Green means the plan is legal. Red names the day and town at fault — a guild declaring a
+                 town it is not next to, too many declares in a day, or a guild losing every town it has.
+                 Nothing stops you entering it; you just get told.`,
+              ),
+            ]
+          : [s],
+      );
+    // Themes are in the header, where they already are after creating the server: a quick look there,
+    // so the rest of the tour can carry on down the page in the order a plan is made.
+    const theme = buildSteps(hooks.getActiveServer()).find(s => s.target === 'theme');
+    const [create, ...setup] = setupSteps();
     steps = [
-      ...setupSteps(),
+      create,
+      theme,
+      ...setup,
       ...tail,
       {
         target: null,
