@@ -275,7 +275,6 @@ td.cell-err .cname {
 
 /* Beside the sidebar on a smaller laptop screen, a little less padding keeps every day in view */
 @media (min-width: 1100px) and (max-width: 1599px) {
-
   .dtbl th,
   .dtbl td {
     padding-left: 4px;
@@ -497,7 +496,6 @@ table.ptbl th.pts-cell {
 /* Declares & giveaways table. Scrolled sideways on a narrow screen, the guild names stay in view like
    the Town column in the grid, so a row is never anonymous. */
 @media (max-width: 1359px) {
-
   .dtbl th:first-child,
   .dtbl td.dec-guild {
     position: sticky;
@@ -1117,7 +1115,7 @@ html.capturing .today-tag {
   margin-left: auto;
 }
 
-.map-key-note+.map-key-note {
+.map-key-note + .map-key-note {
   margin-left: 0;
 }
 

@@ -45,7 +45,8 @@
   /* the same box for the logo and every house, so the title never moves */
   height: 40px;
   margin: -6px 0;
-  background: url('../images/favicon-192.png') center / contain no-repeat;
+  /* Darkwick castle, the academy all eight houses belong to (the same picture as on the map) */
+  background: url('../images/map/darkwick.webp') center / contain no-repeat;
 }
 
 html[data-theme='dionysia'] .app-logo {
