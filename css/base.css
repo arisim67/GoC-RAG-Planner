@@ -260,6 +260,7 @@ input[type='checkbox']:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   input[type='checkbox'],
   input[type='checkbox']::before {
     transition: none;
@@ -374,13 +375,11 @@ textarea {
 }
 
 td.cell-err {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--red-glow),
-    var(--red-glow) 8px,
-    rgba(255, 94, 126, 0.25) 8px,
-    rgba(255, 94, 126, 0.25) 16px
-  ) !important;
+  background: repeating-linear-gradient(45deg,
+      var(--red-glow),
+      var(--red-glow) 8px,
+      rgba(255, 94, 126, 0.25) 8px,
+      rgba(255, 94, 126, 0.25) 16px) !important;
   box-shadow: inset 0 0 0 2px var(--red) !important;
 }
 
@@ -398,6 +397,25 @@ td.cell-err {
   margin: -8px 0 -8px 2px;
   align-self: center;
   user-select: none;
+}
+
+/* Ghouls drawn to one scale (js/ghouls.js). Each place sets the size of the picture's box and --gz,
+   pixels per unit of the game's own size, so every ghoul there comes out the same size. The picture
+   stands with the ghoul's feet on the bottom of the box, centered across it; whatever their special move
+   reaches past the box (a sword, a motorbike) hangs over its edges. */
+.ghoul-sized {
+  display: block;
+  position: relative;
+}
+
+.ghoul-sized img {
+  position: absolute;
+  width: calc(var(--gw) * var(--gz));
+  height: auto;
+  max-width: none;
+  max-height: none;
+  left: calc(50% - var(--gw) * var(--gz) * var(--gx));
+  bottom: calc(var(--gh) * var(--gz) * (var(--gy) - 1));
 }
 
 .pill {
@@ -467,6 +485,7 @@ button.pill {
 }
 
 @keyframes jump-flash {
+
   0%,
   100% {
     outline: 2px solid transparent;
@@ -552,4 +571,23 @@ button.pill {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* Until the app has drawn the page (it waits for nothing, but a slow connection can still take a moment),
+   show a quiet "Loading…" instead of an empty page. It only fades in after a beat, so a fast load never
+   flashes it. */
+#main-content:empty::after {
+  content: 'Loading…';
+  display: block;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--text2);
+  opacity: 0;
+  animation: loading-in 0.4s ease 0.8s forwards;
+}
+
+@keyframes loading-in {
+  to {
+    opacity: 1;
+  }
 }

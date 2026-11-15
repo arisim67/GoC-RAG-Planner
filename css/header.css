@@ -289,15 +289,13 @@ html[data-theme='vagastrom'] .app-logo {
 /* One of the ghouls mid-attack (ghouls.js); the files are 2x, shown at about half size */
 .welcome-ghoul {
   display: block;
+  height: 140px;
   margin: -6px auto 14px;
+  --gz: 0.3;
+  /* see .ghoul-sized in base.css: a ghoul about 115px tall, as on the tutorial card */
 }
 
 .welcome-ghoul img {
-  display: block;
-  height: 150px;
-  max-width: 100%;
-  margin: 0 auto;
-  object-fit: contain;
   user-select: none;
 }
 
@@ -378,8 +376,9 @@ html[data-theme='vagastrom'] .app-logo {
     padding: 24px 16px;
   }
 
-  .welcome-ghoul img {
-    height: 120px;
+  .welcome-ghoul {
+    height: 112px;
+    --gz: 0.24;
   }
 }
 

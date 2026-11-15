@@ -782,7 +782,7 @@
   transform-origin: 0 100%;
 }
 
-.sp-art > * {
+.sp-art>* {
   position: absolute;
 }
 
@@ -859,24 +859,27 @@
   width: 136px;
   height: 128px;
   /* stands on the bottom; a raised weapon can reach over the top edge of the panel */
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
   pointer-events: none;
 }
 
+/* The same size as the ghoul at the desk (0.8 × 150px for 430 units of the game's size) */
+.sp-win-ghoul {
+  width: 100%;
+  height: 100%;
+  --gz: 0.279;
+}
+
 .sp-win-ghoul img {
-  display: block;
-  max-width: 136px;
-  max-height: 128px;
   user-select: none;
   transform: scaleX(-1);
   /* the special moves face left in the game files: turn them toward the text */
+  left: calc(50% - var(--gw) * var(--gz) * (1 - var(--gx)));
+  /* mirrored, so the feet are on the other side */
 }
 
 .solve-panel.sp-done {
-  min-height: 0;
-  /* only as tall as its text: no desk to make room for */
+  min-height: 124px;
+  /* room for the ghoul standing on the bottom; no desk to make room for */
 }
 
 .sp-done .sp-title {
@@ -884,6 +887,9 @@
 }
 
 .sp-body {
+  position: relative;
+  z-index: 1;
+  /* over a special move that reaches across from the ghoul */
   flex: 1;
   min-width: 0;
   font-size: 12px;
@@ -980,9 +986,13 @@
     height: 104px;
   }
 
-  .sp-win-ghoul img {
-    max-width: 98px;
-    max-height: 104px;
+  .sp-win-ghoul {
+    --gz: 0.209;
+    /* the desk scene is shown at 0.6 here */
+  }
+
+  .solve-panel.sp-done {
+    min-height: 0;
   }
 
   /* the same scene, smaller */

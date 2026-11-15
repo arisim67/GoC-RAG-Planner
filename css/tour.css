@@ -142,12 +142,14 @@ body.tour-active .modal-bg.open {
   pointer-events: none;
 }
 
-.tour-ghoul img {
-  display: block;
+.tour-ghoul {
+  width: 130px;
   height: 120px;
-  max-width: 130px;
-  object-fit: contain;
-  object-position: bottom;
+  --gz: 0.3;
+  /* see .ghoul-sized in base.css: a ghoul about 115px tall */
+}
+
+.tour-ghoul img {
   user-select: none;
 }
 
@@ -163,9 +165,10 @@ body.tour-active .modal-bg.open {
 @media (max-width: 639px) {
 
   /* a little smaller over a phone's bottom sheet, so it covers less of the page above */
-  .tour-ghoul img {
+  .tour-ghoul {
+    width: 104px;
     height: 96px;
-    max-width: 104px;
+    --gz: 0.24;
   }
 }
 

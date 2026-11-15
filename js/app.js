@@ -367,6 +367,8 @@ registerActions('input', {
 });
 
 initActions();
+// Sortable (drag to reorder guilds) loads in the background; draw the page again once it is there
+window.__sortableReady = () => renderAll();
 setHistoryHooks({ render: renderAll, toast: msg => showToast(msg, false, 2500) });
 document.addEventListener('keydown', handleUndoKeys);
 document.addEventListener('keydown', handleSpotlightKeys);

@@ -1,397 +1,288 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Darkwick Accord — Game of Claws and Ragnarok Planner</title>
-    <meta
-      name="description"
-      content="Plan Game of Claws and Ragnarok for Tokyo Debunker guilds: map out towns day by day, check the rules as you go, and auto-balance points."
-    />
 
-    <!-- Link previews (Discord, Slack, iMessage, X…). Image and URLs must be absolute. -->
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Darkwick Accord" />
-    <meta
-      property="og:title"
-      content="Darkwick Accord · Game of Claws and Ragnarok Planner for Tokyo Debunker guilds"
-    />
-    <meta
-      property="og:description"
-      content="Plan Game of Claws and Ragnarok for Tokyo Debunker guilds: map out towns day by day, check the rules as you go, and auto-balance points."
-    />
-    <meta property="og:url" content="https://darkwick-accord.pages.dev/" />
-    <meta property="og:image" content="https://darkwick-accord.pages.dev/images/social-preview.png?v=2" />
-    <meta property="og:image:width" content="1280" />
-    <meta property="og:image:height" content="640" />
-    <meta
-      property="og:image:alt"
-      content="Darkwick Accord, the Game of Claws and Ragnarok Planner: a planning grid of towns and days, colored by guild"
-    />
-    <meta name="twitter:card" content="summary_large_image" />
-    <!-- Color of the stripe on the left of Discord embeds (also tints the address bar on some phones) -->
-    <meta name="theme-color" content="#e2c883" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Darkwick Accord — Game of Claws and Ragnarok Planner</title>
+  <meta name="description"
+    content="Plan Game of Claws and Ragnarok for Tokyo Debunker guilds: map out towns day by day, check the rules as you go, and auto-balance points." />
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png" />
+  <!-- Link previews (Discord, Slack, iMessage, X…). Image and URLs must be absolute. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Darkwick Accord" />
+  <meta property="og:title" content="Darkwick Accord · Game of Claws and Ragnarok Planner for Tokyo Debunker guilds" />
+  <meta property="og:description"
+    content="Plan Game of Claws and Ragnarok for Tokyo Debunker guilds: map out towns day by day, check the rules as you go, and auto-balance points." />
+  <meta property="og:url" content="https://darkwick-accord.pages.dev/" />
+  <meta property="og:image" content="https://darkwick-accord.pages.dev/images/social-preview.png?v=2" />
+  <meta property="og:image:width" content="1280" />
+  <meta property="og:image:height" content="640" />
+  <meta property="og:image:alt"
+    content="Darkwick Accord, the Game of Claws and Ragnarok Planner: a planning grid of towns and days, colored by guild" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <!-- Color of the stripe on the left of Discord embeds (also tints the address bar on some phones) -->
+  <meta name="theme-color" content="#e2c883" />
 
-    <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/header.css" />
-    <link rel="stylesheet" href="css/setup.css" />
-    <link rel="stylesheet" href="css/tables.css" />
-    <link rel="stylesheet" href="css/messages.css" />
-    <link rel="stylesheet" href="css/dialogs.css" />
-    <link rel="stylesheet" href="css/responsive.css" />
-    <link rel="stylesheet" href="css/tour.css" />
-    <link rel="stylesheet" href="css/sidebar.css" />
-    <link rel="stylesheet" href="css/themes.css" />
-    <!-- Apply the saved theme before first paint so the page doesn't flash dark. Keep the list in sync with js/theme.js -->
-    <script>
-      try {
-        var t = localStorage.getItem('goc_theme');
-        if (t && t !== 'dark' && /^[a-z]+$/.test(t)) document.documentElement.setAttribute('data-theme', t);
-      } catch (e) {}
-    </script>
-  </head>
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png" />
 
-  <body>
-    <div class="app-header">
-      <div class="app-title app-title-grow">
-        <span class="app-name"
-          ><span class="app-logo" aria-hidden="true"></span
-          ><span class="app-name-text">Darkwick Accord<small>Game of Claws and Ragnarok Planner</small></span></span
-        >
-        <a class="header-link" href="user-guide/" target="_blank" rel="noopener noreferrer"
-          ><svg
-            class="icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 7v14" />
-            <path
-              d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
-            /></svg
-          ><span>User Guide</span></a
-        >
-        <button type="button" class="tour-launch" data-action="tutorial">
-          <svg
-            class="icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path
-              d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"
-            />
-            <path d="M22 10v6" />
-            <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /></svg
-          ><span>Tutorial</span>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/setup.css" />
+  <link rel="stylesheet" href="css/tables.css" />
+  <link rel="stylesheet" href="css/messages.css" />
+  <link rel="stylesheet" href="css/dialogs.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <link rel="stylesheet" href="css/tour.css" />
+  <link rel="stylesheet" href="css/sidebar.css" />
+  <link rel="stylesheet" href="css/themes.css" />
+  <!-- Apply the saved theme before first paint so the page doesn't flash dark. Keep the list in sync with js/theme.js -->
+  <script>
+    try {
+      var t = localStorage.getItem('goc_theme');
+      if (t && t !== 'dark' && /^[a-z]+$/.test(t)) document.documentElement.setAttribute('data-theme', t);
+    } catch (e) { }
+  </script>
+</head>
+
+<body>
+  <div class="app-header">
+    <div class="app-title app-title-grow">
+      <span class="app-name"><span class="app-logo" aria-hidden="true"></span><span class="app-name-text">Darkwick
+          Accord<small>Game of Claws and Ragnarok Planner</small></span></span>
+      <a class="header-link" href="user-guide/" target="_blank" rel="noopener noreferrer"><svg class="icon"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 7v14" />
+          <path
+            d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
+        </svg><span>User Guide</span></a>
+      <button type="button" class="tour-launch" data-action="tutorial">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" aria-hidden="true">
+          <path
+            d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
+          <path d="M22 10v6" />
+          <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+        </svg><span>Tutorial</span>
+      </button>
+      <div class="theme-picker" id="theme-picker" data-tour="theme">
+        <button type="button" class="theme-trigger" id="theme-trigger" aria-haspopup="listbox" aria-expanded="false"
+          aria-controls="theme-menu" title="Change theme">
+          <span class="theme-current" id="theme-current"></span><span class="theme-arrow" aria-hidden="true">▾</span>
         </button>
-        <div class="theme-picker" id="theme-picker" data-tour="theme">
-          <button
-            type="button"
-            class="theme-trigger"
-            id="theme-trigger"
-            aria-haspopup="listbox"
-            aria-expanded="false"
-            aria-controls="theme-menu"
-            title="Change theme"
-          >
-            <span class="theme-current" id="theme-current"></span><span class="theme-arrow" aria-hidden="true">▾</span>
-          </button>
-          <ul class="theme-menu" id="theme-menu" role="listbox" aria-label="Theme" hidden>
-            <li class="theme-item" role="option" tabindex="-1" data-value="dark">
-              <svg
-                class="theme-glyph"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg
-              ><span>Dark</span>
-            </li>
-            <li class="theme-item" role="option" tabindex="-1" data-value="light">
-              <svg
-                class="theme-glyph"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="4" />
-                <path
-                  d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
-                /></svg
-              ><span>Light</span>
-            </li>
-            <li class="theme-sep" role="separator"></li>
-            <li class="theme-item" role="option" tabindex="-1" data-value="dionysia">
-              <img class="crest-icon" src="images/crests/dionysia.webp" alt="" /><span>Dionysia</span>
-            </li>
-            <li class="theme-item" role="option" tabindex="-1" data-value="frostheim">
-              <img class="crest-icon" src="images/crests/frostheim.webp" alt="" /><span>Frostheim</span>
-            </li>
-            <li class="theme-item" role="option" tabindex="-1" data-value="hotarubi">
-              <img class="crest-icon" src="images/crests/hotarubi.webp" alt="" /><span>Hotarubi</span>
-            </li>
-            <li class="theme-item" role="option" tabindex="-1" data-value="jabberwock">
-              <img class="crest-icon" src="images/crests/jabberwock.webp" alt="" /><span>Jabberwock</span>
-            </li>
-            <li class="theme-item" role="option" tabindex="-1" data-value="mortkranken">
-              <img class="crest-icon" src="images/crests/mortkranken.webp" alt="" /><span>Mortkranken</span>
-            </li>
-            <li class="theme-item" role="option" tabindex="-1" data-value="obscuary">
-              <img class="crest-icon" src="images/crests/obscuary.webp" alt="" /><span>Obscuary</span>
-            </li>
-            <li class="theme-item" role="option" tabindex="-1" data-value="sinostra">
-              <img class="crest-icon" src="images/crests/sinostra.webp" alt="" /><span>Sinostra</span>
-            </li>
-            <li class="theme-item" role="option" tabindex="-1" data-value="vagastrom">
-              <img class="crest-icon" src="images/crests/vagastrom.webp" alt="" /><span>Vagastrom</span>
-            </li>
-          </ul>
-        </div>
-        <span class="save-status" id="save-status"></span>
+        <ul class="theme-menu" id="theme-menu" role="listbox" aria-label="Theme" hidden>
+          <li class="theme-item" role="option" tabindex="-1" data-value="dark">
+            <svg class="theme-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+            </svg><span>Dark</span>
+          </li>
+          <li class="theme-item" role="option" tabindex="-1" data-value="light">
+            <svg class="theme-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path
+                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+            </svg><span>Light</span>
+          </li>
+          <li class="theme-sep" role="separator"></li>
+          <li class="theme-item" role="option" tabindex="-1" data-value="dionysia">
+            <img class="crest-icon" src="images/crests/dionysia.webp" alt="" /><span>Dionysia</span>
+          </li>
+          <li class="theme-item" role="option" tabindex="-1" data-value="frostheim">
+            <img class="crest-icon" src="images/crests/frostheim.webp" alt="" /><span>Frostheim</span>
+          </li>
+          <li class="theme-item" role="option" tabindex="-1" data-value="hotarubi">
+            <img class="crest-icon" src="images/crests/hotarubi.webp" alt="" /><span>Hotarubi</span>
+          </li>
+          <li class="theme-item" role="option" tabindex="-1" data-value="jabberwock">
+            <img class="crest-icon" src="images/crests/jabberwock.webp" alt="" /><span>Jabberwock</span>
+          </li>
+          <li class="theme-item" role="option" tabindex="-1" data-value="mortkranken">
+            <img class="crest-icon" src="images/crests/mortkranken.webp" alt="" /><span>Mortkranken</span>
+          </li>
+          <li class="theme-item" role="option" tabindex="-1" data-value="obscuary">
+            <img class="crest-icon" src="images/crests/obscuary.webp" alt="" /><span>Obscuary</span>
+          </li>
+          <li class="theme-item" role="option" tabindex="-1" data-value="sinostra">
+            <img class="crest-icon" src="images/crests/sinostra.webp" alt="" /><span>Sinostra</span>
+          </li>
+          <li class="theme-item" role="option" tabindex="-1" data-value="vagastrom">
+            <img class="crest-icon" src="images/crests/vagastrom.webp" alt="" /><span>Vagastrom</span>
+          </li>
+        </ul>
       </div>
-      <div class="tabs-bar" id="tabs-bar" data-tour="tabs"></div>
+      <span class="save-status" id="save-status"></span>
     </div>
+    <div class="tabs-bar" id="tabs-bar" data-tour="tabs"></div>
+  </div>
 
-    <div class="app-body">
-      <aside class="sidebar" id="sidebar" aria-label="Plan summary"></aside>
-      <div
-        class="sb-resizer"
-        id="sb-resizer"
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Resize the sidebar"
-        tabindex="0"
-        title="Drag to resize the sidebar (double-click to reset)"
-      ></div>
-      <div class="main" id="main-content">
-        <div class="empty-state">
-          No servers yet. Click <strong class="empty-state-cta">+ Add Server</strong> to get started.
-        </div>
-      </div>
-    </div>
-    <!-- Dims the page behind the Server Settings panel (css/sidebar.css); click it to close the panel -->
-    <div class="setup-scrim" data-action="close-setup"></div>
+  <div class="app-body">
+    <aside class="sidebar" id="sidebar" aria-label="Plan summary"></aside>
+    <div class="sb-resizer" id="sb-resizer" role="separator" aria-orientation="vertical" aria-label="Resize the sidebar"
+      tabindex="0" title="Drag to resize the sidebar (double-click to reset)"></div>
+    <div class="main" id="main-content"></div>
+  </div>
+  <!-- Dims the page behind the Server Settings panel (css/sidebar.css); click it to close the panel -->
+  <div class="setup-scrim" data-action="close-setup"></div>
 
-    <div class="site-footer">
-      <p class="site-footer-text">
-        Made by ari with help from Claude &amp; Gemini · Find any bugs or have any suggestions? DM
-        <a
-          class="site-footer-link"
-          href="https://discord.com/users/1013812813245988865"
-          target="_blank"
-          rel="noopener noreferrer"
-          >arianes.</a
-        >
-        on Discord ·
-        <a class="site-footer-link" href="privacy/" target="_blank" rel="noopener noreferrer">Privacy</a>
-        ·
-        <a
-          class="site-footer-link"
-          href="https://github.com/arisim67/GoC-RAG-Planner"
-          target="_blank"
-          rel="noopener noreferrer"
-          >GitHub</a
-        >
-      </p>
-      <p class="site-footer-text site-footer-fine">
-        Fan-made and not affiliated with or endorsed by the creators of Tokyo Debunker. Map artwork, buildings and
-        characters are official Tokyo Debunker artwork and belong to its creators.
-      </p>
-    </div>
+  <div class="site-footer">
+    <p class="site-footer-text">
+      Made by ari with help from Claude &amp; Gemini · Find any bugs or have any suggestions? DM
+      <a class="site-footer-link" href="https://discord.com/users/1013812813245988865" target="_blank"
+        rel="noopener noreferrer">arianes.</a>
+      on Discord ·
+      <a class="site-footer-link" href="privacy/" target="_blank" rel="noopener noreferrer">Privacy</a>
+      ·
+      <a class="site-footer-link" href="https://github.com/arisim67/GoC-RAG-Planner" target="_blank"
+        rel="noopener noreferrer">GitHub</a>
+    </p>
+    <p class="site-footer-text site-footer-fine">
+      Fan-made and not affiliated with or endorsed by the creators of Tokyo Debunker. Map artwork, buildings and
+      characters are official Tokyo Debunker artwork and belong to its creators.
+    </p>
+  </div>
 
-    <!-- Import dialog -->
-    <div class="modal-bg" id="modal-import">
-      <div class="modal modal-wide">
-        <h3>Bulk Import Data</h3>
-        <div id="import-dropzone" class="import-dropzone" data-action="pick-import-file">
-          <input type="file" id="import-file" accept=".json" hidden data-change="import-file" />
-          <div class="dropzone-content">
-            <div class="dropzone-icon">
-              <svg
-                class="icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" x2="12" y1="3" y2="15" />
-              </svg>
-            </div>
-            <div class="dropzone-title">Drop JSON file here</div>
-            <div class="dropzone-hint">or click to browse .json export</div>
+  <!-- Import dialog -->
+  <div class="modal-bg" id="modal-import">
+    <div class="modal modal-wide">
+      <h3>Bulk Import Data</h3>
+      <div id="import-dropzone" class="import-dropzone" data-action="pick-import-file">
+        <input type="file" id="import-file" accept=".json" hidden data-change="import-file" />
+        <div class="dropzone-content">
+          <div class="dropzone-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" x2="12" y1="3" y2="15" />
+            </svg>
           </div>
-        </div>
-        <textarea
-          class="import-text"
-          id="import-text"
-          placeholder="Paste data from spreadsheet or type each guild on a new line here..."
-        ></textarea>
-        <div class="row import-options">
-          <div class="fg">
-            <label>Import Mode</label>
-            <select id="import-mode" data-change="import-mode">
-              <option value="day">Import Daily Map Data</option>
-              <option value="guilds">Import Guild List (Setup)</option>
-            </select>
-          </div>
-          <div class="fg" id="import-day-container">
-            <label>Target Day</label>
-            <input type="number" id="import-day" value="0" min="0" />
-          </div>
-        </div>
-        <div class="import-help">
-          <strong>Daily Data:</strong> Pastes a column of guild names straight down the map grid.<br />
-          <strong>Guild List:</strong> Finds unique names in your pasted text and creates new guilds for them.<br />
-          <strong>Exported Server:</strong> Drop/paste a full server export JSON (from Export Server) to restore
-          everything — guilds, plan, settings.
-        </div>
-        <div class="modal-row modal-row-spaced">
-          <button class="btn" data-action="close-modal" data-modal="modal-import">Cancel</button>
-          <button class="btn-accent" data-action="process-import">Import Data</button>
+          <div class="dropzone-title">Drop JSON file here</div>
+          <div class="dropzone-hint">or click to browse .json export</div>
         </div>
       </div>
-    </div>
-
-    <!-- Add Server dialog -->
-    <div class="modal-bg" id="modal-add">
-      <div class="modal">
-        <h3>Add Server</h3>
-        <div class="fg modal-field">
-          <label>Server Name</label>
-          <input class="input-full" type="text" id="ns-name" placeholder="e.g. EA-43" />
-        </div>
-        <div class="fg modal-field">
-          <label>Mode</label>
-          <select class="input-full" id="ns-mode" data-change="add-modal-mode">
-            <option value="ragnarok">Ragnarok</option>
-            <option value="goc">Game of Claws</option>
+      <textarea class="import-text" id="import-text"
+        placeholder="Paste data from spreadsheet or type each guild on a new line here..."></textarea>
+      <div class="row import-options">
+        <div class="fg">
+          <label>Import Mode</label>
+          <select id="import-mode" data-change="import-mode">
+            <option value="day">Import Daily Map Data</option>
+            <option value="guilds">Import Guild List (Setup)</option>
           </select>
         </div>
-        <div class="fg modal-field">
-          <label>Map</label>
-          <select class="input-full" id="ns-map"></select>
+        <div class="fg" id="import-day-container">
+          <label>Target Day</label>
+          <input type="number" id="import-day" value="0" min="0" />
         </div>
-        <div class="split modal-field">
-          <div class="fg">
-            <label>Start Date (Day 1)</label>
-            <input class="input-full" type="date" id="ns-start" data-change="add-modal-start" />
-          </div>
-          <div class="fg">
-            <label>End Date</label>
-            <input class="input-full" type="date" id="ns-end" />
-          </div>
-        </div>
-        <div class="modal-row">
-          <button class="btn" data-action="close-modal" data-modal="modal-add">Cancel</button>
-          <button class="btn-accent" data-action="confirm-add">Create</button>
-        </div>
+      </div>
+      <div class="import-help">
+        <strong>Daily Data:</strong> Pastes a column of guild names straight down the map grid.<br />
+        <strong>Guild List:</strong> Finds unique names in your pasted text and creates new guilds for them.<br />
+        <strong>Exported Server:</strong> Drop/paste a full server export JSON (from Export Server) to restore
+        everything — guilds, plan, settings.
+      </div>
+      <div class="modal-row modal-row-spaced">
+        <button class="btn" data-action="close-modal" data-modal="modal-import">Cancel</button>
+        <button class="btn-accent" data-action="process-import">Import Data</button>
       </div>
     </div>
+  </div>
 
-    <!-- CONFIRM DELETE MODAL -->
-    <div class="modal-bg" id="modal-confirm-delete">
-      <div class="modal modal-confirm">
-        <h3>Delete Server</h3>
-        <p class="confirm-msg" id="confirm-delete-msg"></p>
-        <p class="confirm-hint">This cannot be undone.</p>
-        <div class="modal-row modal-row-center">
-          <button class="btn" data-action="close-modal" data-modal="modal-confirm-delete">Cancel</button>
-          <button class="btn btn-danger" id="confirm-delete-btn" data-action="confirm-delete">Delete</button>
+  <!-- Add Server dialog -->
+  <div class="modal-bg" id="modal-add">
+    <div class="modal">
+      <h3>Add Server</h3>
+      <div class="fg modal-field">
+        <label>Server Name</label>
+        <input class="input-full" type="text" id="ns-name" placeholder="e.g. EA-43" />
+      </div>
+      <div class="fg modal-field">
+        <label>Mode</label>
+        <select class="input-full" id="ns-mode" data-change="add-modal-mode">
+          <option value="ragnarok">Ragnarok</option>
+          <option value="goc">Game of Claws</option>
+        </select>
+      </div>
+      <div class="fg modal-field">
+        <label>Map</label>
+        <select class="input-full" id="ns-map"></select>
+      </div>
+      <div class="split modal-field">
+        <div class="fg">
+          <label>Start Date (Day 1)</label>
+          <input class="input-full" type="date" id="ns-start" data-change="add-modal-start" />
+        </div>
+        <div class="fg">
+          <label>End Date</label>
+          <input class="input-full" type="date" id="ns-end" />
         </div>
       </div>
-    </div>
-
-    <!-- TAB CONTEXT MENU -->
-    <div id="tab-ctx">
-      <div class="ctx-item" id="ctx-rename" data-action="ctx-rename">
-        <span class="ctx-icon"
-          ><svg
-            class="icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path
-              d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"
-            />
-            <path d="m15 5 4 4" /></svg
-        ></span>
-        Rename
-      </div>
-      <div class="ctx-item" id="ctx-duplicate" data-action="ctx-duplicate">
-        <span class="ctx-icon"
-          ><svg
-            class="icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg
-        ></span>
-        Duplicate
-      </div>
-      <div class="ctx-sep"></div>
-      <div class="ctx-item ctx-danger" id="ctx-delete" data-action="ctx-delete">
-        <span class="ctx-icon"
-          ><svg
-            class="icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M3 6h18" />
-            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-            <line x1="10" x2="10" y1="11" y2="17" />
-            <line x1="14" x2="14" y1="11" y2="17" /></svg
-        ></span>
-        Delete
+      <div class="modal-row">
+        <button class="btn" data-action="close-modal" data-modal="modal-add">Cancel</button>
+        <button class="btn-accent" data-action="confirm-add">Create</button>
       </div>
     </div>
+  </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js"></script>
-    <script type="module" src="js/app.js"></script>
-  </body>
+  <!-- CONFIRM DELETE MODAL -->
+  <div class="modal-bg" id="modal-confirm-delete">
+    <div class="modal modal-confirm">
+      <h3>Delete Server</h3>
+      <p class="confirm-msg" id="confirm-delete-msg"></p>
+      <p class="confirm-hint">This cannot be undone.</p>
+      <div class="modal-row modal-row-center">
+        <button class="btn" data-action="close-modal" data-modal="modal-confirm-delete">Cancel</button>
+        <button class="btn btn-danger" id="confirm-delete-btn" data-action="confirm-delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB CONTEXT MENU -->
+  <div id="tab-ctx">
+    <div class="ctx-item" id="ctx-rename" data-action="ctx-rename">
+      <span class="ctx-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path
+            d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+          <path d="m15 5 4 4" />
+        </svg></span>
+      Rename
+    </div>
+    <div class="ctx-item" id="ctx-duplicate" data-action="ctx-duplicate">
+      <span class="ctx-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+        </svg></span>
+      Duplicate
+    </div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item ctx-danger" id="ctx-delete" data-action="ctx-delete">
+      <span class="ctx-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 6h18" />
+          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+          <line x1="10" x2="10" y1="11" y2="17" />
+          <line x1="14" x2="14" y1="11" y2="17" />
+        </svg></span>
+      Delete
+    </div>
+  </div>
+
+  <!-- These load without holding up the app: zip and screenshots are only used on a click, and the
+         guild list picks up drag-to-reorder when Sortable arrives (window.__sortableReady, js/app.js). -->
+  <script async src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script async src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script async src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js"
+    onload="window.__sortableReady && window.__sortableReady()"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+
 </html>

@@ -2,12 +2,12 @@
 // The panel shown while Auto-Optimize runs: one of the ghouls (a different one each run) doing the
 // paperwork at a counter whose top is a little planning grid that keeps changing color, how long it has
 // been running, what the solver is working on, a tip that changes every few seconds, and a Stop button.
-// When a run finishes, another ghoul shows off their special move for a moment before it closes.
+// When a run finishes, the same ghoul shows off their special move for a moment before it closes.
 // The solver can't say how far along it is, so there is deliberately no progress bar.
 
 import { esc } from './ui.js';
 import { icon } from './icons.js';
-import { ghoulHTML, repickGhoul } from './ghouls.js';
+import { ghoulHTML, pickGhoul, repickGhoul } from './ghouls.js';
 
 const TIP_MS = 7000;
 const WIN_MS = 3200; // how long the finished panel stays: about one battle animation
@@ -164,14 +164,15 @@ export function showSolvePanel({ colors = [], note, phase, onStop }) {
       el.classList.remove('open');
       setTimeout(() => el.remove(), 250);
     },
-    // The plan is ready: a ghoul's special move and the time it took, then the panel closes by itself
-    // (or on a click).
+    // The plan is ready: the ghoul who did the paperwork shows off their special move, with the time it
+    // took, then the panel closes by itself (or on a click).
     finish(took) {
       clearInterval(tipTimer);
       clearInterval(cellTimer);
-      repickGhoul('battle');
+      const who = pickGhoul('working');
       el.classList.add('sp-done');
-      el.querySelector('.sp-art').outerHTML = `<div class="sp-win">${ghoulHTML('battle', 'sp-win-ghoul')}</div>`;
+      el.querySelector('.sp-art').outerHTML =
+        `<div class="sp-win">${ghoulHTML('battle', 'sp-win-ghoul', '', who)}</div>`;
       el.querySelector('.sp-title').innerHTML = `Your plan is ready <span class="sp-time">${esc(took)}</span>`;
       el.querySelector('.sp-phase').textContent = 'Not happy with it? Undo puts your old plan back.';
       el.querySelector('.sp-note').textContent = '';
