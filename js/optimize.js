@@ -152,13 +152,10 @@ export async function autoOptimize() {
     }
   } finally {
     // Always stop the elapsed-time counter. A finished run gets a moment of celebration before the panel
-    // closes (the toast waits until then, so it doesn't cover the ghoul); a stopped or failed one closes it
-    // straight away.
+    // closes (it says how long it took and that Undo puts the old plan back); a stopped or failed one
+    // closes it straight away.
     clearInterval(optTimer);
-    if (took)
-      panel.finish(took, () =>
-        showToast(`✓ Plan found in ${took}. Not happy with it? Undo puts your old plan back.`, false, 5000),
-      );
+    if (took) panel.finish(took);
     else panel.close();
     running = false;
   }

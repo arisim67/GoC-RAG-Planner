@@ -617,7 +617,17 @@ body.tour-active .app-body.has-sidebar .setup-panel {
   color: var(--accent-ink);
 }
 
+/* A cat peeking out from behind a wall: just looking, like the viewer */
+.sb-viewonly-cat {
+  float: right;
+  height: 64px;
+  width: auto;
+  margin: -2px -4px 4px 10px;
+  user-select: none;
+}
+
 .sb-viewonly .btn-tool {
+  clear: both;
   width: 100%;
   justify-content: center;
   margin-top: 10px;

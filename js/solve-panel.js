@@ -165,8 +165,8 @@ export function showSolvePanel({ colors = [], note, phase, onStop }) {
       setTimeout(() => el.remove(), 250);
     },
     // The plan is ready: a ghoul's special move and the time it took, then the panel closes by itself
-    // (or on a click). then() runs once it has closed.
-    finish(took, then) {
+    // (or on a click).
+    finish(took) {
       clearInterval(tipTimer);
       clearInterval(cellTimer);
       repickGhoul('battle');
@@ -181,7 +181,6 @@ export function showSolvePanel({ colors = [], note, phase, onStop }) {
         if (closed) return;
         closed = true;
         this.close();
-        then?.();
       };
       setTimeout(done, WIN_MS);
     },

@@ -10,6 +10,7 @@ import { esc } from './ui.js';
 import { icon } from './icons.js';
 import { gcolor } from './colors.js';
 import { getMapList } from './maps/index.js';
+import { stickerHTML } from './stickers.js';
 
 export function renderSidebar(srv, ctx) {
   const { scores, targets, occ } = ctx;
@@ -50,6 +51,7 @@ export function renderSidebar(srv, ctx) {
       ${
         srv.isViewOnly
           ? `<div class="sb-viewonly">
+        ${stickerHTML('peek', 'sb-viewonly-cat')}
         <div class="sb-viewonly-title">${icon('eye')} View-Only Mode</div>
         You are viewing a shared plan. To make your own changes, you must copy it.
         <button type="button" class="btn-tool btn-primary" data-action="duplicate-plan">${icon('copy')}<span class="btn-label">Duplicate to Edit</span></button>
