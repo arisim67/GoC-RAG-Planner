@@ -47,7 +47,7 @@ export function previewText(srv) {
     Boolean,
   );
   return {
-    title: `${srv.name || 'Shared plan'} · GoC / Ragnarok Planner`,
+    title: `${srv.name || 'Shared plan'} · Darkwick Accord`,
     description: `${parts.join(' · ')}. View-only plan: open it to see every town, day and score.`,
     subtitle: parts,
   };
@@ -268,7 +268,7 @@ export async function renderPlanPreview(srv) {
     // Footer
     ctx.font = `500 15px ${BODY}`;
     ctx.fillStyle = C.text3;
-    ctx.fillText('goc-rag-planner.pages.dev', L, 610);
+    ctx.fillText('darkwick-accord.pages.dev', L, 610);
     ctx.textAlign = 'right';
     ctx.fillText('Fan-made tool for Tokyo Debunker', PX + PW, 610);
     ctx.textAlign = 'left';

@@ -14,7 +14,8 @@
   --accent2: #c4c0ff;
   --gold: #e2c883;
   --gold2: #f2deb0;
-  --title: var(--gold); /* section and dialog titles (a few themes use a paler color so gold can mean "active") */
+  --title: var(--gold);
+  /* section and dialog titles (a few themes use a paler color so gold can mean "active") */
   --red: #ff6b88;
   --red-glow: rgba(255, 94, 126, 0.15);
   --green: #45d6a8;
@@ -29,12 +30,18 @@
   --lv3: #e2c883;
 
   /* Theme hooks: css/themes.css overrides these along with the colors above */
-  --on-accent: #14102a; /* text on top of --accent buttons */
-  --accent-ink: var(--accent); /* the accent color when used as text (themes with a dark accent lighten it) */
-  --header-top: #1f1930; /* top of the header gradient */
-  --hairline: rgba(255, 255, 255, 0.03); /* table row dividers */
-  --hover: rgba(255, 255, 255, 0.02); /* table row hover */
-  --overlay: rgba(10, 8, 15, 0.85); /* modal backdrop */
+  --on-accent: #14102a;
+  /* text on top of --accent buttons */
+  --accent-ink: var(--accent);
+  /* the accent color when used as text (themes with a dark accent lighten it) */
+  --header-top: #1f1930;
+  /* top of the header gradient */
+  --hairline: rgba(255, 255, 255, 0.03);
+  /* table row dividers */
+  --hover: rgba(255, 255, 255, 0.02);
+  /* table row hover */
+  --overlay: rgba(10, 8, 15, 0.85);
+  /* modal backdrop */
   --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   --text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
   --text-shadow-title: 0 2px 4px rgba(0, 0, 0, 0.5);
@@ -168,6 +175,7 @@ input[type='date'] {
   min-height: 36px;
   text-align: left;
 }
+
 input[type='date']::-webkit-date-and-time-value {
   text-align: left;
   min-width: 0;
@@ -383,6 +391,15 @@ td.cell-err {
   margin-bottom: 10px;
 }
 
+/* The OK / NO cat right after the Status pills (js/render.js); pulled in so the row doesn't grow */
+.status-sticker {
+  height: 44px;
+  width: auto;
+  margin: -8px 0 -8px 2px;
+  align-self: center;
+  user-select: none;
+}
+
 .pill {
   display: flex;
   align-items: center;
@@ -455,6 +472,7 @@ button.pill {
     outline: 2px solid transparent;
     outline-offset: -2px;
   }
+
   50% {
     outline: 2px solid var(--gold);
     outline-offset: -2px;

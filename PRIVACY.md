@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**GoC / Ragnarok Planner** · Last updated: 15 November 2026
+**Darkwick Accord** (Game of Claws and Ragnarok Planner) · Last updated: 15 November 2026
 
 The planner is a free, fan-made tool. It has no accounts, no cookies, no ads and no analytics.
 This page explains what little data is involved and where it goes.
@@ -47,7 +47,7 @@ The planner itself does not collect, log or sell any of this.
 
 ## Moving from the old address
 
-The planner moved from `arisim67.github.io/GoC-RAG-Planner` to `goc-rag-planner.pages.dev`.
+The planner moved from `arisim67.github.io/GoC-RAG-Planner` to `darkwick-accord.pages.dev`.
 Each address keeps its own browser storage, so the old address offers **Move my servers**. It puts
 your saved servers in the new site's link after the `#`, a part of a link that browsers never send to
 any server, and the new site saves them in your browser. Nothing is uploaded, and the copy at the old

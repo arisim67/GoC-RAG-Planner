@@ -1,6 +1,6 @@
-# GoC / Ragnarok Planner: User Guide
+# Darkwick Accord: User Guide
 
-The GoC / Ragnarok Planner, made by ari (EA-4, 43, 45) and gharial (EA-44), helps Tokyo Debunker guilds plan Game of Claws (GoC) and Ragnarok together: who holds which town on which day, with every move legal and the points shared out evenly.
+Darkwick Accord, the Game of Claws and Ragnarok Planner made by ari (EA-4, 43, 45) and gharial (EA-44), helps Tokyo Debunker guilds plan Game of Claws (GoC) and Ragnarok together: who holds which town on which day, with every move legal and the points shared out evenly.
 
 ![The planner with a Game of Claws server open](images/overview.png)
 

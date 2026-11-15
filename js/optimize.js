@@ -75,6 +75,7 @@ export async function autoOptimize() {
   }
   running = true;
   stopped = false;
+  let took = null; // set when a plan comes back
 
   // Game of Claws plans are solved in several steps and take a while: say so up front. How long is
   // driven mostly by the number of guilds, and much more steeply than one to one, so the estimate
@@ -141,19 +142,24 @@ export async function autoOptimize() {
 
     save();
     renderAll();
-    const took = sec < 60 ? `${sec}s` : `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-    showToast(`✓ Plan found in ${took}. Not happy with it? Undo puts your old plan back.`, false, 5000);
+    took = sec < 60 ? `${sec}s` : `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
   } catch (err) {
     if (err instanceof Stopped) {
       showToast('Auto-Optimize stopped. Your plan is just as it was.', false, 4000);
     } else {
       console.error('Optimizer crashed:', err);
-      showToast(err.message || 'Solver encountered an error.', true);
+      showToast(err.message || 'Solver encountered an error.', true, 5000, 'sorry');
     }
   } finally {
-    // Always stop the elapsed-time counter and close the panel, whether the solve worked or not
+    // Always stop the elapsed-time counter. A finished run gets a moment of celebration before the panel
+    // closes (the toast waits until then, so it doesn't cover the ghoul); a stopped or failed one closes it
+    // straight away.
     clearInterval(optTimer);
-    panel.close();
+    if (took)
+      panel.finish(took, () =>
+        showToast(`✓ Plan found in ${took}. Not happy with it? Undo puts your old plan back.`, false, 5000),
+      );
+    else panel.close();
     running = false;
   }
 }

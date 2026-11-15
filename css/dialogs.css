@@ -131,6 +131,20 @@
   margin-top: 4px;
 }
 
+/* A message with one of the stickers (js/stickers.js) */
+.modal-notice .notice-sticker {
+  display: block;
+  height: 96px;
+  width: auto;
+  margin: -6px auto 10px;
+  user-select: none;
+}
+
+.modal-notice .confirm-msg {
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
 .confirm-msg {
   color: var(--text2);
   font-size: 13px;
@@ -506,9 +520,11 @@
   .modal-tpl .tpl-cols {
     grid-template-columns: 1fr;
   }
+
   .modal-tpl .tpl-preview-wrap {
     position: static;
   }
+
   .modal-tpl .tpl-preview {
     max-height: 40vh;
   }
@@ -574,16 +590,19 @@
 .modal.modal-versions {
   width: min(560px, 94vw);
 }
+
 .modal-versions h3 .icon {
   vertical-align: -0.15em;
   margin-right: 4px;
 }
+
 .ver-help {
   font-size: 12px;
   line-height: 1.5;
   color: var(--text2);
   margin-bottom: 14px;
 }
+
 .ver-sub {
   margin: 18px 0 8px;
   font-size: 11px;
@@ -592,6 +611,7 @@
   text-transform: uppercase;
   color: var(--text2);
 }
+
 .ver-list {
   list-style: none;
   margin: 0;
@@ -602,6 +622,7 @@
   max-height: 48vh;
   overflow-y: auto;
 }
+
 .ver-row {
   display: flex;
   align-items: center;
@@ -612,21 +633,25 @@
   border: 1px solid var(--border);
   border-radius: 10px;
 }
+
 .ver-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
+
 .ver-when {
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
 }
+
 .ver-reason {
   font-size: 12px;
   color: var(--accent2);
 }
+
 .ver-desc {
   font-size: 11px;
   color: var(--text3);
@@ -634,6 +659,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .ver-empty {
   font-size: 13px;
   color: var(--text3);
@@ -717,10 +743,15 @@
   bottom: 20px;
   z-index: 9000;
   display: flex;
+  cursor: pointer;
+  /* a click shows the next tip */
   gap: 16px;
   align-items: flex-start;
-  width: min(480px, calc(100vw - 40px));
-  padding: 16px;
+  width: min(540px, calc(100vw - 40px));
+  min-height: 176px;
+  /* tall enough for the desk scene (.sp-art) */
+  padding: 16px 16px 16px 154px;
+  /* the desk scene sits on the left */
   border-radius: 14px;
   background: var(--bg2);
   border: 1px solid var(--border2);
@@ -737,64 +768,119 @@
   transform: none;
 }
 
+/* One of the ghouls doing the paperwork (ghouls.js) behind a desk in the theme's colors, on the left of
+   the panel. Three layers on one 335 x 398 frame (the files are 2x, shown at half size): the
+   ghoul's back layer (body, coat, legs), the desk, and the front layer (arms, head, paper). */
 .sp-art {
-  display: grid;
-  grid-template-columns: repeat(9, 9px);
-  gap: 3px;
-  flex-shrink: 0;
-  padding: 8px;
-  border-radius: 10px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  position: relative;
-  overflow: hidden;
-}
-
-/* A soft light sweeping across the grid, day by day */
-.sp-art::after {
-  content: '';
   position: absolute;
-  inset: 0;
-  width: 30%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
-  animation: sp-sweep 2.4s linear infinite;
+  left: 10px;
+  bottom: 8px;
+  width: 167.5px;
+  height: 199px;
+  pointer-events: none;
+  transform: scale(0.8);
+  transform-origin: 0 100%;
 }
 
-@keyframes sp-sweep {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(340%);
-  }
+.sp-art > * {
+  position: absolute;
+}
+
+.sp-counter {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.sp-ghoul {
+  left: 22.5px;
+  /* the desk's frame starts 45px (22.5 shown) left of the ghoul's */
+  top: 0;
+}
+
+.sp-ghoul img {
+  display: block;
+  width: 136.5px;
+  height: 150px;
+  user-select: none;
+}
+
+.sp-counter-top {
+  /* lifted toward the text color so the top stands out from the page behind it, light or dark */
+  fill: color-mix(in srgb, var(--bg4) 72%, var(--text));
+  stroke: var(--border2);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.sp-counter-edge {
+  fill: color-mix(in srgb, var(--bg4) 85%, var(--text));
+}
+
+.sp-counter-front {
+  fill: color-mix(in srgb, var(--bg3) 88%, var(--text));
+}
+
+.sp-counter-panel {
+  fill: color-mix(in srgb, var(--bg3) 85%, #000);
+  stroke: var(--border2);
+  stroke-width: 1;
+}
+
+.sp-counter-kick {
+  fill: color-mix(in srgb, var(--bg3) 60%, #000);
+}
+
+.sp-counter-end {
+  fill: color-mix(in srgb, var(--bg3) 70%, #000);
+}
+
+.sp-counter-mat {
+  fill: var(--bg3);
 }
 
 .sp-cell {
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
-  background: var(--bg3);
-  transition: background 0.3s;
+  fill: var(--bg2);
+  transition: fill 0.4s;
 }
 
 .sp-cell.on {
-  background: var(--c);
+  fill: var(--c);
+  opacity: 0.85;
 }
 
-.sp-cell.pop {
-  animation: sp-pop 0.35s ease-out;
+/* When the plan is ready, a ghoul's special move takes the desk's place (the files are 2x). */
+.sp-win {
+  position: absolute;
+  left: 10px;
+  bottom: 6px;
+  width: 136px;
+  height: 128px;
+  /* stands on the bottom; a raised weapon can reach over the top edge of the panel */
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
 }
 
-@keyframes sp-pop {
-  0% {
-    transform: scale(0.4);
-  }
-  70% {
-    transform: scale(1.25);
-  }
-  100% {
-    transform: scale(1);
-  }
+.sp-win-ghoul img {
+  display: block;
+  max-width: 136px;
+  max-height: 128px;
+  user-select: none;
+  transform: scaleX(-1);
+  /* the special moves face left in the game files: turn them toward the text */
+}
+
+.solve-panel.sp-done {
+  min-height: 0;
+  /* only as tall as its text: no desk to make room for */
+}
+
+.sp-done .sp-title {
+  color: var(--accent2);
 }
 
 .sp-body {
@@ -864,6 +950,7 @@
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: none;
@@ -882,27 +969,31 @@
     bottom: 10px;
     width: auto;
     gap: 12px;
-    padding: 12px;
+    min-height: 136px;
+    padding: 12px 12px 12px 114px;
   }
-  .solve-panel {
-    flex-wrap: wrap;
+
+  .sp-win {
+    left: 8px;
+    bottom: 4px;
+    width: 98px;
+    height: 104px;
   }
+
+  .sp-win-ghoul img {
+    max-width: 98px;
+    max-height: 104px;
+  }
+
+  /* the same scene, smaller */
   .sp-art {
-    width: 100%;
-    box-sizing: border-box;
-    grid-template-columns: repeat(9, 1fr);
-    gap: 3px;
-    padding: 6px;
-  }
-  .sp-cell {
-    width: auto;
-    height: 6px;
+    left: 8px;
+    bottom: 8px;
+    transform: scale(0.6);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sp-art::after,
-  .sp-cell.pop,
   .sp-tip-text.in {
     animation: none;
   }

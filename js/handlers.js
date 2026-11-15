@@ -11,6 +11,7 @@ import { setBtnLabel } from './icons.js';
 import { recordChange, clearHistory } from './history.js';
 import { getMapList, getMapData } from './maps/index.js';
 import { takeVersion } from './versions.js';
+import { showNotice } from './stickers.js';
 
 export function updName(v) {
   const s = activeSrv();
@@ -89,9 +90,18 @@ function resetPlan(srv) {
   }
 }
 
-export function clearPlan() {
+export async function clearPlan() {
   const s = activeSrv();
   if (!s) return;
+  const sure = await showNotice({
+    sticker: 'stop',
+    title: 'Clear the whole plan?',
+    body: 'Every day after Day 0 is emptied. Day 0 stays as it is, and Undo puts the plan back.',
+    ok: 'Clear Plan',
+    cancel: 'Cancel',
+    danger: true,
+  });
+  if (!sure || activeSrv() !== s) return;
   takeVersion(s, 'Before Clear Plan');
   recordChange(s, 'Clear Plan');
   const mapData = getMapData(s.mode, s.mapKey);

@@ -1,9 +1,21 @@
 // js/ui.js
 // Small UI helpers: toast messages, HTML escaping, date labels, closing modals.
 
-export function showToast(msg, isError = true, duration = 5000) {
+// sticker: the name of one in images/stickers/ to show beside the message (js/stickers.js).
+export function showToast(msg, isError = true, duration = 5000, sticker = '') {
   const toast = document.createElement('div');
   toast.textContent = msg;
+  if (sticker) {
+    const img = document.createElement('img');
+    img.src = `images/stickers/${sticker}.webp`;
+    img.alt = '';
+    img.style.cssText = 'height: 56px; width: auto; flex: none; margin: -6px 0';
+    img.onerror = () => img.remove();
+    toast.prepend(img);
+    toast.style.display = 'flex';
+    toast.style.alignItems = 'center';
+    toast.style.gap = '14px';
+  }
   toast.style.cssText = `
     position: fixed; bottom: 24px; right: 24px; 
     background: ${isError ? 'var(--red)' : 'var(--green)'}; 

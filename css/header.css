@@ -20,6 +20,66 @@
   flex-wrap: wrap;
 }
 
+/* The logo left of the title; a house theme shows that house's ghouls instead. A background picture,
+   so only the one for the theme in use is downloaded. */
+.app-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-name-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.app-name-text small {
+  margin-top: 2px;
+  letter-spacing: 0.04em;
+}
+
+.app-logo {
+  flex: none;
+  width: 48px;
+  /* the same box for the logo and every house, so the title never moves */
+  height: 40px;
+  margin: -6px 0;
+  background: url('../images/favicon-192.png') center / contain no-repeat;
+}
+
+html[data-theme='dionysia'] .app-logo {
+  background-image: url('../images/ghouls/houses/dionysia.webp');
+}
+
+html[data-theme='frostheim'] .app-logo {
+  background-image: url('../images/ghouls/houses/frostheim.webp');
+}
+
+html[data-theme='hotarubi'] .app-logo {
+  background-image: url('../images/ghouls/houses/hotarubi.webp');
+}
+
+html[data-theme='jabberwock'] .app-logo {
+  background-image: url('../images/ghouls/houses/jabberwock.webp');
+}
+
+html[data-theme='mortkranken'] .app-logo {
+  background-image: url('../images/ghouls/houses/mortkranken.webp');
+}
+
+html[data-theme='obscuary'] .app-logo {
+  background-image: url('../images/ghouls/houses/obscuary.webp');
+}
+
+html[data-theme='sinostra'] .app-logo {
+  background-image: url('../images/ghouls/houses/sinostra.webp');
+}
+
+html[data-theme='vagastrom'] .app-logo {
+  background-image: url('../images/ghouls/houses/vagastrom.webp');
+}
+
 .app-title small {
   font-size: 11px;
   color: var(--text2);
@@ -226,55 +286,19 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
-.welcome-art {
-  display: inline-grid;
-  gap: 5px;
-  padding: 14px;
-  margin-bottom: 22px;
-  border-radius: 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
+/* One of the ghouls mid-attack (ghouls.js); the files are 2x, shown at about half size */
+.welcome-ghoul {
+  display: block;
+  margin: -6px auto 14px;
 }
 
-.wa-row {
-  display: grid;
-  grid-template-columns: 34px repeat(7, 30px);
-  gap: 5px;
-}
-
-.wa-town,
-.wa-day,
-.wa-cell {
-  height: 12px;
-  border-radius: 4px;
-}
-
-.wa-town {
-  background: var(--bg3);
-}
-
-.wa-head .wa-town {
-  background: transparent;
-}
-
-.wa-day {
-  height: 8px;
-  margin-top: 2px;
-  background: var(--bg4);
-}
-
-.wa-cell {
-  background: color-mix(in srgb, var(--c) 30%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 55%, transparent);
-}
-
-.wa-today {
-  outline: 1px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.wa-day.wa-today {
-  background: var(--accent);
+.welcome-ghoul img {
+  display: block;
+  height: 150px;
+  max-width: 100%;
+  margin: 0 auto;
+  object-fit: contain;
+  user-select: none;
 }
 
 .welcome-title {
@@ -353,9 +377,9 @@
     margin: 16px auto 40px;
     padding: 24px 16px;
   }
-  .wa-row {
-    grid-template-columns: 24px repeat(7, 22px);
-    gap: 4px;
+
+  .welcome-ghoul img {
+    height: 120px;
   }
 }
 

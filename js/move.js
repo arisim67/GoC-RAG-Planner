@@ -9,9 +9,9 @@
 // Shared plan links (?plan=...) opened on the old site go straight to the new site, unless this
 // browser already has that plan saved (the person who made it), who should move their servers first.
 //
-// Testing before the move: add ?moved-test to any goc-rag-planner.pages.dev address to see the
-// banner there. ?moved-test=https://cloudflare-test.goc-rag-planner.pages.dev/ sends the move to
-// that address instead of the main site (it must be another *.goc-rag-planner.pages.dev address).
+// Testing before the move: add ?moved-test to any darkwick-accord.pages.dev address to see the
+// banner there. ?moved-test=https://cloudflare-test.darkwick-accord.pages.dev/ sends the move to
+// that address instead of the main site (it must be another *.darkwick-accord.pages.dev address).
 
 import { NEW_SITE_URL, OLD_SITE_HOSTS } from './config.js';
 import { state, save } from './state.js';
@@ -24,7 +24,7 @@ const MAX_LINK = 1800000; // stay well under browsers' URL length limits
 const OFF_DATE = 'January 1, 2027'; // when GitHub Pages (the old address) will be switched off
 
 const TEST_PARAM = 'moved-test';
-const TEST_HOST_RE = /^([a-z0-9-]+\.)?goc-rag-planner\.pages\.dev$/i;
+const TEST_HOST_RE = /^([a-z0-9-]+\.)?darkwick-accord\.pages\.dev$/i;
 
 function testTarget() {
   const params = new URLSearchParams(location.search);

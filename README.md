@@ -1,6 +1,8 @@
-# GoC / Ragnarok Planner
+# Darkwick Accord
 
-[![Site](https://img.shields.io/website?url=https%3A%2F%2Fgoc-rag-planner.pages.dev&label=site&up_message=online)](https://goc-rag-planner.pages.dev/)
+**Game of Claws and Ragnarok Planner**
+
+[![Site](https://img.shields.io/website?url=https%3A%2F%2Fdarkwick-accord.pages.dev&label=site&up_message=online)](https://darkwick-accord.pages.dev/)
 [![CI](https://github.com/arisim67/GoC-RAG-Planner/actions/workflows/ci.yml/badge.svg)](https://github.com/arisim67/GoC-RAG-Planner/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io)
@@ -9,7 +11,7 @@ A browser-based planning tool for **Tokyo Debunker** guild events: **Game of Cla
 Guild leaders use it to lay out who takes which town on which day, check that the plan is legal,
 and auto-balance points, Darkwick and dorm time across guilds with a built-in MILP optimizer.
 
-**[Open the app](https://goc-rag-planner.pages.dev/)** · **[User guide](docs/user-guide.md)** · [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md)
+**[Open the app](https://darkwick-accord.pages.dev/)** · **[User guide](https://darkwick-accord.pages.dev/user-guide/)** · [Changelog](CHANGELOG.md) · [Privacy](https://darkwick-accord.pages.dev/privacy/)
 
 ![Planner screenshot](docs/screenshot.png)
 
@@ -161,5 +163,5 @@ Code is released under the [MIT License](LICENSE).
 
 This is a fan-made tool and is not affiliated with or endorsed by the developers or publishers of
 Tokyo Debunker. Game names and terms belong to their respective owners. The map artwork, buildings and
-characters in `images/map/` are official Tokyo Debunker artwork and belong to its creators; they are used
-here only to show the in-game maps.
+characters in `images/map/`, the ghoul animations and house pictures in `images/ghouls/`, and the stickers in `images/stickers/`, are official Tokyo Debunker artwork
+and belong to its creators; they are used here only to show the in-game maps and characters.

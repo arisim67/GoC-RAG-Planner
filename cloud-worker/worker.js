@@ -10,8 +10,8 @@
 //
 // Everything expires TTL seconds after it was last saved.
 
-const APP_URL = 'https://goc-rag-planner.pages.dev/';
-const DEFAULT_IMAGE = APP_URL + 'images/social-preview.png';
+const APP_URL = 'https://darkwick-accord.pages.dev/';
+const DEFAULT_IMAGE = APP_URL + 'images/social-preview.png?v=2'; // ?v= changes when the picture does, so Discord fetches the new one
 const TTL = 2592000; // 30 days
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const VER_RE = /^[a-z0-9]{1,16}$/i;
@@ -61,7 +61,7 @@ function sharePage({ url, title, description, image, target }) {
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="GoC / Ragnarok Planner">
+<meta property="og:site_name" content="Darkwick Accord">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(url)}">
@@ -125,8 +125,9 @@ export default {
       if (!ID_RE.test(id)) return Response.redirect(APP_URL, 302);
       const v = VER_RE.test(url.searchParams.get('v') || '') ? url.searchParams.get('v') : '';
 
-      let title = 'Shared plan · GoC / Ragnarok Planner';
-      let description = 'A plan shared from the GoC / Ragnarok Planner for Tokyo Debunker guilds.';
+      let title = 'Shared plan · Darkwick Accord';
+      let description =
+        'A plan shared from Darkwick Accord, the Game of Claws and Ragnarok Planner for Tokyo Debunker guilds.';
       let image = DEFAULT_IMAGE;
 
       const { value, metadata } = await kv(env).getWithMetadata('img:' + id, { type: 'stream' });
@@ -141,7 +142,7 @@ export default {
         if (raw) {
           try {
             const plan = JSON.parse(raw);
-            if (plan.name) title = `${clip(plan.name, 120)} · GoC / Ragnarok Planner`;
+            if (plan.name) title = `${clip(plan.name, 120)} · Darkwick Accord`;
           } catch {
             /* keep the defaults */
           }

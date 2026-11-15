@@ -2,7 +2,7 @@
 // Builds the page: server tabs, settings, guilds, status, planning grid, stats and daily messages.
 
 import { morph } from './morph.js';
-import { state, activeSrv, numDays, save, numDisplayDays, GUILD_COLORS } from './state.js';
+import { state, activeSrv, numDays, save, numDisplayDays } from './state.js';
 import { gcolor } from './colors.js';
 import { esc, dateLabel, dateLabelShort, todayDay } from './ui.js';
 import {
@@ -31,6 +31,8 @@ import {
   GAME_LIMIT,
 } from './messages.js';
 import { icon } from './icons.js';
+import { ghoulHTML } from './ghouls.js';
+import { stickerHTML } from './stickers.js';
 import { renderDiscord } from './discord-md.js';
 import { canUndo, canRedo, undoLabel, redoLabel } from './history.js';
 import { applySpotlight } from './spotlight.js';
@@ -201,30 +203,10 @@ function wireJumpBar(mc) {
   });
 }
 
-// ── No servers yet: a welcome panel with a little picture of a plan ──
-// The picture is a few rows of a planning grid, drawn with the guild colors (no image file).
-const WELCOME_ART = [
-  [0, 0, 1, 1, 2, 2, 0],
-  [3, 3, 3, 0, 0, 4, 4],
-  [1, 2, 2, 2, 3, 3, 1],
-  [4, 4, 0, 1, 1, 0, 2],
-  [2, 1, 4, 4, 2, 1, 3],
-];
+// ── No servers yet: a welcome panel with one of the ghouls in battle ──
 function renderWelcome() {
-  const art = WELCOME_ART.map(
-    row =>
-      `<div class="wa-row"><span class="wa-town"></span>${row
-        .map((g, d) => `<span class="wa-cell${d === 4 ? ' wa-today' : ''}" style="--c:${GUILD_COLORS[g]}"></span>`)
-        .join('')}</div>`,
-  ).join('');
   return `<div class="empty-state welcome">
-    <div class="welcome-art" aria-hidden="true">
-      <div class="wa-row wa-head"><span class="wa-town"></span>${Array.from(
-        { length: 7 },
-        (_, d) => `<span class="wa-day${d === 4 ? ' wa-today' : ''}"></span>`,
-      ).join('')}</div>
-      ${art}
-    </div>
+    ${ghoulHTML('battle', 'welcome-ghoul')}
     <h2 class="welcome-title">Plan your next Game of Claws or Ragnarok</h2>
     <p class="welcome-sub">Work out who holds which town on which day, keep every move legal, and share the points out evenly.</p>
     <ol class="welcome-steps">
@@ -702,6 +684,9 @@ function renderStatus(srv, issues, wipes, starts) {
       : jump(kind, `${attrs} title="${title}"`, inner, 'pill pill-fail pill-jump');
   };
 
+  // A cat holding up OK when nothing is wrong, NO when something is
+  const allOk = !issues.length && !wipes.length && !starts.length && !decViol.length;
+
   return `<div class="section" id="sec-status" data-sec="status" data-tour="status">
     <div class="sec-title">Status</div>
     <div class="pills">
@@ -725,6 +710,7 @@ function renderStatus(srv, issues, wipes, starts) {
         wipes.length ? `data-day="${wipes[0].day}" data-g="${esc(wipes[0].guild)}"` : '',
         'Show the first wipe in the grid',
       )}
+      ${stickerHTML(allOk ? 'ok' : 'no', 'status-sticker')}
     </div>
     ${issueItems.length ? `<div class="status-issues">${issueItems.join('<span class="status-sep"> · </span>')}</div>` : ''}
   </div>`;

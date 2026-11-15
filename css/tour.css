@@ -17,6 +17,7 @@
   border-radius: 8px;
   border: 1px solid var(--border);
 }
+
 @media (hover: hover) {
   .tour-launch:hover {
     border-color: var(--border2);
@@ -37,13 +38,16 @@
   inset: 0;
   pointer-events: auto;
 }
+
 .tour-root.tour-dim .tour-blocker {
   background: rgba(8, 6, 14, 0.72);
 }
+
 /* ...except while a step is waiting for the person to do the thing, when the page has to be usable. */
 .tour-root.tour-pass .tour-blocker {
   pointer-events: none;
 }
+
 /* A dialog is z-index 200, far below the tour, so during a tour it would open behind the dimming.
    Lift it while the tour is running, with the tour above it again so the instructions stay readable
    over the dialog's own backdrop. The card cannot be lifted on its own - .tour-root makes a stacking
@@ -63,6 +67,7 @@ body.tour-active .modal-bg.open {
     0 0 0 2px var(--accent),
     0 0 24px var(--accent-glow);
 }
+
 /* Animate only when moving to another step; while the page scrolls the box follows instantly. */
 .tour-root.tour-anim .tour-spot {
   transition:
@@ -92,9 +97,11 @@ body.tour-active .modal-bg.open {
   max-height: calc(100vh - 24px);
   max-height: calc(100dvh - 24px);
 }
+
 .tour-card > * {
   flex-shrink: 0;
 }
+
 .tour-card > .tour-body {
   flex-shrink: 1;
   min-height: 0;
@@ -105,16 +112,67 @@ body.tour-active .modal-bg.open {
   padding: 5px;
   margin: -5px;
 }
+
 .tour-card > .tour-body.tour-body-more {
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
 }
+
+/* One of the ghouls sits on the line at the top of every card, as if it were the one telling them
+   (ghouls.js); the picture's bottom sits 46px inside the card so the seat lands on that line. */
+.tour-perch {
+  display: none;
+}
+
+.tour-card-perch .tour-perch {
+  display: block;
+  position: absolute;
+  right: 16px;
+  bottom: calc(100% - 46px);
+  pointer-events: none;
+}
+
+.tour-ghoul img {
+  display: block;
+  height: 120px;
+  max-width: 130px;
+  object-fit: contain;
+  object-position: bottom;
+  user-select: none;
+}
+
+/* The "Bye" cat on the last card */
+.tour-sticker {
+  display: block;
+  height: 72px;
+  width: auto;
+  margin: 12px auto 0;
+  user-select: none;
+}
+
+@media (max-width: 639px) {
+  /* a little smaller over a phone's bottom sheet, so it covers less of the page above */
+  .tour-ghoul img {
+    height: 96px;
+    max-width: 104px;
+  }
+}
+
+.tour-card-perch .tour-title {
+  padding-right: 96px;
+}
+
+.tour-card-perch {
+  margin-top: 30px;
+}
+
 .tour-card-center {
   left: 50% !important;
   top: 50% !important;
   transform: translate(-50%, -50%);
   width: min(420px, calc(100vw - 32px));
 }
+
 .tour-card-sheet {
   left: 12px !important;
   right: 12px;
@@ -131,12 +189,14 @@ body.tour-active .modal-bg.open {
   overflow: hidden;
   margin-bottom: 10px;
 }
+
 .tour-progress-fill {
   height: 100%;
   background: var(--accent);
   width: 0;
   transition: width 0.25s ease;
 }
+
 .tour-count {
   font-size: 10px;
   color: var(--text3);
@@ -144,6 +204,7 @@ body.tour-active .modal-bg.open {
   text-transform: uppercase;
   margin-bottom: 4px;
 }
+
 .tour-title {
   font-family: var(--font-head);
   font-size: 15px;
@@ -151,13 +212,16 @@ body.tour-active .modal-bg.open {
   margin-bottom: 8px;
   letter-spacing: 0.02em;
 }
+
 .tour-body {
   color: var(--text2);
 }
+
 .tour-body b {
   color: var(--text);
   font-weight: 600;
 }
+
 .tour-body code {
   background: var(--bg3);
   padding: 1px 5px;
@@ -172,6 +236,7 @@ body.tour-active .modal-bg.open {
   gap: 8px;
   margin-top: 14px;
 }
+
 .tour-choice {
   display: flex;
   flex-direction: column;
@@ -186,21 +251,25 @@ body.tour-active .modal-bg.open {
   border-radius: 12px;
   padding: 11px 13px;
 }
+
 .tour-choice-label {
   font-weight: 600;
   font-size: 13px;
 }
+
 .tour-choice-hint {
   font-size: 11.5px;
   color: var(--text3);
   line-height: 1.45;
 }
+
 @media (hover: hover) {
   .tour-choice:hover {
     border-color: var(--accent);
     background: var(--bg4);
   }
 }
+
 .tour-choice:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
@@ -220,6 +289,7 @@ body.tour-active .modal-bg.open {
   gap: 4px;
   margin: 8px 0;
 }
+
 .tour-switch button {
   flex: 1;
   padding: 6px 10px;
@@ -231,11 +301,13 @@ body.tour-active .modal-bg.open {
   font-size: 12px;
   cursor: pointer;
 }
+
 .tour-switch button[aria-pressed='true'] {
   border-color: var(--gold);
   background: var(--bg4);
   color: var(--gold);
 }
+
 .tour-switch button:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
@@ -250,6 +322,7 @@ body.tour-active .modal-bg.open {
   font-size: 12px;
   color: var(--accent2);
 }
+
 .tour-wait-dot {
   width: 7px;
   height: 7px;
@@ -258,21 +331,25 @@ body.tour-active .modal-bg.open {
   flex: none;
   animation: tour-pulse 1.4s ease-in-out infinite;
 }
+
 @keyframes tour-pulse {
   0%,
   100% {
     opacity: 0.35;
     transform: scale(0.8);
   }
+
   50% {
     opacity: 1;
     transform: scale(1.15);
   }
 }
+
 /* Done: the hint turns into a nudge toward Next, which is now theirs to press. */
 .tour-wait-done {
   color: var(--green);
 }
+
 .tour-wait-tick {
   font-weight: 700;
   flex: none;
@@ -286,11 +363,13 @@ body.tour-active .modal-bg.open {
   cursor: not-allowed;
   font-weight: 500;
 }
+
 @media (hover: hover) {
   .tour-next:disabled:hover {
     background: var(--bg3);
   }
 }
+
 .tour-stepskip {
   font-family: var(--font-body);
   font-size: 12px;
@@ -302,11 +381,13 @@ body.tour-active .modal-bg.open {
   background: none;
   color: var(--text3);
 }
+
 @media (hover: hover) {
   .tour-stepskip:hover {
     color: var(--text2);
   }
 }
+
 .tour-stepskip:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
@@ -319,10 +400,12 @@ body.tour-active .modal-bg.open {
   margin-top: 14px;
   gap: 8px;
 }
+
 .tour-nav {
   display: flex;
   gap: 6px;
 }
+
 .tour-skip,
 .tour-back,
 .tour-next {
@@ -334,31 +417,38 @@ body.tour-active .modal-bg.open {
   padding: 7px 14px;
   border: none;
 }
+
 .tour-skip {
   background: none;
   color: var(--text3);
   padding-left: 0;
 }
+
 .tour-back {
   background: var(--bg3);
   color: var(--text);
 }
+
 .tour-next {
   background: var(--accent);
   color: var(--on-accent);
   box-shadow: 0 4px 12px var(--accent-glow);
 }
+
 @media (hover: hover) {
   .tour-skip:hover {
     color: var(--text2);
   }
+
   .tour-back:hover {
     background: var(--bg4);
   }
+
   .tour-next:hover {
     background: var(--accent2);
   }
 }
+
 .tour-skip:focus-visible,
 .tour-back:focus-visible,
 .tour-next:focus-visible {
@@ -371,6 +461,7 @@ body.tour-active .modal-bg.open {
   .tour-progress-fill {
     transition: none;
   }
+
   .tour-wait-dot {
     animation: none;
     opacity: 0.8;

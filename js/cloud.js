@@ -9,6 +9,7 @@ import { renderPlanPreview, previewText } from './preview.js';
 import { setBtnLabel } from './icons.js';
 import { isOldSite, newSiteUrl } from './move.js';
 import { takeVersion } from './versions.js';
+import { showNotice } from './stickers.js';
 
 const WORKER_URL = CLOUD_SYNC_URL; // set in js/config.js
 
@@ -68,7 +69,11 @@ export async function publishToCloud() {
     }
   } catch (err) {
     console.error(err);
-    alert('Failed to sync to cloud. Check your connection or Worker URL.');
+    showNotice({
+      sticker: 'crying',
+      title: "Couldn't save to the cloud",
+      body: 'Check your connection and try again. Your plan is still saved in this browser.',
+    });
     setBtns(originalText, false);
   }
 }
@@ -111,7 +116,11 @@ export async function syncFromCloud() {
     setBtn('✓ Synced!', true);
   } catch (err) {
     console.error(err);
-    alert('No cloud updates found for this specific server.');
+    showNotice({
+      sticker: 'crying',
+      title: "Couldn't sync from the cloud",
+      body: 'No cloud copy of this server was found, or the cloud could not be reached. Your plan here is unchanged.',
+    });
     setBtn('Error', true);
   }
 
@@ -144,6 +153,10 @@ export async function checkUrlForSharedPlan() {
     save();
   } catch (err) {
     console.error(err);
-    alert('Could not load the shared plan. It may have expired or the link is incorrect.');
+    showNotice({
+      sticker: 'confused',
+      title: "This link didn't open",
+      body: 'The shared plan may have expired, or the link is incomplete. Ask whoever sent it for a new one.',
+    });
   }
 }

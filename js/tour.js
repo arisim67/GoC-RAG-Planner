@@ -32,6 +32,8 @@
 
 import { showPanelFor, closePanels, setupIsPanel, tabsActive, isOnTab, currentTab, setTab } from './sidebar.js';
 import { startRule, validateStarts, isMidEvent, startingTownLimit } from './calc.js';
+import { ghoulHTML, repickGhoul } from './ghouls.js';
+import { stickerHTML } from './stickers.js';
 
 // 2 for the move to the new site (November 2026), so everyone sees the updated tutorial once. Anyone
 // who skips it gets the What's new card instead (whats-new.js). Bump this only to deliberately show
@@ -132,7 +134,7 @@ function chooserStep() {
   const has = !!hooks.getActiveServer();
   return {
     target: null,
-    title: 'Welcome to the GoC / Ragnarok Planner',
+    title: 'Welcome to Darkwick Accord',
     body: `This app plans a whole Game of Claws or Ragnarok event: who holds which town on which day,
            kept legal and with the points shared out evenly.<br><br>Where would you like to start?`,
     choices: [
@@ -374,7 +376,7 @@ function buildSteps(srv) {
   return [
     {
       target: null,
-      title: 'Welcome to the GoC / Ragnarok Planner',
+      title: 'Welcome to Darkwick Accord',
       body: `This quick tour shows how to plan an event from start to finish. It takes about a minute.
              <br><br>You can skip it now and replay it any time from the <b>Tutorial</b> button at the top.`,
       next: 'Start tour',
@@ -509,7 +511,7 @@ function buildSteps(srv) {
           ? 'The Tutorial Server will be removed when you close this. Click <b>+ Add Server</b> to start your own plan.<br><br>'
           : ''
       }Your work saves to this browser automatically. Replay this tour with <b>Tutorial</b>, or open
-             <b>User Guide</b> for the full details.`,
+             <b>User Guide</b> for the full details.${stickerHTML('bye', 'tour-sticker')}`,
       next: 'Done',
     },
   ];
@@ -544,6 +546,7 @@ export function startTour() {
   demoState = null;
   flow = null;
   steps = [chooserStep()];
+  repickGhoul('sitting'); // a different ghoul on the first card each time the tutorial opens
   buildOverlay();
   index = 0;
   show(0, 1);
@@ -574,7 +577,7 @@ function pickFlow(which) {
         body: `It is saved in this browser and will be here when you come back — no account, nothing to
              press. Carry on filling in the days, or let <b>Auto-Optimize</b> propose the rest.
              <br><br>Replay this any time with <b>Tutorial</b>, or open <b>User Guide</b> for the
-             full details.`,
+             full details.${stickerHTML('bye', 'tour-sticker')}`,
         next: 'Done',
       },
     ];
@@ -607,6 +610,7 @@ function buildOverlay() {
     <div class="tour-blocker"></div>
     <div class="tour-spot" aria-hidden="true"></div>
     <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" tabindex="-1">
+      <div class="tour-perch"></div>
       <div class="tour-progress"><div class="tour-progress-fill"></div></div>
       <div class="tour-count"></div>
       <h3 class="tour-title" id="tour-title"></h3>
@@ -625,6 +629,7 @@ function buildOverlay() {
     root,
     spot: root.querySelector('.tour-spot'),
     card: root.querySelector('.tour-card'),
+    perch: root.querySelector('.tour-perch'),
     count: root.querySelector('.tour-count'),
     fill: root.querySelector('.tour-progress-fill'),
     title: root.querySelector('.tour-title'),
@@ -746,6 +751,10 @@ function show(i, dir) {
   els.count.textContent = flow ? `${pos} of ${visible.length}` : '';
   els.fill.style.width = flow ? `${(pos / visible.length) * 100}%` : '0';
   els.title.innerHTML = step.title;
+  // The tour's ghoul sits on the top edge of every card, as if it were the one telling them. It is put
+  // in once per tour, so it doesn't restart its animation at each step; perch: false leaves it off.
+  els.card.classList.toggle('tour-card-perch', step.perch !== false);
+  if (!els.perch.firstChild) els.perch.innerHTML = ghoulHTML('sitting', 'tour-ghoul');
   els.body.innerHTML = typeof step.body === 'function' ? step.body() : step.body;
   els.back.style.visibility = i === 0 ? 'hidden' : 'visible';
   els.next.textContent = step.next || (i === steps.length - 1 ? 'Done' : 'Next');
@@ -936,10 +945,17 @@ function reposition() {
   tb.classList.toggle('tour-body-more', tb.scrollHeight - tb.scrollTop - tb.clientHeight > 4);
   const step = steps[index];
   const el = targetEl(step);
+  // How far the ghoul sitting on the card reaches above it: the card is placed as if it were that much
+  // taller, so the ghoul doesn't sit on what the step is pointing at or off the top of the screen.
   const vw = window.innerWidth,
     vh = window.innerHeight;
   const card = els.card;
   const mobile = vw < 640;
+  // How far the ghoul sitting on the card reaches above it: the card is placed as if it were that much
+  // taller, so the ghoul doesn't sit on what the step points at or off the top of the screen.
+  const head = card.classList.contains('tour-card-perch')
+    ? Math.max(0, card.getBoundingClientRect().top - els.perch.getBoundingClientRect().top)
+    : 0;
 
   // The Map is nearly as tall as the window on wide screens, so a card above or below it has nowhere to
   // go and would sit on top of the towns. Instead the map moves to the left and shrinks just enough
@@ -985,7 +1001,7 @@ function reposition() {
       ch = card.offsetHeight,
       gap = 16;
     let x = mr.right + gap,
-      y = Math.min(Math.max(mr.top, 16), vh - ch - 16);
+      y = Math.min(Math.max(mr.top, 16 + head), vh - ch - 16);
     if (x + cw > vw - 16) {
       x = mr.left - gap - cw;
       if (x < 16) {
@@ -994,7 +1010,7 @@ function reposition() {
       }
     }
     card.style.left = Math.max(16, x) + 'px';
-    card.style.top = Math.max(16, y) + 'px';
+    card.style.top = Math.max(16 + head, y) + 'px';
     return;
   }
   card.classList.toggle('tour-card-sheet', mobile && !!el);
@@ -1047,7 +1063,7 @@ function reposition() {
   if (side) {
     const sr = svgEl.getBoundingClientRect();
     card.style.left = Math.min(sr.right + 24, vw - cw - 16) + 'px';
-    card.style.top = Math.min(Math.max(sr.top, 8), vh - ch - 16) + 'px';
+    card.style.top = Math.min(Math.max(sr.top, 8 + head), vh - ch - 16) + 'px';
     return;
   }
   // A target in the Server Settings panel (against the right edge): the card goes to the panel's left
@@ -1056,28 +1072,28 @@ function reposition() {
     const pl = panel.getBoundingClientRect().left;
     if (pl > cw + 40) {
       card.style.left = pl - cw - 24 + 'px';
-      card.style.top = Math.min(Math.max(top, 8), vh - ch - 16) + 'px';
+      card.style.top = Math.min(Math.max(top, 8 + head), vh - ch - 16) + 'px';
       return;
     }
   }
   let y;
-  const below = bottom + gap,
+  const below = bottom + gap + head,
     above = top - gap - ch;
   if (step.place !== 'top' && below + ch <= vh - 8) y = below;
-  else if (above >= 8) y = above;
+  else if (above >= 8 + head) y = above;
   else if (below + ch <= vh - 8) y = below;
   else y = vh - ch - 16;
   let x = Math.min(Math.max(left, 16), vw - cw - 16);
   // Target too tall to avoid (grid, stats…): park the card in the bottom-right corner,
   // which hides less than covering the town names on the left.
-  const overlaps = y < bottom && y + ch > top;
+  const overlaps = y - head < bottom && y + ch > top;
   if (overlaps) {
     x = vw - cw - 24;
     y = vh - ch - 16;
   }
   // Never off screen, even when the target has been scrolled away (a Status pill jumping down to the
   // grid, say): the card stays where Next can be reached.
-  y = Math.min(Math.max(y, 8), vh - ch - 16);
+  y = Math.min(Math.max(y, 8 + head), vh - ch - 16);
   card.style.left = x + 'px';
   card.style.top = y + 'px';
 }
