@@ -108,11 +108,11 @@ body.tour-active .modal-bg.open {
   max-height: calc(100dvh - 24px);
 }
 
-.tour-card>* {
+.tour-card > * {
   flex-shrink: 0;
 }
 
-.tour-card>.tour-body {
+.tour-card > .tour-body {
   flex-shrink: 1;
   min-height: 0;
   overflow-y: auto;
@@ -123,7 +123,7 @@ body.tour-active .modal-bg.open {
   margin: -5px;
 }
 
-.tour-card>.tour-body.tour-body-more {
+.tour-card > .tour-body.tour-body-more {
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
 }
@@ -163,7 +163,6 @@ body.tour-active .modal-bg.open {
 }
 
 @media (max-width: 639px) {
-
   /* a little smaller over a phone's bottom sheet, so it covers less of the page above */
   .tour-ghoul {
     width: 104px;
@@ -347,7 +346,6 @@ body.tour-active .modal-bg.open {
 }
 
 @keyframes tour-pulse {
-
   0%,
   100% {
     opacity: 0.35;
@@ -472,7 +470,6 @@ body.tour-active .modal-bg.open {
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   .tour-root.tour-anim .tour-spot,
   .tour-progress-fill {
     transition: none;
