@@ -61,7 +61,7 @@ let sizeWatch = null; // ResizeObserver on it, for controls that change shape in
 //   null puts the card in the middle of the screen.
 // Steps whose target is not on the page are skipped automatically.
 
-// Status, in both tours: have them click a red pill and see where it points. A plan with nothing wrong
+// Status, in the guided setup: have them click a red pill and see where it points. A plan with nothing wrong
 // gets a broken move put in for the step (hooks.makeDemoIssue) and taken out again as soon as they
 // leave it, whichever way (hooks.undoDemoIssue); it never reaches Undo or the saved plan.
 // Once they click, the spotlight moves from Status to what the pill points at (the first cell that
@@ -94,9 +94,8 @@ document.addEventListener(
   },
   true,
 );
-// optional: the walkthrough ("Just show me around") only looks, so there it is an invitation, not a
-// task: Next works straight away, and the page is still clickable so the pills work.
-function statusStep(title, intro, { optional = false } = {}) {
+// The guided setup's Status step (the walkthrough only points at Status: see buildSteps).
+function statusStep(title, intro) {
   return {
     live: true,
     // Status until a pill is clicked, then what it pointed at (back to Status if that was re-rendered).
@@ -117,15 +116,13 @@ function statusStep(title, intro, { optional = false } = {}) {
         demoIssue
           ? 'Your plan has nothing wrong yet, so we have put in a broken move to try it on (it is taken out again after this step). '
           : ''
-      }${optional ? 'Try it: click' : 'Click'} a <b>red</b> pill: the planner jumps to the problem and flashes it.`,
-    wait: optional
-      ? null
-      : {
-          snap: () => null,
-          done: () => jumped,
-          hint: 'Click a red pill…',
-          ready: 'That is the problem, lit up. Try another pill, or press Next.',
-        },
+      }Click a <b>red</b> pill: the planner jumps to the problem and flashes it.`,
+    wait: {
+      snap: () => null,
+      done: () => jumped,
+      hint: 'Click a red pill…',
+      ready: 'That is the problem, lit up. Try another pill, or press Next.',
+    },
   };
 }
 
@@ -447,13 +444,15 @@ function buildSteps(srv) {
              }
              <br><br>Not happy with the result? <b>Undo</b> above the grid brings back your previous plan, even after a reload.`,
     },
-    statusStep(
-      'Check Status',
-      `The app checks your plan as you go. <b>Green</b> pills mean that day is legal; <b>red</b> ones point
-       to the problem: a town taken without a neighboring town, too many declares, or a guild losing
-       every town.`,
-      { optional: true },
-    ),
+    {
+      // Just a look here; the guided setup is where they click a pill and see it jump.
+      target: 'status',
+      title: 'Check Status',
+      body: `The app checks your plan as you go. <b>Green</b> pills mean that day is legal; <b>red</b> ones point
+             to the problem: a town taken without a neighboring town, too many declares, or a guild losing
+             every town.
+             <br><br>Click a red pill and the planner jumps to the problem and flashes it.`,
+    },
     {
       target: 'stats',
       title: 'Check the balance',
