@@ -3,7 +3,7 @@
 Notable changes to Darkwick Accord (formerly the GoC / Ragnarok Planner), newest first.
 The app is updated continuously rather than in numbered releases, so entries are grouped by date.
 
-## 2026-11-17
+## 2026-11-16
 
 ### Changed
 - **A new name: Darkwick Accord.** The planner is now called Darkwick Accord, the Game of Claws and Ragnarok Planner, after the castle at the heart of every map and the peace every guild agrees to. The Darkwick castle is the new logo, next to the title and in the browser tab; with a house theme on, the title shows that house’s ghouls instead.
