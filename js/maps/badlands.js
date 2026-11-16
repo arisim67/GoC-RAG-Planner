@@ -3,12 +3,12 @@ export const badlandsMap = {
   name: 'Badlands',
   mode: 'goc',
   kingdoms: [
-    { id: 'Darkwick',    type: 'lv3', adj: ['A', 'Dionysia', 'G'] },
-    { id: 'Vagastrom',   type: 'lv2', adj: ['K', 'M', 'P', 'O'] },
-    { id: 'Dionysia',    type: 'lv2', adj: ['Darkwick', 'E', 'H', 'J'] },
-    { id: 'Frostheim',   type: 'lv2', adj: ['G', 'Sinostra', 'M'] },
-    { id: 'Sinostra',    type: 'lv2', adj: ['Frostheim', 'G', 'J'] },
-    { id: 'Hotarubi',    type: 'lv2', adj: ['N', 'P', 'R'] },
+    { id: 'Darkwick', type: 'lv3', adj: ['A', 'Dionysia', 'G'] },
+    { id: 'Vagastrom', type: 'lv2', adj: ['K', 'M', 'P', 'O'] },
+    { id: 'Dionysia', type: 'lv2', adj: ['Darkwick', 'E', 'H', 'J'] },
+    { id: 'Frostheim', type: 'lv2', adj: ['G', 'Sinostra', 'M'] },
+    { id: 'Sinostra', type: 'lv2', adj: ['Frostheim', 'G', 'J'] },
+    { id: 'Hotarubi', type: 'lv2', adj: ['N', 'P', 'R'] },
     { id: 'A', type: 'lv1', adj: ['B', 'Darkwick'] },
     { id: 'B', type: 'lv1', adj: ['A', 'C'] },
     { id: 'C', type: 'lv1', adj: ['B', 'D'] },
@@ -25,6 +25,6 @@ export const badlandsMap = {
     { id: 'O', type: 'lv1', adj: ['Q', 'Vagastrom'] },
     { id: 'P', type: 'lv1', adj: ['Vagastrom', 'Hotarubi', 'Q'] },
     { id: 'Q', type: 'lv1', adj: ['O', 'P', 'R'] },
-    { id: 'R', type: 'lv1', adj: ['Hotarubi', 'Q'] }
-  ]
+    { id: 'R', type: 'lv1', adj: ['Hotarubi', 'Q'] },
+  ],
 };

@@ -4,8 +4,10 @@
 import { activeSrv, GUILD_COLORS, MAX_GUILDS, save } from './state.js';
 import { renderAll } from './render.js';
 import { getMapData } from './maps/index.js';
+import { recordChange, clearHistory } from './history.js';
+import { takeVersion } from './versions.js';
 
-export function openImport(){
+export function openImport() {
   document.getElementById('modal-import').classList.add('open');
   // Reset state
   document.getElementById('import-dropzone').style.display = 'block';
@@ -13,56 +15,58 @@ export function openImport(){
   document.getElementById('import-file').value = '';
 }
 
-export function handleDragOver(e){
+export function handleDragOver(e) {
   e.preventDefault();
   e.stopPropagation();
   document.getElementById('import-dropzone').classList.add('drag-over');
 }
 
-export function handleDragLeave(e){
+export function handleDragLeave(e) {
   e.preventDefault();
   e.stopPropagation();
   document.getElementById('import-dropzone').classList.remove('drag-over');
 }
 
-export function handleDrop(e){
+export function handleDrop(e) {
   e.preventDefault();
   e.stopPropagation();
   document.getElementById('import-dropzone').classList.remove('drag-over');
   const file = e.dataTransfer.files[0];
-  if(file) readImportFile(file);
+  if (file) readImportFile(file);
 }
 
-export function handleFileSelect(e){
+export function handleFileSelect(e) {
   const file = e.target.files[0];
-  if(file) readImportFile(file);
+  if (file) readImportFile(file);
 }
 
-function readImportFile(file){
-  if(!file.name.endsWith('.json')){
+function readImportFile(file) {
+  if (!file.name.endsWith('.json')) {
     alert('Please select a .json file');
     return;
   }
   const reader = new FileReader();
-  reader.onload = function(e){
+  reader.onload = function (e) {
     const text = e.target.result;
     document.getElementById('import-text').value = text;
     // Auto-switch to guilds mode if it looks like a server export
     try {
       const parsed = JSON.parse(text);
-      if(parsed.version === 1 && parsed.server){
+      if (parsed.version === 1 && parsed.server) {
         document.getElementById('import-mode').value = 'guilds';
         document.getElementById('import-day-container').style.opacity = '0.3';
         document.getElementById('import-day').disabled = true;
       }
-    } catch(err) { /* not JSON, keep current mode */ }
+    } catch (err) {
+      /* not JSON, keep current mode */
+    }
   };
   reader.readAsText(file);
 }
 
-export function exportServer(){
+export function exportServer() {
   const srv = activeSrv();
-  if(!srv) return;
+  if (!srv) return;
 
   // Create a clean export object
   const exportData = {
@@ -88,7 +92,7 @@ export function exportServer(){
       })),
       plan: srv.plan,
       notes: srv.notes || '',
-    }
+    },
   };
 
   const json = JSON.stringify(exportData, null, 2);
@@ -103,7 +107,7 @@ export function exportServer(){
   URL.revokeObjectURL(url);
 
   // Visual feedback
-  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target.closest('button') : null;
+  const btn = typeof event !== 'undefined' && event && event.target ? event.target.closest('button') : null;
   if (btn) {
     const originalText = btn.textContent;
     btn.textContent = '✓ Downloaded!';
@@ -117,33 +121,39 @@ export function exportServer(){
   }
 }
 
-export function processImport(){
+export function processImport() {
   const srv = activeSrv();
   const textarea = document.getElementById('import-text');
   const text = textarea.value.trim();
   const mode = document.getElementById('import-mode') ? document.getElementById('import-mode').value : 'day';
   const day = parseInt(document.getElementById('import-day').value, 10);
 
-  if(!text) { alert("Please paste data first!"); return; }
+  if (!text) {
+    alert('Please paste data first!');
+    return;
+  }
+  takeVersion(srv, 'Before importing');
 
   // Try to parse as exported JSON first
   let parsed = null;
   try {
     parsed = JSON.parse(text);
-  } catch(e) { /* not JSON, continue to line-based parsing */ }
+  } catch (e) {
+    /* not JSON, continue to line-based parsing */
+  }
 
   // One entry per pasted line. Blank lines are kept so that, for the daily map import,
   // line N still lines up with town N in the planning grid.
   const lines = text.split(/\r?\n/);
 
-  if(parsed && parsed.version === 1 && parsed.server) {
+  if (parsed && parsed.version === 1 && parsed.server) {
     // EXPORTED SERVER FORMAT - full server restore
     const imp = parsed.server;
 
     // Restore guilds (using the exported ID so the map plan connects properly)
     srv.guilds = imp.guilds.map((g, i) => {
       return {
-        id: g.id || 'g_' + Date.now() + '_' + i, // <-- GRABS EXPORTED ID
+        id: g.id || 'g_' + Date.now() + '_' + i, // keep the exported ID so the plan still points at this guild
         name: g.name,
         color: g.color || GUILD_COLORS[i % GUILD_COLORS.length],
         basePoints: g.basePoints || 0,
@@ -166,16 +176,25 @@ export function processImport(){
 
     // Restore plan (guild IDs will match since we preserved them by name)
     srv.plan = imp.plan || {};
+    clearHistory(srv);
 
-    alert(`Server "${srv.name}" imported successfully! ${srv.guilds.length} guilds, ${Object.keys(srv.plan).length} days planned.`);
-
+    alert(
+      `Server "${srv.name}" imported successfully! ${srv.guilds.length} guilds, ${Object.keys(srv.plan).length} days planned.`,
+    );
   } else if (mode === 'guilds') {
     // Extract unique, valid names
-    const uniqueNames = [...new Set(lines.map(line => line.trim().replace(/^["']|["']$/g, ''))
-      .filter(name => name && name.toLowerCase() !== 'none' && name !== '—'))];
+    const uniqueNames = [
+      ...new Set(
+        lines
+          .map(line => line.trim().replace(/^["']|["']$/g, ''))
+          .filter(name => name && name.toLowerCase() !== 'none' && name !== '—'),
+      ),
+    ];
 
     if (uniqueNames.length > MAX_GUILDS) {
-      alert(`That list has ${uniqueNames.length} guilds; a server can have at most ${MAX_GUILDS}. Please shorten the list and try again.`);
+      alert(
+        `That list has ${uniqueNames.length} guilds; a server can have at most ${MAX_GUILDS}. Please shorten the list and try again.`,
+      );
       return;
     }
 
@@ -187,40 +206,41 @@ export function processImport(){
         color: GUILD_COLORS[index % GUILD_COLORS.length],
         basePoints: 0,
         baseLv3s: 0,
-        baseLv2s: 0
+        baseLv2s: 0,
       };
     });
-    
+
     // Wipe the existing map plan since old guild IDs no longer exist
     srv.plan = {};
-    
+    clearHistory(srv);
+
     alert(`Replaced roster with ${uniqueNames.length} guilds! The map plan has been reset for the new roster.`);
-    
   } else {
     // MODE: IMPORT DAILY MAP DATA
     const mapData = getMapData(srv.mode, srv.mapKey);
-    const sortedKingdoms = [...mapData.kingdoms].sort((a,b)=>{
-        const pts={'lv3':3,'lv2':2,'lv1':1};
-        return pts[b.type]-pts[a.type];
+    recordChange(srv, `Import day ${day}`);
+    const sortedKingdoms = [...mapData.kingdoms].sort((a, b) => {
+      const pts = { lv3: 3, lv2: 2, lv1: 1 };
+      return pts[b.type] - pts[a.type];
     });
-    
+
     lines.forEach((line, index) => {
-      if(index >= sortedKingdoms.length) return; 
-      
+      if (index >= sortedKingdoms.length) return;
+
       const guildName = line.trim().replace(/^["']|["']$/g, '');
-      if(!guildName || guildName.toLowerCase() === 'none' || guildName === '—') return;
-      
+      if (!guildName || guildName.toLowerCase() === 'none' || guildName === '—') return;
+
       const guild = srv.guilds.find(g => g.name.toLowerCase() === guildName.toLowerCase());
-      if(guild) {
-        if(!srv.plan[day]) srv.plan[day] = {};
+      if (guild) {
+        if (!srv.plan[day]) srv.plan[day] = {};
         srv.plan[day][sortedKingdoms[index].id] = guild.id;
       }
     });
   }
-  
+
   save();
   renderAll();
-  
+
   textarea.value = '';
   document.getElementById('modal-import').classList.remove('open');
 }

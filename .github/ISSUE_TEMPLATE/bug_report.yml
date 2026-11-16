@@ -1,0 +1,46 @@
+name: Bug report
+description: Something in the planner doesn't work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting! The more of this you can fill in, the faster it can be fixed.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Event
+      options:
+        - Game of Claws
+        - Ragnarok
+        - Not specific to one event
+    validations:
+      required: true
+  - type: input
+    id: map
+    attributes:
+      label: Map
+      placeholder: e.g. Wetland, Sea of Poseidon
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the server...
+        2. Click Auto-Optimize...
+  - type: textarea
+    id: export
+    attributes:
+      label: Server export or shared link (optional)
+      description: Attach the file from Export Server, or paste a Save to Cloud link, so the plan can be loaded exactly as you have it.
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: e.g. Chrome on Windows, Safari on iPhone

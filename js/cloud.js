@@ -1,125 +1,162 @@
 // js/cloud.js
 // Save to Cloud / Sync from Cloud, and opening shared plan links (?plan=...).
-// Share links point at the cloud worker (/s/<id>) so each plan gets its own link preview;
-// the worker sends people on to this page with ?plan=<id>.
+// On Cloudflare Pages, functions/index.js gives each shared plan link its own preview.
 
 import { CLOUD_SYNC_URL } from './config.js';
 import { state, activeSrv, save } from './state.js';
 import { renderAll } from './render.js';
 import { renderPlanPreview, previewText } from './preview.js';
+import { setBtnLabel } from './icons.js';
+import { isOldSite, newSiteUrl } from './move.js';
+import { takeVersion } from './versions.js';
+import { showNotice } from './stickers.js';
 
 const WORKER_URL = CLOUD_SYNC_URL; // set in js/config.js
 
 export async function publishToCloud() {
   const srv = activeSrv();
-  if(!srv) return;
-  
-  const btn = document.getElementById('btn-share-cloud');
-  const originalText = btn.innerHTML;
-  btn.innerHTML = '⏳ Saving...';
-  btn.disabled = true;
+  if (!srv) return;
+
+  // Save to Cloud is in the Setup toolbar and in the sidebar; both show the progress. Look the buttons
+  // up each time, since renderAll() replaces them.
+  const btns = () => [...document.querySelectorAll('[data-action="save-cloud"]')];
+  const setBtns = (text, disabled) =>
+    btns().forEach(b => {
+      setBtnLabel(b, text);
+      b.disabled = disabled;
+    });
+  const originalText = setBtnLabel(btns()[0], 'Saving...');
+  setBtns('Saving...', true);
 
   try {
     // Link-preview image for Discord etc. If it can't be drawn, the plan still saves.
-    const preview = null;
+    const preview = await renderPlanPreview(srv);
     const { title, description } = previewText(srv);
     const body = preview ? { ...srv, preview, previewMeta: { title, description } } : srv;
 
     const response = await fetch(WORKER_URL, {
       method: 'POST',
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
-    
-    if(response.ok) {
-      srv.cloudSynced = true; // 🚨 NEW
-      save();                 // 🚨 NEW
 
-      // 🚨 Fix 1: Force the creator's URL bar to update immediately
+    if (response.ok) {
+      srv.cloudSynced = true; // shows "Cloud Linked" in the header
+      save();
+
+      // Put the plan's link in the address bar right away, so a refresh reopens the shared copy
       window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + srv.id);
-      
-      const shareUrl = window.location.origin + window.location.pathname + '?plan=' + srv.id;
+
+      // Built from wherever the app is opened; from the old address, links point to the new site.
+      // &v= changes on each save so Discord fetches the new preview instead of reusing a cached one;
+      // the app ignores it.
+      const base = isOldSite() ? newSiteUrl() : window.location.origin + window.location.pathname;
+      const shareUrl = base + '?plan=' + srv.id + '&v=' + Date.now().toString(36);
       // Safari drops the "user gesture" after an awaited fetch, so the clipboard write can be
       // refused even though the save worked. Treat that as a copy failure, not a save failure.
       let copied = false;
-      try { await navigator.clipboard.writeText(shareUrl); copied = true; } catch (e) { console.warn('Clipboard blocked', e); }
-      btn.innerHTML = copied ? '✓ Saved & Copied!' : '✓ Saved!';
-      setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 2500);
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        copied = true;
+      } catch (e) {
+        console.warn('Clipboard blocked', e);
+      }
+      setBtns(copied ? '✓ Saved & Copied!' : '✓ Saved!', true);
+      setTimeout(() => setBtns(originalText, false), 2500);
       if (!copied) setTimeout(() => window.prompt('Saved! Copy this share link:', shareUrl), 50);
     } else {
       throw new Error('Failed to save to cloud');
     }
-  } catch(err) {
+  } catch (err) {
     console.error(err);
-    alert("Failed to sync to cloud. Check your connection or Worker URL.");
-    btn.innerHTML = originalText;
-    btn.disabled = false;
+    showNotice({
+      sticker: 'crying',
+      title: "Couldn't save to the cloud",
+      body: 'Check your connection and try again. Your plan is still saved in this browser.',
+    });
+    setBtns(originalText, false);
   }
 }
 
 export async function syncFromCloud() {
   const srv = activeSrv();
-  if(!srv) return;
-  
+  if (!srv) return;
+
   // renderAll() rebuilds the page, replacing this button, so always look up the current one.
   const syncBtn = () => document.getElementById('btn-sync-cloud');
-  const setBtn = (html, disabled) => { const b = syncBtn(); if (b) { b.innerHTML = html; b.disabled = disabled; } };
-  const originalText = syncBtn().innerHTML;
-  setBtn('⏳ Syncing...', true);
+  const setBtn = (text, disabled) => {
+    const b = syncBtn();
+    if (b) {
+      setBtnLabel(b, text);
+      b.disabled = disabled;
+    }
+  };
+  const originalText = setBtnLabel(syncBtn(), 'Syncing...');
+  setBtn('Syncing...', true);
 
   try {
     const res = await fetch(`${WORKER_URL}?plan=${srv.id}&t=${Date.now()}`, { cache: 'no-store' });
-    if(!res.ok) throw new Error('Plan not found in cloud');
-    
+    if (!res.ok) throw new Error('Plan not found in cloud');
+
     const sharedSrv = await res.json();
-    sharedSrv.cloudSynced = true; 
-    
+    sharedSrv.cloudSynced = true;
+
     const existingIdx = state.servers.findIndex(s => s.id === sharedSrv.id);
-    if(existingIdx >= 0) {
+    if (existingIdx >= 0) {
       // Preserve the view-only lock if a viewer syncs to get your latest changes
+      takeVersion(state.servers[existingIdx], 'Before syncing from the cloud');
       sharedSrv.isViewOnly = state.servers[existingIdx].isViewOnly;
-      state.servers[existingIdx] = sharedSrv; 
+      state.servers[existingIdx] = sharedSrv;
     }
-    
+
     window.history.replaceState({}, document.title, window.location.pathname + '?plan=' + srv.id);
     save();
     renderAll();
-    
+
     setBtn('✓ Synced!', true);
-  } catch(err) {
+  } catch (err) {
     console.error(err);
-    alert("No cloud updates found for this specific server.");
-    setBtn('❌ Error', true);
+    showNotice({
+      sticker: 'crying',
+      title: "Couldn't sync from the cloud",
+      body: 'No cloud copy of this server was found, or the cloud could not be reached. Your plan here is unchanged.',
+    });
+    setBtn('Error', true);
   }
-  
+
   setTimeout(() => setBtn(originalText, false), 2500);
 }
 
 export async function checkUrlForSharedPlan() {
   const params = new URLSearchParams(window.location.search);
   const planId = params.get('plan');
-  if(!planId) return;
+  if (!planId) return;
 
   try {
     const res = await fetch(`${WORKER_URL}?plan=${planId}`);
-    if(!res.ok) throw new Error('Plan not found');
+    if (!res.ok) throw new Error('Plan not found');
     const sharedSrv = await res.json();
-    sharedSrv.cloudSynced = true; 
-    
+    sharedSrv.cloudSynced = true;
+
     const existingIdx = state.servers.findIndex(s => s.id === sharedSrv.id);
-    if(existingIdx >= 0) {
+    if (existingIdx >= 0) {
       // The creator already has it in local storage, so keep it editable
+      takeVersion(state.servers[existingIdx], 'Before opening the shared link');
       sharedSrv.isViewOnly = state.servers[existingIdx].isViewOnly;
-      state.servers[existingIdx] = sharedSrv; 
+      state.servers[existingIdx] = sharedSrv;
     } else {
       // It's a new visitor: Lock the UI
       sharedSrv.isViewOnly = true;
-      state.servers.push(sharedSrv); 
+      state.servers.push(sharedSrv);
     }
     state.activeId = sharedSrv.id;
     save();
-  } catch(err) {
+  } catch (err) {
     console.error(err);
-    alert("Could not load the shared plan. It may have expired or the link is incorrect.");
+    showNotice({
+      sticker: 'confused',
+      title: "This link didn't open",
+      body: 'The shared plan may have expired, or the link is incomplete. Ask whoever sent it for a new one.',
+    });
   }
 }

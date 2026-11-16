@@ -1,0 +1,7 @@
+# Third-party and generated files
+vendor/
+images/
+docs/
+*.md
+tests/fixtures/
+.wrangler/

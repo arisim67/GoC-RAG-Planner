@@ -14,25 +14,25 @@ import { extractPathCells } from './paths.js';
 import { checkPlan } from './check.js';
 
 export const TWO_PHASE_DEFAULTS = {
-  commitDays: 4,        // phase 1: days committed per window
-  lookahead: 4,         // phase 1: extra days solved (not committed) so a window sees what comes next
+  commitDays: 4, // phase 1: days committed per window
+  lookahead: 4, // phase 1: extra days solved (not committed) so a window sees what comes next
   phase1TimeLimit: 200, // seconds per phase 1 window (best plan found so far is used if it is hit)
-  phase1Gap: 500,       // stop a window when provably within this many objective units (~1 point = 6000)
+  phase1Gap: 500, // stop a window when provably within this many objective units (~1 point = 6000)
   phase2TimeLimit: 120, // seconds per phase 2 attempt
   phase2Gap: 500,
-  phase2Attempts: 1,    // different locked-path sets to try (stops early once points are perfectly even)
-  phase2Budget: 240,    // seconds in total for phase 2
-  repairWindow: 7,      // clean-up: days re-solved at a time when Darkwick / dorms are not even
-  repairTimeLimit: 60,  // seconds per repair window
-  repairBudget: 180,    // seconds in total for the all-free clean-up. It skips every window with
-                        // nothing out of place, so it costs this much only while there is work to do.
-  castleWindow: 7,      // clean-up: days re-solved at a time when only Darkwick is uneven
-  castleTimeLimit: 45,  // seconds per Darkwick window
-  castleBudget: 135,    // seconds in total for the Darkwick clean-up
+  phase2Attempts: 1, // different locked-path sets to try (stops early once points are perfectly even)
+  phase2Budget: 240, // seconds in total for phase 2
+  repairWindow: 7, // clean-up: days re-solved at a time when Darkwick / dorms are not even
+  repairTimeLimit: 60, // seconds per repair window
+  repairBudget: 180, // seconds in total for the all-free clean-up. It skips every window with
+  // nothing out of place, so it costs this much only while there is work to do.
+  castleWindow: 7, // clean-up: days re-solved at a time when only Darkwick is uneven
+  castleTimeLimit: 45, // seconds per Darkwick window
+  castleBudget: 135, // seconds in total for the Darkwick clean-up
   refineWindows: [5, 8, 11], // clean-up: days re-solved at a time to even out points
-  refineTimeLimit: 40,  // seconds per refine window
-  refineBudget: 300,    // seconds in total for the points clean-up (it stops as soon as points are even,
-                        // so this only matters on the maps that need the time)
+  refineTimeLimit: 40, // seconds per refine window
+  refineBudget: 300, // seconds in total for the points clean-up (it stops as soon as points are even,
+  // so this only matters on the maps that need the time)
 };
 
 export function numDays(srv) {
@@ -43,7 +43,8 @@ export function numDays(srv) {
 
 function mulberry32(a) {
   return function () {
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
     let t = Math.imul(a ^ (a >>> 15), 1 | a);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
@@ -55,8 +56,8 @@ function mulberry32(a) {
 // short", even though both are 5 points off in total. The clean-up steps compare candidates on this
 // instead of the plain total, so a candidate that shares an unavoidable miss out is kept rather than
 // rejected for tying on the total.
-const MISS_COST_PTS = [1, 1.33, 1.58];       // = MISS_TIERS_PTS / 6000
-const MISS_COST_SCARCE = [1, 1.67, 2.5];     // = MISS_TIERS_SCARCE / 6000
+const MISS_COST_PTS = [1, 1.33, 1.58]; // = MISS_TIERS_PTS / 6000
+const MISS_COST_SCARCE = [1, 1.67, 2.5]; // = MISS_TIERS_SCARCE / 6000
 function missCost(devs, tiers) {
   let c = 0;
   for (const dev of devs) {
@@ -73,7 +74,8 @@ function pointDevs(plan, srv, mapData, FULL, target) {
     const t = target[g.id];
     if (!t) continue;
     let pts = 0;
-    for (let d = 1; d <= FULL; d++) for (const k of mapData.kingdoms) if (plan[d][k.id] === g.id) pts += val[k.type] || 0;
+    for (let d = 1; d <= FULL; d++)
+      for (const k of mapData.kingdoms) if (plan[d][k.id] === g.id) pts += val[k.type] || 0;
     devs.push(Math.abs(pts - t.mapPts));
   }
   return devs;
@@ -94,7 +96,7 @@ export async function solveGocPhase1(srv, mapData, runSolver, userOpts = {}) {
   const o = { ...TWO_PHASE_DEFAULTS, ...userOpts };
   const onProgress = o.onProgress || (() => {});
   const FULL = numDays(srv);
-  const work = { ...srv, plan: JSON.parse(JSON.stringify(srv.plan)) };   // user's own placements stay locked
+  const work = { ...srv, plan: JSON.parse(JSON.stringify(srv.plan)) }; // user's own placements stay locked
   const nWin = Math.ceil(FULL / o.commitDays);
   let ws = 1;
   for (let w = 0; w < nWin; w++) {
@@ -137,22 +139,31 @@ export async function solveGocPhase2(srv, mapData, runSolver, phase1Plan, userOp
   }
   const work2 = { ...srv, plan: plan2 };
 
-  let best = null, bestDev = Infinity, bestCost = Infinity;
+  let best = null,
+    bestDev = Infinity,
+    bestCost = Infinity;
   const t0 = Date.now();
   for (let a = 0; a < o.phase2Attempts; a++) {
     if (a > 0 && (Date.now() - t0) / 1000 > o.phase2Budget) break;
-    onProgress(`Phase 2/2 · balancing points with lv1 towns · try ${a + 1}/${o.phase2Attempts}` + (best ? ` (best so far: ${bestDev} off)` : ''));
+    onProgress(
+      `Phase 2/2 · balancing points with lv1 towns · try ${a + 1}/${o.phase2Attempts}` +
+        (best ? ` (best so far: ${bestDev} off)` : ''),
+    );
     try {
       const pathCells = extractPathCells(phase1Plan, srv, mapData, FULL, a === 0 ? null : mulberry32(1000 + a));
       const { milp, decode } = buildModel(work2, mapData, { phase: 'lv1', pathCells, locks });
       const result = await runSolver(milp.toArrays(), { timeLimit: o.phase2TimeLimit, absGap: o.phase2Gap });
       const plan = decode(result);
       const cost = pointsMissCost(plan, srv, mapData, FULL, target);
-      if (cost < bestCost) { best = plan; bestCost = cost; bestDev = pointsDeviation(plan, srv, mapData, FULL, target); }
+      if (cost < bestCost) {
+        best = plan;
+        bestCost = cost;
+        bestDev = pointsDeviation(plan, srv, mapData, FULL, target);
+      }
       if (bestCost === 0) break;
     } catch (e) {
       console.warn(`[TwoPhase] phase 2 try ${a + 1} failed: ${e.message}`);
-      if (a === 0 && !best) throw e;   // nothing usable yet: report the failure
+      if (a === 0 && !best) throw e; // nothing usable yet: report the failure
     }
   }
   return best;
@@ -164,10 +175,15 @@ function scarceDevs(plan, srv, mapData, FULL, target) {
   for (const g of srv.guilds) {
     const t = target[g.id];
     if (!t) continue;
-    let lv3 = 0, lv2 = 0;
-    for (let d = 1; d <= FULL; d++) for (const k of mapData.kingdoms) {
-      if (plan[d][k.id] === g.id) { if (k.type === 'lv3') lv3++; if (k.type === 'lv2') lv2++; }
-    }
+    let lv3 = 0,
+      lv2 = 0;
+    for (let d = 1; d <= FULL; d++)
+      for (const k of mapData.kingdoms) {
+        if (plan[d][k.id] === g.id) {
+          if (k.type === 'lv3') lv3++;
+          if (k.type === 'lv2') lv2++;
+        }
+      }
     devs.push(Math.abs(lv3 - t.mapLv3), Math.abs(lv2 - t.mapLv2));
   }
   return devs;
@@ -228,12 +244,14 @@ function scarceHeat(plan, srv, mapData, FULL, target, only) {
   for (const g of srv.guilds) {
     const t = target[g.id];
     if (!t) continue;
-    const days3 = [], days2 = [];
-    for (let d = 1; d <= FULL; d++) for (const k of mapData.kingdoms) {
-      if (plan[d][k.id] !== g.id) continue;
-      if (k.type === 'lv3') days3.push(d);
-      if (k.type === 'lv2') days2.push(d);
-    }
+    const days3 = [],
+      days2 = [];
+    for (let d = 1; d <= FULL; d++)
+      for (const k of mapData.kingdoms) {
+        if (plan[d][k.id] !== g.id) continue;
+        if (k.type === 'lv3') days3.push(d);
+        if (k.type === 'lv2') days2.push(d);
+      }
     if (only !== 'lv2' && days3.length > t.mapLv3) for (const d of days3) heat[d]++;
     if (only !== 'lv3' && days2.length > t.mapLv2) for (const d of days2) heat[d]++;
   }
@@ -251,8 +269,8 @@ export async function repairScarce(srv, mapData, runSolver, phase1Plan, userOpts
   const target = getPerfectTargets(srv, mapData, { respectLocked: true });
   const locks = JSON.parse(JSON.stringify(srv.plan));
   let plan = phase1Plan;
-  let dev = scarceDeviation(plan, srv, mapData, FULL, target);      // shown to the user
-  let cost = scarceMissCost(plan, srv, mapData, FULL, target);      // what candidates are judged on
+  let dev = scarceDeviation(plan, srv, mapData, FULL, target); // shown to the user
+  let cost = scarceMissCost(plan, srv, mapData, FULL, target); // what candidates are judged on
   if (dev === 0) return plan;
   const t0 = Date.now();
   const K = Math.min(o.repairWindow, FULL);
@@ -260,28 +278,47 @@ export async function repairScarce(srv, mapData, runSolver, phase1Plan, userOpts
     let improved = false;
     // Re-read the heat every pass: once a surplus moves, the days worth re-solving move with it.
     let hot = scarceHeat(plan, srv, mapData, FULL, target);
-    const covered = (ws) => { let s = 0; for (let d = ws; d <= ws + K - 1; d++) s += hot[d] || 0; return s; };
+    const covered = ws => {
+      let s = 0;
+      for (let d = ws; d <= ws + K - 1; d++) s += hot[d] || 0;
+      return s;
+    };
     const starts = windowStarts(FULL, K, 1).sort((a, b) => covered(b) - covered(a) || a - b);
     for (const ws of starts) {
       if ((Date.now() - t0) / 1000 > o.repairBudget || dev === 0) break;
-      if (covered(ws) === 0) continue;   // nothing out of place in these days
+      if (covered(ws) === 0) continue; // nothing out of place in these days
 
       const we = ws + K - 1;
       onProgress(`Clean-up · Darkwick & dorms · days ${ws}-${we} (${dev} off)`);
       try {
         const work = { ...srv, plan: JSON.parse(JSON.stringify(plan)) };
         for (let d = ws; d <= we; d++) work.plan[d] = lockedOnly(d, mapData, locks);
-        const { milp, decode, warmStart } = buildWindow(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'scarce', locks });
-        const result = await runSolver(milp.toArrays(), { timeLimit: o.repairTimeLimit, absGap: o.phase1Gap, warmStart: warmStart(plan) });
+        const { milp, decode, warmStart } = buildWindow(work, mapData, {
+          winStart: ws,
+          winEnd: we,
+          repair: true,
+          phase: 'scarce',
+          locks,
+        });
+        const result = await runSolver(milp.toArrays(), {
+          timeLimit: o.repairTimeLimit,
+          absGap: o.phase1Gap,
+          warmStart: warmStart(plan),
+        });
         const dec = decode(result);
         const cand = JSON.parse(JSON.stringify(plan));
         for (let d = ws; d <= we; d++) cand[d] = dec[d];
         const c2 = scarceMissCost(cand, srv, mapData, FULL, target);
         if (c2 < cost - 1e-9 && checkPlan(cand, srv, mapData, FULL, locks).length === 0) {
-          plan = cand; cost = c2; dev = scarceDeviation(cand, srv, mapData, FULL, target); improved = true;
-          hot = scarceHeat(plan, srv, mapData, FULL, target);   // the days out of place have moved
+          plan = cand;
+          cost = c2;
+          dev = scarceDeviation(cand, srv, mapData, FULL, target);
+          improved = true;
+          hot = scarceHeat(plan, srv, mapData, FULL, target); // the days out of place have moved
         }
-      } catch (e) { console.warn(`[TwoPhase] repair window ${ws}-${we} skipped: ${e.message}`); }
+      } catch (e) {
+        console.warn(`[TwoPhase] repair window ${ws}-${we} skipped: ${e.message}`);
+      }
     }
     if (!improved) break;
   }
@@ -296,9 +333,12 @@ function castleRuns(plan, mapData, FULL) {
   const out = { stints: 0, floor: 0, splits: [] };
   if (!lv3) return out;
   const days = {};
-  for (let d = 1; d <= FULL; d++) { const g = plan[d][lv3.id]; if (g) (days[g] = days[g] || []).push(d); }
+  for (let d = 1; d <= FULL; d++) {
+    const g = plan[d][lv3.id];
+    if (g) (days[g] = days[g] || []).push(d);
+  }
   for (const ds of Object.values(days)) {
-    out.floor++;                                     // one stint per holder is the best possible
+    out.floor++; // one stint per holder is the best possible
     let runs = 0;
     for (let i = 0; i < ds.length; i++) if (i === 0 || ds[i] !== ds[i - 1] + 1) runs++;
     out.stints += runs;
@@ -325,7 +365,11 @@ export async function repairCastle(srv, mapData, runSolver, plan0, userOpts = {}
   const t0 = Date.now();
   const K = Math.min(o.castleWindow, FULL);
   let hot = scarceHeat(plan, srv, mapData, FULL, target, 'lv3');
-  const covered = (ws) => { let s = 0; for (let d = ws; d <= ws + K - 1; d++) s += hot[d] || 0; return s; };
+  const covered = ws => {
+    let s = 0;
+    for (let d = ws; d <= ws + K - 1; d++) s += hot[d] || 0;
+    return s;
+  };
   for (const ws of windowStarts(FULL, K, 1).sort((a, b) => covered(b) - covered(a) || a - b)) {
     if ((Date.now() - t0) / 1000 > o.castleBudget || dev === 0) break;
     if (covered(ws) === 0) continue;
@@ -333,20 +377,35 @@ export async function repairCastle(srv, mapData, runSolver, plan0, userOpts = {}
     onProgress(`Clean-up · Darkwick · days ${ws}-${we} (${dev} off)`);
     try {
       const work = { ...srv, plan: JSON.parse(JSON.stringify(plan)) };
-      for (let d = ws; d <= we; d++) for (const k of mapData.kingdoms) {
-        if (k.type !== 'lv2' && !(locks[d] || {})[k.id]) work.plan[d][k.id] = '';
-      }
-      const { milp, decode, warmStart } = buildWindow(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'castle', locks });
-      const result = await runSolver(milp.toArrays(), { timeLimit: o.castleTimeLimit, absGap: o.phase1Gap, warmStart: warmStart(plan) });
+      for (let d = ws; d <= we; d++)
+        for (const k of mapData.kingdoms) {
+          if (k.type !== 'lv2' && !(locks[d] || {})[k.id]) work.plan[d][k.id] = '';
+        }
+      const { milp, decode, warmStart } = buildWindow(work, mapData, {
+        winStart: ws,
+        winEnd: we,
+        repair: true,
+        phase: 'castle',
+        locks,
+      });
+      const result = await runSolver(milp.toArrays(), {
+        timeLimit: o.castleTimeLimit,
+        absGap: o.phase1Gap,
+        warmStart: warmStart(plan),
+      });
       const dec = decode(result);
       const cand = JSON.parse(JSON.stringify(plan));
       for (let d = ws; d <= we; d++) cand[d] = dec[d];
       const c2 = scarceMissCost(cand, srv, mapData, FULL, target);
       if (c2 < cost - 1e-9 && checkPlan(cand, srv, mapData, FULL, locks).length === 0) {
-        plan = cand; cost = c2; dev = scarceDeviation(cand, srv, mapData, FULL, target);
+        plan = cand;
+        cost = c2;
+        dev = scarceDeviation(cand, srv, mapData, FULL, target);
         hot = scarceHeat(plan, srv, mapData, FULL, target, 'lv3');
       }
-    } catch (e) { console.warn(`[TwoPhase] Darkwick window ${ws}-${we} skipped: ${e.message}`); }
+    } catch (e) {
+      console.warn(`[TwoPhase] Darkwick window ${ws}-${we} skipped: ${e.message}`);
+    }
   }
   return plan;
 }
@@ -370,13 +429,13 @@ export async function consolidateCastle(srv, mapData, runSolver, plan0, userOpts
   const locks = JSON.parse(JSON.stringify(srv.plan));
   let plan = plan0;
   let runs = castleRuns(plan, mapData, FULL);
-  if (runs.stints === runs.floor) return plan;      // already as few stints as its holders allow
+  if (runs.stints === runs.floor) return plan; // already as few stints as its holders allow
   let cost = scarceMissCost(plan, srv, mapData, FULL, target);
   const t0 = Date.now();
   const K = Math.min(o.repairWindow, FULL);
   // A window is only worth solving if it holds every one of a split guild's castle days - with one of
   // them outside, re-solving the window cannot bring them together.
-  const covered = (ws) => runs.splits.filter(ds => ds[0] >= ws && ds[ds.length - 1] <= ws + K - 1).length;
+  const covered = ws => runs.splits.filter(ds => ds[0] >= ws && ds[ds.length - 1] <= ws + K - 1).length;
   for (const ws of windowStarts(FULL, K, 1).sort((a, b) => covered(b) - covered(a) || a - b)) {
     if ((Date.now() - t0) / 1000 > o.castleBudget || runs.stints === runs.floor) break;
     if (covered(ws) === 0) continue;
@@ -385,8 +444,18 @@ export async function consolidateCastle(srv, mapData, runSolver, plan0, userOpts
     try {
       const work = { ...srv, plan: JSON.parse(JSON.stringify(plan)) };
       for (let d = ws; d <= we; d++) work.plan[d] = lockedOnly(d, mapData, locks);
-      const { milp, decode, warmStart } = buildWindow(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'scarce', locks });
-      const result = await runSolver(milp.toArrays(), { timeLimit: o.repairTimeLimit, absGap: o.phase1Gap, warmStart: warmStart(plan) });
+      const { milp, decode, warmStart } = buildWindow(work, mapData, {
+        winStart: ws,
+        winEnd: we,
+        repair: true,
+        phase: 'scarce',
+        locks,
+      });
+      const result = await runSolver(milp.toArrays(), {
+        timeLimit: o.repairTimeLimit,
+        absGap: o.phase1Gap,
+        warmStart: warmStart(plan),
+      });
       const dec = decode(result);
       const cand = JSON.parse(JSON.stringify(plan));
       for (let d = ws; d <= we; d++) cand[d] = dec[d];
@@ -398,9 +467,13 @@ export async function consolidateCastle(srv, mapData, runSolver, plan0, userOpts
       // back, and solveGocFinish checks that it did.
       const better = r2.stints < runs.stints && c2 <= cost + 1e-9;
       if (better && checkPlan(cand, srv, mapData, FULL, locks).length === 0) {
-        plan = cand; cost = c2; runs = r2;
+        plan = cand;
+        cost = c2;
+        runs = r2;
       }
-    } catch (e) { console.warn(`[TwoPhase] castle stint window ${ws}-${we} skipped: ${e.message}`); }
+    } catch (e) {
+      console.warn(`[TwoPhase] castle stint window ${ws}-${we} skipped: ${e.message}`);
+    }
   }
   return plan;
 }
@@ -414,8 +487,8 @@ export async function refinePoints(srv, mapData, runSolver, plan0, userOpts = {}
   const target = getPerfectTargets(srv, mapData, { respectLocked: true });
   const locks = JSON.parse(JSON.stringify(srv.plan));
   let plan = plan0;
-  let dev = pointsDeviation(plan, srv, mapData, FULL, target);      // shown to the user
-  let cost = pointsMissCost(plan, srv, mapData, FULL, target);      // what candidates are judged on
+  let dev = pointsDeviation(plan, srv, mapData, FULL, target); // shown to the user
+  let cost = pointsMissCost(plan, srv, mapData, FULL, target); // what candidates are judged on
   if (dev === 0) return plan;
   const t0 = Date.now();
   for (const K0 of o.refineWindows) {
@@ -426,19 +499,34 @@ export async function refinePoints(srv, mapData, runSolver, plan0, userOpts = {}
       onProgress(`Clean-up · points · days ${ws}-${we} (${dev} off)`);
       try {
         const work = { ...srv, plan: JSON.parse(JSON.stringify(plan)) };
-        for (let d = ws; d <= we; d++) for (const k of mapData.kingdoms) {
-          if (k.type === 'lv1' && !(locks[d] || {})[k.id]) work.plan[d][k.id] = '';
-        }
-        const { milp, decode, warmStart } = buildWindow(work, mapData, { winStart: ws, winEnd: we, repair: true, phase: 'lv1', locks });
-        const result = await runSolver(milp.toArrays(), { timeLimit: o.refineTimeLimit, absGap: o.phase2Gap, warmStart: warmStart(plan) });
+        for (let d = ws; d <= we; d++)
+          for (const k of mapData.kingdoms) {
+            if (k.type === 'lv1' && !(locks[d] || {})[k.id]) work.plan[d][k.id] = '';
+          }
+        const { milp, decode, warmStart } = buildWindow(work, mapData, {
+          winStart: ws,
+          winEnd: we,
+          repair: true,
+          phase: 'lv1',
+          locks,
+        });
+        const result = await runSolver(milp.toArrays(), {
+          timeLimit: o.refineTimeLimit,
+          absGap: o.phase2Gap,
+          warmStart: warmStart(plan),
+        });
         const dec = decode(result);
         const cand = JSON.parse(JSON.stringify(plan));
         for (let d = ws; d <= we; d++) cand[d] = dec[d];
         const c2 = pointsMissCost(cand, srv, mapData, FULL, target);
         if (c2 < cost - 1e-9 && checkPlan(cand, srv, mapData, FULL, locks).length === 0) {
-          plan = cand; cost = c2; dev = pointsDeviation(cand, srv, mapData, FULL, target);
+          plan = cand;
+          cost = c2;
+          dev = pointsDeviation(cand, srv, mapData, FULL, target);
         }
-      } catch (e) { console.warn(`[TwoPhase] refine window ${ws}-${we} skipped: ${e.message}`); }
+      } catch (e) {
+        console.warn(`[TwoPhase] refine window ${ws}-${we} skipped: ${e.message}`);
+      }
     }
     if (K >= FULL) break;
   }

@@ -5,7 +5,8 @@
 // __underline__, ~~strikethrough~~, ||spoilers||, [masked](https://links) and \escapes.
 // Everything is HTML-escaped first, so whatever is typed can't add tags to the page.
 
-const escHtml = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const escHtml = s =>
+  s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 function inline(text) {
   const keep = [];
@@ -31,7 +32,9 @@ function inline(text) {
 function blocks(lines) {
   let html = '';
   const stack = []; // open lists, innermost last
-  const closeLists = (toDepth = 0) => { while (stack.length > toDepth) html += `</${stack.pop()}>`; };
+  const closeLists = (toDepth = 0) => {
+    while (stack.length > toDepth) html += `</${stack.pop()}>`;
+  };
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -46,8 +49,12 @@ function blocks(lines) {
     if (item) {
       const depth = Math.min(Math.floor(item[1].replace(/\t/g, '  ').length / 2), 4) + 1;
       const tag = /\d/.test(item[2]) ? 'ol' : 'ul';
-      if (depth > stack.length) { while (stack.length < depth) { html += `<${tag} class="dmd-list">`; stack.push(tag); } }
-      else closeLists(depth);
+      if (depth > stack.length) {
+        while (stack.length < depth) {
+          html += `<${tag} class="dmd-list">`;
+          stack.push(tag);
+        }
+      } else closeLists(depth);
       html += `<li>${inline(item[3])}</li>`;
       continue;
     }

@@ -1,245 +1,569 @@
 // js/render.js
 // Builds the page: server tabs, settings, guilds, status, planning grid, stats and daily messages.
 
+import { morph } from './morph.js';
 import { state, activeSrv, numDays, save, numDisplayDays } from './state.js';
-import { esc, dateLabel, dateLabelShort } from './ui.js';
-import { calcScores, calcOcc, validateAdj, validateWipes, calcDec, kPts, getEligibleGuilds } from './calc.js';
+import { gcolor } from './colors.js';
+import { esc, dateLabel, dateLabelShort, todayDay } from './ui.js';
+import {
+  calcScores,
+  calcOcc,
+  validateAdj,
+  validateWipes,
+  validateStarts,
+  isMidEvent,
+  hasMidEventNumbers,
+  calcDec,
+  kPts,
+  getEligibleGuilds,
+} from './calc.js';
 import { openTabCtx, openAdd } from './servers.js';
 import { renderFillSel } from './grid-fill.js';
 import { getMapData, getMapList } from './maps/index.js';
-import { buildMessages } from './messages.js';
+import {
+  dailyPlans,
+  messageParts,
+  formatGuildMessage,
+  getMsgView,
+  getMsgDay,
+  msgGuild,
+  gameLength,
+  GAME_LIMIT,
+} from './messages.js';
+import { icon } from './icons.js';
+import { ghoulHTML } from './ghouls.js';
+import { stickerHTML } from './stickers.js';
+import { renderDiscord } from './discord-md.js';
+import { canUndo, canRedo, undoLabel, redoLabel } from './history.js';
+import { applySpotlight } from './spotlight.js';
+import { renderSidebar, openSetup, setupIsPanel, tabsActive, setTab, syncTabs, TAB_OF_JUMP } from './sidebar.js';
+import { renderMapView, hasMapView } from './map-view.js';
 // Each mode's targets come from that mode's own model: Game of Claws has rules Ragnarok does not
 // (Darkwick needs a dorm or two lv1 towns behind it), so the GoC model is the only one that knows
 // which towns are really winnable. Reading GoC targets out of the Ragnarok model overstated them.
 import { getPerfectTargets as getGocTargets } from './solver/model_goc.js';
 import { getPerfectTargets as getRagnarokTargets } from './solver/model_ragnarok.js';
 
-export function renderTabs(){
-  const bar=document.getElementById('tabs-bar');
-  bar.innerHTML='';
-  for(const s of state.servers){
-    const b=document.createElement('button');
-    b.className='tab-btn'+(s.id===state.activeId?' active':'');
-    b.dataset.srvId=s.id;
-    b.innerHTML=`<span class="tab-label" onclick="switchSrv('${s.id}')">${esc(s.name)}</span><span class="tab-close" onclick="removeSrv('${s.id}')">✕</span>`;
-    
+export function renderTabs() {
+  const bar = document.getElementById('tabs-bar');
+  bar.innerHTML = '';
+  for (const s of state.servers) {
+    const b = document.createElement('button');
+    b.className = 'tab-btn' + (s.id === state.activeId ? ' active' : '');
+    b.dataset.srvId = s.id;
+    b.innerHTML = `<span class="tab-label" data-action="switch-server" data-id="${s.id}">${esc(s.name)}</span><span class="tab-close" data-action="remove-server" data-id="${s.id}" title="Delete server">${icon('x')}</span>`;
+
     // Desktop Right-Click
-    b.addEventListener('contextmenu', e=>{ e.preventDefault(); openTabCtx(e, s.id); });
-    
+    b.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      openTabCtx(e, s.id);
+    });
+
     // Mobile Long-Press (500ms)
-    let pressTimer, longPressed = false;
-    b.addEventListener('touchstart', e => {
+    let pressTimer,
       longPressed = false;
-      pressTimer = setTimeout(() => { longPressed = true; openTabCtx(e, s.id); }, 500);
-    }, {passive: true});
-    b.addEventListener('touchend', e => {
-      clearTimeout(pressTimer);
-      // If the long-press opened the menu, swallow the click that follows the lift,
-      // otherwise the document click-handler closes the menu instantly.
-      if (longPressed && e.cancelable) e.preventDefault();
-    }, {passive: false});
+    b.addEventListener(
+      'touchstart',
+      e => {
+        longPressed = false;
+        pressTimer = setTimeout(() => {
+          longPressed = true;
+          openTabCtx(e, s.id);
+        }, 500);
+      },
+      { passive: true },
+    );
+    b.addEventListener(
+      'touchend',
+      e => {
+        clearTimeout(pressTimer);
+        // If the long-press opened the menu, swallow the click that follows the lift,
+        // otherwise the document click-handler closes the menu instantly.
+        if (longPressed && e.cancelable) e.preventDefault();
+      },
+      { passive: false },
+    );
     b.addEventListener('touchmove', () => clearTimeout(pressTimer));
     b.addEventListener('touchcancel', () => clearTimeout(pressTimer));
 
     bar.appendChild(b);
   }
-  const a=document.createElement('button');
-  a.className='add-tab-btn';a.textContent='+ Add Server';a.onclick=openAdd;
+  const a = document.createElement('button');
+  a.className = 'add-tab-btn';
+  a.textContent = '+ Add Server';
+  a.onclick = openAdd;
   bar.appendChild(a);
 }
 
-export function renderAll(){
-  const srv=activeSrv();
-  const mc=document.getElementById('main-content');
-  if(!srv){mc.innerHTML='<div class="empty-state">No servers yet. Click <strong class="empty-state-cta">+ Add Server</strong> to get started.</div>';return;}
-  const days=numDays(srv);
-  const mapData=getMapData(srv.mode,srv.mapKey);
-  const scores=calcScores(srv);
-  const occ=calcOcc(srv);
-  const issues=validateAdj(srv);
+// ── Today: on opening a server during its event, scroll the grid so today's column is in view ──
+const scrolledToToday = new Set();
+function scrollToToday(mc, srv) {
+  if (scrolledToToday.has(srv.id)) return; // only once per server, so it doesn't fight your own scrolling
+  const th = mc.querySelector('table.ptbl thead th.is-today');
+  if (!th || th.offsetParent === null) return; // on another tab for now: lined up when the Grid tab opens
+  scrolledToToday.add(srv.id);
+  const wrap = th.closest('.tbl-wrap');
+  // Sit just right of the Town column, which sticks to the grid's left edge once it's scrolled (the
+  // Adjacent Towns column before it scrolls away), so that edge is the grid's left plus Town's width.
+  // (Measured on screen: offsetLeft counts from the page, which put Today under Town on phones.)
+  const place = () => {
+    const town = wrap.querySelector('tbody td.kname') || wrap.querySelector('thead th.kname');
+    const edge = wrap.getBoundingClientRect().left + wrap.clientLeft + (town ? town.offsetWidth : 0);
+    wrap.scrollLeft = Math.max(0, wrap.scrollLeft + th.getBoundingClientRect().left - edge - 8);
+    return wrap.scrollLeft;
+  };
+  const at = place();
+  // The columns change width once the web fonts load: line it up again then, unless the grid has
+  // been scrolled by hand in the meantime.
+  if (document.fonts && document.fonts.status !== 'loaded')
+    document.fonts.ready.then(() => {
+      if (th.isConnected && wrap.scrollLeft === at) place();
+    });
+}
+
+// ── Day buttons (Map, Daily Messages): on phones they're one row that scrolls sideways, so keep the
+// picked day in the middle of it ──
+function centerDays(mc) {
+  mc.querySelectorAll('.map-days').forEach(strip => {
+    const a = strip.querySelector('.map-day.active');
+    if (!a || strip.scrollWidth <= strip.clientWidth) return;
+    const r = a.getBoundingClientRect(),
+      sr = strip.getBoundingClientRect();
+    strip.scrollLeft += r.left + r.width / 2 - (sr.left + sr.width / 2);
+  });
+}
+
+// ── Jump bar: quick links to each part of the page ──
+const JUMPS = [
+  ['sec-settings', 'Setup'],
+  ['sec-guilds', 'Guilds'],
+  ['capture-grid', 'Grid'],
+  ['sec-map', 'Map'],
+  ['capture-stats', 'Scores'],
+  ['sec-declares', 'Declares'],
+  ['sec-messages', 'Messages'],
+];
+function renderJumpBar(srv) {
+  // The links scroll inside .jump-links, so on narrow screens only they fade at the edge, not the bar's border.
+  return `<nav class="jump-bar" aria-label="Jump to section"><div class="jump-links">
+    ${JUMPS.filter(([id]) => id !== 'sec-map' || hasMapView(srv))
+      .map(([id, label]) => `<a href="#${id}" class="jump-link" data-jump="${id}">${label}</a>`)
+      .join('')}
+  </div></nav>`;
+}
+let jumpObserver = null;
+let jumpCurrent = null; // the section at the top of the screen, for the bar's highlight on a long page
+const markJump = bar =>
+  bar.querySelectorAll('.jump-link').forEach(l => l.classList.toggle('active', l.dataset.jump === jumpCurrent));
+function wireJumpBar(mc) {
+  const bar = mc.querySelector('.jump-bar');
+  if (!bar) return;
+  // The bar is the same element from one render to the next now: listen once
+  if (!bar._wired) {
+    bar._wired = true;
+    bar.addEventListener('click', e => {
+      const a = e.target.closest('[data-jump]');
+      if (!a) return;
+      e.preventDefault(); // scroll without putting #section in the address bar
+      // With the sidebar, the Server Settings and the Guilds are one panel that slides in, not parts of the page
+      if ((a.dataset.jump === 'sec-settings' || a.dataset.jump === 'sec-guilds') && setupIsPanel()) {
+        openSetup();
+        return;
+      }
+      // ...and the other links are tabs: show that one
+      if (tabsActive() && TAB_OF_JUMP[a.dataset.jump]) {
+        setTab(TAB_OF_JUMP[a.dataset.jump], { scroll: true });
+        return;
+      }
+      const el = document.getElementById(a.dataset.jump);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+  // Highlight the section currently at the top of the screen.
+  if (jumpObserver) jumpObserver.disconnect();
+  if (!tabsActive()) markJump(bar); // the redraw cleared the highlight: put it back before anyone sees it
+  if (typeof IntersectionObserver === 'undefined') return;
+  const visible = new Map();
+  jumpObserver = new IntersectionObserver(
+    entries => {
+      entries.forEach(en => visible.set(en.target.id, en.isIntersecting));
+      if (tabsActive()) return; // tabs: the bar shows the open tab (syncTabs)
+      // Sections can nest (Declares is inside the Scores block), so the last one in page order wins.
+      jumpCurrent =
+        JUMPS.map(([id]) => id)
+          .filter(id => visible.get(id))
+          .pop() || jumpCurrent;
+      markJump(bar);
+    },
+    { rootMargin: '-56px 0px -60% 0px' },
+  );
+  JUMPS.forEach(([id]) => {
+    const el = document.getElementById(id);
+    if (el) jumpObserver.observe(el);
+  });
+}
+
+// ── No servers yet: a welcome panel with one of the ghouls in battle ──
+function renderWelcome() {
+  return `<div class="empty-state welcome">
+    ${ghoulHTML('battle', 'welcome-ghoul')}
+    <h2 class="welcome-title">Plan your next Game of Claws or Ragnarok</h2>
+    <p class="welcome-sub">Work out who holds which town on which day, keep every move legal, and share the points out evenly.</p>
+    <ol class="welcome-steps">
+      <li><span class="ws-num">1</span><span><b>Add a server</b>Pick the mode, map and event dates.</span></li>
+      <li><span class="ws-num">2</span><span><b>Add your guilds</b>Type their names, or paste the whole list.</span></li>
+      <li><span class="ws-num">3</span><span><b>Plan the grid</b>Fill it in yourself or let Auto-Optimize do it, then copy each day's message for Discord.</span></li>
+    </ol>
+    <div class="welcome-actions">
+      <button type="button" class="btn-accent" data-action="open-add">${icon('plus')} Add Server</button>
+      <button type="button" class="btn" data-action="tutorial">${icon('graduation-cap')} Take the tour</button>
+    </div>
+  </div>`;
+}
+
+// Dynamically set pts-row sticky offset to match the actual first header row height
+function fixPtsRow() {
+  const firstTh = document.querySelector('table.ptbl thead tr:first-child th');
+  const ptsRow = document.querySelector('table.ptbl tr.pts-row');
+  if (firstTh && ptsRow) {
+    const h = firstTh.getBoundingClientRect().height;
+    if (h) ptsRow.querySelectorAll('th').forEach(th => (th.style.top = h + 'px'));
+  }
+}
+
+// Tabs hide a section with display:none, which drops its sideways scroll position and its measurements:
+// remember the scroll as a tab is left, and put it (and the grid's header offset) back as one opens.
+let lastH = [];
+const SCROLL_SEL = '.tbl-wrap, .guild-list';
+document.addEventListener('goc:tab', e => {
+  const mc = document.getElementById('main-content');
+  if (!mc) return;
+  if (e.detail.phase === 'before') {
+    const wraps = [...mc.querySelectorAll(SCROLL_SEL)];
+    lastH = wraps.map((w, i) => (w.offsetParent === null ? lastH[i] || 0 : w.scrollLeft));
+    return;
+  }
+  mc.querySelectorAll(SCROLL_SEL).forEach((w, i) => {
+    if (w.offsetParent !== null && lastH[i]) w.scrollLeft = lastH[i];
+  });
+  const srv = activeSrv();
+  if (srv) scrollToToday(mc, srv);
+  centerDays(mc);
+  requestAnimationFrame(fixPtsRow);
+});
+
+// Set by tests: the next render builds the page from scratch, to compare with the updated one
+let coldNext = false;
+export function forceColdRender() {
+  coldNext = true;
+}
+
+export function renderAll() {
+  const srv = activeSrv();
+  const mc = document.getElementById('main-content');
+  const sidebar = document.getElementById('sidebar');
+  const appBody = document.querySelector('.app-body');
+  if (!srv) {
+    mc.innerHTML = renderWelcome();
+    delete mc.dataset.rendered;
+    if (sidebar) delete sidebar.dataset.rendered;
+    if (sidebar) sidebar.innerHTML = '';
+    if (appBody) appBody.classList.remove('has-sidebar');
+    return;
+  }
+  const days = numDays(srv);
+  const mapData = getMapData(srv.mode, srv.mapKey);
+  const scores = calcScores(srv);
+  const occ = calcOcc(srv);
+  const issues = validateAdj(srv);
   const wipes = validateWipes(srv);
-  const{dec,give}=calcDec(srv);
-  const totalPts=mapData.kingdoms.reduce((s,k)=>s+kPts(k.type),0)*days;
-  const totalBase=srv.guilds.reduce((s,g)=>s+(parseInt(g.basePoints||0,10)||0),0);
-  const targets=(srv.mode==='goc'?getGocTargets:getRagnarokTargets)(srv, mapData);
+  const { dec, give } = calcDec(srv);
+  const totalPts = mapData.kingdoms.reduce((s, k) => s + kPts(k.type), 0) * days;
+  const totalBase = srv.guilds.reduce((s, g) => s + (parseInt(g.basePoints || 0, 10) || 0), 0);
+  const targets = (srv.mode === 'goc' ? getGocTargets : getRagnarokTargets)(srv, mapData);
+  const starts = validateStarts(srv);
 
   // Remember scroll positions so editing a cell doesn't snap the grid back to the left
-  const scrollSel = '.tbl-wrap, .guild-list';
-  const hScroll = [...mc.querySelectorAll(scrollSel)].map(w => w.scrollLeft);
+  const scrollSel = SCROLL_SEL;
+  // (a list on a tab that is not showing has no scroll position to read: keep what it had)
+  const hScroll = [...mc.querySelectorAll(scrollSel)].map((w, i) =>
+    w.offsetParent === null ? lastH[i] || 0 : w.scrollLeft,
+  );
+  lastH = hScroll;
   const pageY = window.scrollY;
+  const sidebarY = sidebar ? sidebar.scrollTop : 0;
 
-  mc.innerHTML=`
-    ${renderSettings(srv)}
-    ${renderGuilds(srv)}
-    ${renderStatus(srv,issues,wipes)}
+  const pageHtml = `
+    ${renderJumpBar(srv)}
+    <div class="setup-panel">
+      ${renderSettings(srv)}
+      ${renderGuilds(srv)}
+    </div>
+    ${renderStatus(srv, issues, wipes, starts)}
     
     <!-- WRAPPER 1: The Grid -->
     <div class="capture-wrap" id="capture-grid">
-      ${renderGrid(srv,days,mapData,issues,wipes)}
+      ${renderGrid(srv, days, mapData, issues, wipes)}
     </div>
+
+    ${renderMapView(srv, mapData, days)}
 
     <!-- WRAPPER 2: The Stats -->
     <div class="capture-wrap capture-wrap-stats" id="capture-stats" data-tour="stats">
-      ${renderScores(srv,scores,targets)}
-      ${renderOcc(srv,occ)}
-      ${renderDecTable(srv,days,dec,give)}
+      ${renderScores(srv, scores, targets)}
+      ${renderOcc(srv, occ)}
+      ${renderDecTable(srv, days, dec, give)}
     </div>
     
     ${renderMsgs(srv)}
   `;
-  mc.querySelectorAll(scrollSel).forEach((w,i) => { w.scrollLeft = hScroll[i] || 0; });
-  window.scrollTo(0, pageY);
-
-  // Dynamically set pts-row sticky offset to match the actual first header row height
-  requestAnimationFrame(()=>{
-    const firstTh = document.querySelector('table.ptbl thead tr:first-child th');
-    const ptsRow  = document.querySelector('table.ptbl tr.pts-row');
-    if(firstTh && ptsRow){
-      const h = firstTh.getBoundingClientRect().height;
-      ptsRow.querySelectorAll('th').forEach(th => th.style.top = h + 'px');
-    }
+  // The same server as last time: change only what differs. A different server (or the welcome panel
+  // before it) starts from scratch, so nothing of the old one can carry over.
+  const key = srv.id + (srv.isViewOnly ? ':view' : '');
+  if (coldNext || mc.dataset.rendered !== key) {
+    mc.innerHTML = pageHtml;
+    mc.dataset.rendered = key;
+  } else {
+    morph(mc, pageHtml);
+  }
+  mc.querySelectorAll(scrollSel).forEach((w, i) => {
+    w.scrollLeft = hScroll[i] || 0;
   });
+  if (sidebar) {
+    const sbHtml = renderSidebar(srv, { scores, targets, occ });
+    if (coldNext || sidebar.dataset.rendered !== key) {
+      sidebar.innerHTML = sbHtml;
+      sidebar.dataset.rendered = key;
+    } else {
+      morph(sidebar, sbHtml);
+    }
+    sidebar.scrollTop = sidebarY;
+  }
+  if (appBody) appBody.classList.add('has-sidebar');
+  window.scrollTo(0, pageY);
+  fixPtsRow();
+  coldNext = false;
+  wireJumpBar(mc);
+  syncTabs();
+  applySpotlight(mc);
+  scrollToToday(mc, srv);
+  centerDays(mc);
 
-  // 🚨 NEW: Drag and Drop Initialization
+  requestAnimationFrame(fixPtsRow);
+
+  // Drag and drop to reorder guilds
   const guildListEl = document.getElementById('guild-list');
   if (guildListEl && !srv.isViewOnly && typeof Sortable !== 'undefined') {
-    new Sortable(guildListEl, {
+    // (the list can be the same element as last time, still holding the old plan's handler)
+    if (guildListEl._sortable) guildListEl._sortable.destroy();
+    guildListEl._sortable = new Sortable(guildListEl, {
       handle: '.drag-handle', // Prevents accidental dragging when typing in inputs
+      draggable: '.guild-row[data-id]', // the column header row stays put
       animation: 150,
       onEnd: function () {
         // Read the new DOM order via the data-id tags
-        const newOrder = Array.from(guildListEl.children).map(row => row.dataset.id);
+        const newOrder = Array.from(guildListEl.querySelectorAll('.guild-row[data-id]')).map(row => row.dataset.id);
         // Rebuild the master guild array to match the new visual order
         srv.guilds = newOrder.map(id => srv.guilds.find(g => g.id === id));
         save();
-        renderAll(); 
-      }
+        renderAll();
+      },
     });
   }
 
   renderFillSel();
 }
 
-function renderSettings(srv){
-  const maps=getMapList(srv.mode);
-  const days=numDays(srv);
-  
-  // 🚨 VIEW-ONLY DASHBOARD
+// A toolbar button: icon + words. Status messages ("Saving...") replace only the words.
+function tbBtn(iconName, label, attrs = '', cls = '') {
+  return `<button type="button" class="btn-tool${cls ? ' ' + cls : ''}" ${attrs}>${icon(iconName)}<span class="btn-label">${label}</span></button>`;
+}
+
+function renderSettings(srv) {
+  const maps = getMapList(srv.mode);
+  const days = numDays(srv);
+
+  // Shared plans opened from a link are view-only
   if (srv.isViewOnly) {
-    return `<div class="section view-only">
-      <div class="sec-title view-only-title">👀 View-Only Mode</div>
+    return `<div class="section view-only" id="sec-settings">
+      <div class="sec-title view-only-title">${icon('eye')} View-Only Mode</div>
+      <button type="button" class="setup-close" data-action="close-setup" aria-label="Close server settings">${icon('x')}</button>
       <div class="view-only-msg">
         You are viewing a shared plan: <strong>${esc(srv.name)}</strong>. To make your own changes, you must copy it.
       </div>
-      <div class="btn-group">
-        <button class="btn-gold" onclick="duplicateCurrentPlan()">📋 Duplicate to Edit</button>
-        <button class="btn-accent btn-sync" id="btn-sync-cloud" onclick="syncFromCloud()">🔄 Pull Latest Updates</button>
-        <button class="btn-accent btn-screenshot" onclick="takeScreenshots()">📸 Screenshots</button>
-        <button class="btn-accent btn-export" onclick="exportServer()">📤 Export Data</button>
+      <div class="toolbar">
+        <div class="tb-group">
+          ${tbBtn('copy', 'Duplicate to Edit', 'data-action="duplicate-plan"', 'btn-primary')}
+        </div>
+        <div class="tb-group">
+          ${tbBtn('refresh-cw', 'Pull Latest Updates', 'id="btn-sync-cloud" data-action="sync-cloud"')}
+          ${tbBtn('camera', 'Screenshots', 'data-action="screenshots"')}
+          ${tbBtn('download', 'Export Data', 'data-action="export-server"')}
+        </div>
       </div>
       <div class="settings-meta">
-        ${days} days planned · ${getMapData(srv.mode,srv.mapKey).kingdoms.length} kingdoms · ${srv.guilds.length} guilds
+        ${days} days planned · ${getMapData(srv.mode, srv.mapKey).kingdoms.length} kingdoms · ${srv.guilds.length} guilds
       </div>
     </div>`;
   }
 
   // STANDARD EDIT DASHBOARD
-  return `<div class="section" data-tour="settings">
+  return `<div class="section" id="sec-settings" data-sec="settings" data-tour="settings">
     <div class="sec-title">Server Settings</div>
+    <button type="button" class="setup-close" data-action="close-setup" aria-label="Close server settings">${icon('x')}</button>
     <div class="row">
       <div class="fg"><label>Server Name</label>
-        <input class="settings-input" type="text" value="${esc(srv.name)}" onchange="updName(this.value)"></div>
+        <input class="settings-input" type="text" value="${esc(srv.name)}" data-change="server-name"></div>
       <div class="fg"><label>Mode</label>
-        <select onchange="updMode(this.value)">
-          <option value="ragnarok"${srv.mode==='ragnarok'?' selected':''}>Ragnarok</option>
-          <option value="goc"${srv.mode==='goc'?' selected':''}>Game of Claws</option>
+        <select data-change="server-mode">
+          <option value="ragnarok"${srv.mode === 'ragnarok' ? ' selected' : ''}>Ragnarok</option>
+          <option value="goc"${srv.mode === 'goc' ? ' selected' : ''}>Game of Claws</option>
         </select></div>
       <div class="fg"><label>Map</label>
-        <select onchange="updMap(this.value)">
-          ${maps.map(m=>`<option value="${m.key}"${srv.mapKey===m.key?' selected':''}>${m.name}</option>`).join('')}
+        <select data-change="server-map">
+          ${maps.map(m => `<option value="${m.key}"${srv.mapKey === m.key ? ' selected' : ''}>${m.name}</option>`).join('')}
         </select></div>
       <div class="fg"><label>Start Date</label>
-        <input class="settings-input" type="date" value="${srv.startDate||''}" onchange="updStart(this.value)"></div>
+        <input class="settings-input" type="date" value="${srv.startDate || ''}" data-change="server-start"></div>
       <div class="fg"><label>End Date</label>
-        <input class="settings-input" type="date" value="${srv.endDate||''}" onchange="updEnd(this.value)"></div>
-      <div class="fg"><label>&nbsp;</label>
-        <div class="btn-group">
-          <button class="btn" onclick="clearPlan()">Clear Plan</button>
-          <button class="btn-accent btn-import" onclick="openImport()" data-tour="import">📥 Import</button>
-          <button class="btn-accent btn-export" onclick="exportServer()">📤 Export Server</button>
-          <button class="btn-accent btn-screenshot" onclick="takeScreenshots()">📸 Screenshots</button>
-          <button id="opt-btn" class="btn-gold" data-tour="optimize" onclick="autoOptimize()">⚡ Auto-Optimize</button>
-          
+        <input class="settings-input" type="date" value="${srv.endDate || ''}" data-change="server-end"></div>
+    </div>
+    <div class="toolbar">
+      <div class="tb-section">
+        <div class="tb-label">Plan</div>
+        <div class="tb-group">
+          ${tbBtn('zap', 'Auto-Optimize', 'id="opt-btn" data-tour="optimize" data-action="optimize"', 'btn-primary')}
           ${srv.lastSolveTime ? `<span class="solve-badge">Last solve: ${srv.lastSolveTime}s</span>` : ''}
-          
-          ${srv.undoPlan ? `<button class="btn-accent btn-undo" onclick="undoOptimize()">↩ Undo Optimize</button>` : ''}
-          <button class="btn-accent btn-share" id="btn-share-cloud" data-tour="share" onclick="publishToCloud()">🔗 Save to Cloud</button>
-          <button class="btn-accent btn-sync" id="btn-sync-cloud" onclick="syncFromCloud()">🔄 Sync from Cloud</button>
-        </div></div>
+          ${tbBtn('history', 'History', 'data-action="versions" title="Saved versions of this server"')}
+        </div>
+      </div>
+      <div class="tb-section">
+        <div class="tb-label">Files</div>
+        <div class="tb-group">
+          ${tbBtn('upload', 'Import', 'data-action="open-import" data-tour="import"')}
+          ${tbBtn('download', 'Export Server', 'data-action="export-server"')}
+        </div>
+      </div>
+      <div class="tb-section">
+        <div class="tb-label">Share</div>
+        <div class="tb-group">
+          ${tbBtn('camera', 'Screenshots', 'data-action="screenshots"')}
+          ${tbBtn('cloud-upload', 'Save to Cloud', 'id="btn-share-cloud" data-tour="share" data-action="save-cloud"')}
+          ${tbBtn('refresh-cw', 'Sync from Cloud', 'id="btn-sync-cloud" data-action="sync-cloud"')}
+          ${todayDay(srv, days) ? tbBtn('copy', "Copy Today's Message", 'id="btn-copy-today" data-action="copy-today"') : ''}
+        </div>
+      </div>
     </div>
     <div class="settings-meta">
-      ${days} days planned · ${getMapData(srv.mode,srv.mapKey).kingdoms.length} kingdoms · ${srv.guilds.length} guilds
+      <span>${days} days planned · ${getMapData(srv.mode, srv.mapKey).kingdoms.length} kingdoms · ${srv.guilds.length} guilds</span>
+      ${tbBtn('trash-2', 'Clear Plan', 'data-action="clear-plan"', 'btn-danger-ghost')}
     </div>
   </div>`;
 }
 
-function renderGuilds(srv){
-  // 🚨 Removed the .sort() function so the array stays in your manual dragged order
+function renderGuilds(srv) {
+  // Guilds are shown in the order they were dragged into (the order decides tie-breaks)
   const dAttr = srv.isViewOnly ? 'disabled' : '';
+  // Points / Castle / Dorms / Towns are only for plans started partway through an event, so they stay
+  // hidden until "Planning mid-event" is turned on. Numbers already in them always show, and the switch
+  // can't be turned off until they are all back to 0, so nothing counted is ever out of sight.
+  const midLocked = hasMidEventNumbers(srv);
+  const showMid = isMidEvent(srv);
 
-  return `<div class="section" data-tour="guilds">
+  return `<div class="section" id="sec-guilds" data-sec="guilds" data-tour="guilds">
     <div class="sec-title">Guilds</div>
-    <div class="guild-list" id="guild-list">
-      ${srv.guilds.map((g,i)=>`
+    <div class="guild-list${showMid ? '' : ' hide-mid'}" id="guild-list" style="--rows:${Math.ceil(srv.guilds.length / 2)}">
+      ${
+        showMid
+          ? `<div class="guild-row guild-row-head" aria-hidden="true">
+        <span></span><span></span>
+        <span class="gh-name">Guild</span>
+        <span></span><span></span>
+        <span class="gh-num" title="Points the guild already has">Points</span>
+        <span class="gh-num" title="Days already held before this plan starts (for events already under way)">Castle</span>
+        <span class="gh-num" title="Days already held before this plan starts (for events already under way)">Dorms</span>
+        <span class="gh-num" title="Days already held before this plan starts (for events already under way)">Towns</span>
+        <span></span>
+      </div>`
+          : ''
+      }
+      ${srv.guilds
+        .map(
+          (g, i) => `
         <div class="guild-row" data-id="${g.id}">
-          ${!srv.isViewOnly ? `<div class="drag-handle">☰</div>` : ''}
-          <div class="guild-dot" style="background:${g.color}"></div>
-          
-          <input class="guild-name-inp" data-guild-id="${g.id}" data-guild-field="name" value="${esc(g.name)}" placeholder="Guild name"
-            oninput="updGuildName('${g.id}',this.value)" ${dAttr}>
-            
-          ${srv.mode === 'ragnarok' ? '' : `
-            <input type="checkbox" id="sm_${g.id}" class="guild-small-check" ${g.isSmall ? 'checked' : ''} 
-              onchange="updGuildSmall('${g.id}', this.checked)" ${dAttr}>
-            <label for="sm_${g.id}" class="guild-small-label" title="Check this if this is a smaller guild.">Small Guild</label>
-          `}
-          <input type="checkbox" id="exc_${g.id}" class="guild-small-check" ${g.isExcluded ? 'checked' : ''} 
-            onchange="updGuildExcluded('${g.id}', this.checked)" ${dAttr}>
-          <label for="exc_${g.id}" class="guild-small-label"
-           title="Leave this guild out of the rest of the plan. It keeps the towns it is holding now, nobody can take them, it declares nothing more, and the points still to win are shared out between the other guilds. Days you have already played are untouched.">Exclude Guild</label>
+          ${!srv.isViewOnly ? `<div class="drag-handle" title="Drag to reorder">${icon('grip-vertical')}</div>` : '<span></span>'}
+          ${showMid ? '' : `<span class="guild-rank" title="Order in the list">${i + 1}</span>`}
+          <button type="button" class="guild-color" style="--guild-color:${gcolor(g.color)}" data-action="guild-color" data-id="${g.id}"
+            title="${srv.isViewOnly ? '' : 'Change color'}" aria-label="${esc(g.name)}: change color" ${dAttr}></button>
 
-          <input class="guild-num guild-num-pts" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="points" value="${esc(g.basePoints||0)}"
-            onchange="updGuildPoints('${g.id}',this.value)" title="Current points" ${dAttr}>
-            
-          <input class="guild-num" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv3" value="${esc(g.baseLv3||0)}"
-            onchange="updGuildLv3('${g.id}',this.value)" title="Previous Lv3 Days" ${dAttr}>
-            
-          <input class="guild-num" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv2" value="${esc(g.baseLv2||0)}"
-            onchange="updGuildLv2('${g.id}',this.value)" title="Previous Dorm Days" ${dAttr}>
-            
-          <input class="guild-num" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv1" value="${esc(g.baseLv1||0)}"
-            onchange="updGuildLv1('${g.id}',this.value)" title="Previous Lv1 Town Days" ${dAttr}>
+          <input class="guild-name-inp" data-guild-id="${g.id}" data-guild-field="name" value="${esc(g.name)}" placeholder="Guild name" aria-label="Guild name"
+            data-input="guild-name" ${dAttr}>
 
-          <span class="guild-num-label">Pts/L3/L2/L1</span>
+          ${
+            srv.mode === 'ragnarok'
+              ? '<span></span>'
+              : `
+            <label class="guild-flag" title="Check this if this is a smaller guild (1 declare a day).">
+              <input type="checkbox" id="sm_${g.id}" class="guild-small-check" ${g.isSmall ? 'checked' : ''}
+                data-change="guild-small" data-id="${g.id}" ${dAttr}>
+              <span>Small guild</span>
+            </label>
+          `
+          }
+          <label class="guild-flag"
+            title="Leave this guild out of the rest of the plan. It keeps the towns it is holding now, nobody can take them, it declares nothing more, and the points still to win are shared out between the other guilds. Days you have already played are untouched.">
+            <input type="checkbox" id="exc_${g.id}" class="guild-small-check" ${g.isExcluded ? 'checked' : ''}
+              data-change="guild-excluded" data-id="${g.id}" ${dAttr}>
+            <span>Exclude guild</span>
+          </label>
 
-          ${(!srv.isViewOnly && srv.guilds.length>2) ? `<span class="guild-remove" onclick="removeGuild('${g.id}')">✕</span>` : ''}
-        </div>`).join('')}
+          ${
+            showMid
+              ? `
+          <input class="guild-num" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="points" value="${esc(g.basePoints || 0)}"
+            data-change="guild-points" title="Current points" aria-label="${esc(g.name)}: current points" ${dAttr}>
+          <input class="guild-num" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv3" value="${esc(g.baseLv3 || 0)}"
+            data-change="guild-lv3" title="Castle days already held" aria-label="${esc(g.name)}: castle days already held" ${dAttr}>
+          <input class="guild-num" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv2" value="${esc(g.baseLv2 || 0)}"
+            data-change="guild-lv2" title="Dorm days already held" aria-label="${esc(g.name)}: dorm days already held" ${dAttr}>
+          <input class="guild-num" type="number" min="0" step="1" data-guild-id="${g.id}" data-guild-field="lv1" value="${esc(g.baseLv1 || 0)}"
+            data-change="guild-lv1" title="Town days already held" aria-label="${esc(g.name)}: town days already held" ${dAttr}>
+          `
+              : ''
+          }
+
+          ${!srv.isViewOnly && srv.guilds.length > 2 ? `<button type="button" class="guild-remove" data-action="remove-guild" data-id="${g.id}" title="Remove guild" aria-label="Remove ${esc(g.name)}">${icon('x')}</button>` : '<span></span>'}
+        </div>`,
+        )
+        .join('')}
     </div>
-    ${!srv.isViewOnly ? `
+    ${
+      !srv.isViewOnly
+        ? `
     <div class="guild-actions">
-      <button class="btn-accent" onclick="addGuild()">+ Add Guild</button>
-    </div>` : ''}
+      <button type="button" class="btn-tool" data-action="add-guild">${icon('plus')}<span class="btn-label">Add Guild</span></button>
+      <label class="guild-flag mid-toggle" title="${
+        midLocked
+          ? 'Some guilds have points or days held entered. Set them all back to 0 to hide these boxes.'
+          : "Starting a plan partway through an event? Turn this on to enter each guild's current points and the days it has already held the castle, dorms and towns."
+      }">
+        <input type="checkbox" class="guild-small-check" data-change="mid-event-toggle" ${showMid ? 'checked' : ''} ${midLocked ? 'disabled' : ''}>
+        <span>Planning mid-event</span>
+      </label>
+    </div>`
+        : ''
+    }
   </div>`;
 }
 
 function renderScores(srv, scores, targets) {
   const days = numDays(srv);
-  
+
   // Calculate the target range for the header (e.g., "47-48")
   const isGoC = srv.mode === 'goc';
   const active = srv.guilds.filter(g => isGoC || !g.isExcluded);
-  const targetVals = active.map(g => targets[g.id] ? targets[g.id].grandPts : 0);
-  
+  const targetVals = active.map(g => (targets[g.id] ? targets[g.id].grandPts : 0));
+
   let targetHeader = 0;
   if (targetVals.length > 0) {
     const minT = Math.min(...targetVals);
@@ -250,95 +574,194 @@ function renderScores(srv, scores, targets) {
   // Pull the actual points from your cumulative score tracker
   const final = srv.guilds.map(g => ({ g, pts: scores.cumul[g.id][days - 1] || 0 }));
   final.sort((a, b) => b.pts - a.pts);
-  
+
   const maxPts = Math.max(...final.map(x => x.pts), 1);
-  
-  return `<div class="section">
+
+  return `<div class="section" data-sec="scores">
     <div class="sec-title">Final Scores <span class="sec-note"> Even target: ${targetHeader} pts</span></div>
     <div class="score-grid">
-      ${final.map(({g, pts}) => {
-        
-        // Extract the mathematically perfect target for this specific guild
-        const t = targets[g.id] ? targets[g.id].grandPts : 0;
-        const diff = pts - t;
-        
-        const cls = Math.abs(diff) <= 1 ? 'diff-ok' : Math.abs(diff) <= 3 ? 'diff-warn' : 'diff-bad';
-        const pct = Math.round(pts / maxPts * 100);
-        
-        return `<div class="score-card">
-          <div class="sc-label"><div class="guild-dot" style="background:${g.color}"></div>${esc(g.name)}</div>
-          <div class="sc-val" style="color:${g.color}">${pts}</div>
+      ${final
+        .map(({ g, pts }) => {
+          // Extract the mathematically perfect target for this specific guild
+          const t = targets[g.id] ? targets[g.id].grandPts : 0;
+          const diff = pts - t;
+
+          const cls = Math.abs(diff) <= 1 ? 'diff-ok' : Math.abs(diff) <= 3 ? 'diff-warn' : 'diff-bad';
+          const pct = Math.round((pts / maxPts) * 100);
+
+          return `<div class="score-card" data-g="${g.id}" data-action="spotlight" data-id="${g.id}" title="Spotlight ${esc(g.name)}">
+          <div class="sc-label"><div class="guild-dot" style="background:${gcolor(g.color)}"></div>${esc(g.name)}</div>
+          <div class="sc-val gc-ink" style="--gc:${gcolor(g.color)}">${pts}</div>
           <div class="sc-sub">target: ${t}</div>
           <div class="sc-diff ${cls}">${diff >= 0 ? '+' : ''}${diff}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${g.color}"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${gcolor(g.color)}"></div></div>
         </div>`;
-      }).join('')}
+        })
+        .join('')}
     </div>
   </div>`;
 }
 
-function renderStatus(srv, issues, wipes){
-  const days=numDays(srv);
-  const baseMaxDecl=srv.mode==='goc'?2:3;
-  const byDay=Array.from({length:days},(_,i)=>issues.filter(x=>x.day===i+1));
-  const decViol=[];
-  const {dec}=calcDec(srv);
-  
-  for(const g of srv.guilds){
+// The day pills: days with problems get a red pill each (D5 (2) jumps to them); the days that are fine
+// share one green pill, so thirteen days no longer fill the row.
+function dayPills(byDay, pill) {
+  const bad = byDay.map((list, i) => ({ list, day: i + 1 })).filter(x => x.list.length);
+  const okCount = byDay.length - bad.length;
+  const out = bad.map(({ list, day }) =>
+    pill(false, `D${day} (${list.length})`, 'day', `data-day="${day}"`, 'Show the problems on this day in the grid'),
+  );
+  if (okCount)
+    out.push(
+      pill(
+        true,
+        bad.length
+          ? `${okCount} other ${okCount === 1 ? 'day' : 'days'} OK`
+          : byDay.length === 1
+            ? 'Day OK'
+            : `All ${okCount} days OK`,
+      ),
+    );
+  return out.join('');
+}
+
+function renderStatus(srv, issues, wipes, starts) {
+  const days = numDays(srv);
+  const baseMaxDecl = srv.mode === 'goc' ? 2 : 3;
+  const byDay = Array.from({ length: days }, (_, i) => issues.filter(x => x.day === i + 1));
+  const decViol = [];
+  const { dec } = calcDec(srv);
+
+  for (const g of srv.guilds) {
     const maxDecl = g.isSmall ? 1 : baseMaxDecl;
-    for(let d=0;d<days;d++){
-      if(dec[g.id][d].length>maxDecl) decViol.push({g,d,c:dec[g.id][d].length});
+    for (let d = 0; d < days; d++) {
+      if (dec[g.id][d].length > maxDecl) decViol.push({ g, d, c: dec[g.id][d].length });
     }
   }
-  
-  // Combine issues and wipes for the display text
-  const issueText = [
+
+  // Every problem is a button that jumps to it (status-jump.js).
+  const jump = (kind, attrs, inner, cls = '') =>
+    `<button type="button" class="${cls}" data-action="status-jump" data-kind="${kind}" ${attrs}>${inner}</button>`;
+  const issueItems = [
+    ...starts.map(s => {
+      const g = srv.guilds.find(x => x.id === s.guild);
+      if (s.kingdom)
+        return jump(
+          'cell',
+          `data-day="0" data-k="${esc(s.kingdom)}" title="Show this town in the grid"`,
+          `Day 0: ${g ? esc(g.name) : '?'} on ${esc(s.kingdom)} (only towns at the start)`,
+          'status-item',
+        );
+      return jump(
+        'starts',
+        `data-g="${esc(s.guild)}" title="Show Day 0 in the grid"`,
+        `Day 0: ${g ? esc(g.name) : '?'} has ${s.count} of ${s.want} starting towns`,
+        'status-item',
+      );
+    }),
     ...issues.map(i => {
       const g = srv.guilds.find(x => x.id === i.guild);
-      return `Day ${i.day}: ${g ? esc(g.name) : '?'} → ${i.kingdom}`;
+      return jump(
+        'cell',
+        `data-day="${i.day}" data-k="${esc(i.kingdom)}" title="Show this town in the grid"`,
+        `Day ${i.day}: ${g ? esc(g.name) : '?'} → ${esc(i.kingdom)}`,
+        'status-item',
+      );
     }),
     ...wipes.map(w => {
       const g = srv.guilds.find(x => x.id === w.guild);
-      return `Day ${w.day}: ${g ? esc(g.name) : '?'} Wiped`;
-    })
-  ].join(' · ');
+      return jump(
+        'wipe',
+        `data-day="${w.day}" data-g="${esc(w.guild)}" title="Show this day in the grid"`,
+        `Day ${w.day}: ${g ? esc(g.name) : '?'} Wiped`,
+        'status-item',
+      );
+    }),
+  ];
+  const pill = (ok, label, kind, attrs, title) => {
+    const inner = `<span class="pdot" style="background:${ok ? 'var(--green)' : 'var(--red)'}"></span>${label}`;
+    return ok
+      ? `<div class="pill pill-ok">${inner}</div>`
+      : jump(kind, `${attrs} title="${title}"`, inner, 'pill pill-fail pill-jump');
+  };
 
-  return `<div class="section" data-tour="status">
+  // A cat holding up OK when nothing is wrong, NO when something is
+  const allOk = !issues.length && !wipes.length && !starts.length && !decViol.length;
+
+  return `<div class="section" id="sec-status" data-sec="status" data-tour="status">
     <div class="sec-title">Status</div>
     <div class="pills">
-      ${byDay.map((_,i)=>{
-        const ok=byDay[i].length===0;
-        return `<div class="pill ${ok?'pill-ok':'pill-fail'}">
-          <div class="pdot" style="background:${ok?'var(--green)':'var(--red)'}"></div>
-          D${i+1}${!ok?` (${byDay[i].length})`:''}
-        </div>`;
-      }).join('')}
-      <div class="pill ${decViol.length?'pill-fail':'pill-ok'}">
-        <div class="pdot" style="background:${decViol.length?'var(--red)':'var(--green)'}"></div>
-        Valid Declares
-      </div>
-      <div class="pill ${wipes.length ? 'pill-fail' : 'pill-ok'}">
-        <div class="pdot" style="background:${wipes.length ? 'var(--red)' : 'var(--green)'}"></div>
-        ${wipes.length ? `No Map Wipes (${wipes.length})` : 'No Map Wipes'}
-      </div>
+      ${dayPills(byDay, pill)}
+      ${pill(
+        !starts.length,
+        starts.length ? `Starting Towns (${starts.length})` : 'Starting Towns',
+        starts.length && starts[0].kingdom ? 'cell' : 'starts',
+        starts.length
+          ? starts[0].kingdom
+            ? `data-day="0" data-k="${esc(starts[0].kingdom)}"`
+            : `data-g="${esc(starts[0].guild)}"`
+          : '',
+        'Show Day 0 in the grid',
+      )}
+      ${pill(!decViol.length, 'Valid Declares', 'declares', '', 'Show the guilds declaring too many towns')}
+      ${pill(
+        !wipes.length,
+        wipes.length ? `No Map Wipes (${wipes.length})` : 'No Map Wipes',
+        'wipe',
+        wipes.length ? `data-day="${wipes[0].day}" data-g="${esc(wipes[0].guild)}"` : '',
+        'Show the first wipe in the grid',
+      )}
+      ${stickerHTML(allOk ? 'ok' : 'no', 'status-sticker')}
     </div>
-    ${issueText ? `<div class="status-issues">${issueText}</div>` : ''}
+    ${issueItems.length ? `<div class="status-issues">${issueItems.join('<span class="status-sep"> · </span>')}</div>` : ''}
   </div>`;
 }
 
 function renderGrid(srv, days, mapData, issues, wipes) {
+  const midEvent = isMidEvent(srv);
+  const today = todayDay(srv, days);
   const totalCols = numDisplayDays(srv);
   const issSet = new Set(issues.map(i => `${i.day}_${i.kingdom}`));
+  validateStarts(srv).forEach(s => s.kingdom && issSet.add(`0_${s.kingdom}`));
   const lv3 = mapData.kingdoms.filter(k => k.type === 'lv3');
   const lv2 = mapData.kingdoms.filter(k => k.type === 'lv2');
   const lv1 = mapData.kingdoms.filter(k => k.type === 'lv1');
   const ordered = [...lv3, ...lv2, ...lv1];
   const scores = calcScores(srv);
-  
-  const dAttr = srv.isViewOnly ? 'disabled' : '';
+  const occ = calcOcc(srv);
 
-  return `<div class="section" data-tour="grid">
-    <div class="sec-title">Planning Grid</div>
+  const dAttr = srv.isViewOnly ? 'disabled' : '';
+  // Spotlight chips: each carries the summary line shown when it is picked
+  const spotChips = srv.guilds
+    .map(g => {
+      const o = occ[g.id] || { lv1: 0, lv2: 0, lv3: 0 };
+      const pts = (scores.cumul[g.id] || [])[days - 1] || 0;
+      const summary = `${g.name}: ${pts} points · castle ${o.lv3} · dorms ${o.lv2} · towns ${o.lv1} days`;
+      return `<button type="button" class="spot-chip" data-action="spotlight" data-id="${g.id}" style="--guild-color:${gcolor(g.color)}"
+        aria-pressed="false" data-summary="${esc(summary)}"><span class="spot-dot"></span>${esc(g.name)}</button>`;
+    })
+    .join('');
+
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  const key = isMac ? '⌘' : 'Ctrl+';
+  const histBtn = (action, iconName, word, able, label, shortcut) =>
+    `<button type="button" class="btn-tool btn-tool-sm" data-action="${action}" ${able ? '' : 'disabled'}
+      title="${able ? esc(`${word}: ${label}`) : `Nothing to ${word.toLowerCase()}`} (${shortcut})">${icon(iconName)}<span class="btn-label">${word}</span></button>`;
+  return `<div class="section" data-sec="grid" data-tour="grid">
+    <div class="sec-title sec-title-row">
+      <div>Planning Grid</div>
+      ${
+        srv.isViewOnly
+          ? ''
+          : `<div class="hist-btns">
+        ${histBtn('undo', 'undo-2', 'Undo', canUndo(srv), undoLabel(srv), key + 'Z')}
+        ${histBtn('redo', 'redo-2', 'Redo', canRedo(srv), redoLabel(srv), isMac ? '⌘⇧Z' : 'Ctrl+Y')}
+      </div>`
+      }
+    </div>
+    <div class="spot-bar" role="group" aria-label="Spotlight a guild">
+      <span class="spot-label">Spotlight</span>${spotChips}
+    </div>
+    <p class="spot-summary" aria-live="polite" hidden></p>
     <div class="tbl-wrap">
     <table class="ptbl">
       <thead>
@@ -346,52 +769,68 @@ function renderGrid(srv, days, mapData, issues, wipes) {
           <th class="kadj">Adjacent Towns</th>
           <th class="kname">Town</th>
           <th class="ktype">Type</th>
-          ${Array.from({length:totalCols},(_,d)=>`<th>
-            ${dateLabel(srv,d)}
-            ${srv.isViewOnly ? '' : `<div class="clear-day-wrap"><button class="clear-day-btn" onclick="clearDay(${d})">Clear</button></div>`}
-          </th>`).join('')}
+          ${Array.from(
+            { length: totalCols },
+            (_, d) => `<th${d === today ? ' class="is-today"' : ''}>
+            ${d === today ? '<div class="today-tag">Today</div>' : ''}${dateLabel(srv, d)}
+            ${srv.isViewOnly ? '' : `<div class="clear-day-wrap"><button class="clear-day-btn" data-action="clear-day" data-day="${d}">Clear</button></div>`}
+          </th>`,
+          ).join('')}
         </tr>
         <tr class="pts-row">
           <th class="kadj pts-blank"></th>
           <th class="kname pts-label">Running pts →</th>
           <th class="ktype pts-blank"></th>
-          ${Array.from({length:totalCols},(_,d)=>{
-            return `<th class="pts-cell">
-              ${srv.guilds.map(g => {
-                let pts = 0;
-                if (d === 0) {
+          ${Array.from({ length: totalCols }, (_, d) => {
+            return `<th class="pts-cell${d === today ? ' is-today' : ''}">
+              ${srv.guilds
+                .map(g => {
+                  let pts = 0;
+                  if (d === 0) {
                     pts = parseInt(g.basePoints || 0, 10);
-                } else if (scores.cumul[g.id]) {
-                    pts = scores.cumul[g.id][d-1] || 0;
-                }
-                return `<div style="color:${g.color};font-size:9px;white-space:nowrap;line-height:1.4;margin-bottom:1px;">${esc(g.name.length>8?g.name.slice(0,7)+'…':g.name)}:${pts}</div>`;
-              }).join('')}
+                  } else if (scores.cumul[g.id]) {
+                    pts = scores.cumul[g.id][d - 1] || 0;
+                  }
+                  return `<div class="pts-line gc-ink" style="--gc:${gcolor(g.color)}" title="${esc(g.name)}: ${pts}"><span class="pts-name">${esc(g.name)}:</span>&nbsp;${pts}</div>`;
+                })
+                .join('')}
             </th>`;
           }).join('')}
         </tr>
       </thead>
       <tbody>
-        ${ordered.map(k => {
-          const nameColor = k.type==='lv3'?'var(--lv3)':k.type==='lv2'?'var(--lv2)':'var(--lv1)';
-          return `<tr>
+        ${ordered
+          .map(k => {
+            const nameColor = k.type === 'lv3' ? 'var(--lv3)' : k.type === 'lv2' ? 'var(--lv2)' : 'var(--lv1)';
+            return `<tr>
             <td class="kadj">${esc(k.adj.join(', ') || '—')}</td>
             <td class="kname" style="color:${nameColor}">${esc(k.id)}</td>
             <td class="ktype"><span class="badge badge-${k.type}">${k.type.toUpperCase()}</span></td>
-            ${Array.from({length:totalCols},(_,d)=>{
-              const eligible = (d === 0) ? srv.guilds : getEligibleGuilds(srv, k.id, d);
+            ${Array.from({ length: totalCols }, (_, d) => {
+              // At the start of an event, guilds only hold plain towns on Day 0.
+              const day0 = (srv.plan[0] || {})[k.id];
+              const eligible =
+                d > 0
+                  ? getEligibleGuilds(srv, k.id, d)
+                  : k.type === 'lv1' || midEvent
+                    ? srv.guilds
+                    : srv.guilds.filter(g => g.id === day0);
               const gOpts = [['', '—'], ...eligible.map(g => [g.id, g.name])];
               const gid = (srv.plan[d] || {})[k.id] || '';
               const g = srv.guilds.find(x => x.id === gid);
               const err = issSet.has(`${d}_${k.id}`);
-              
-              return `<td data-k="${k.id}" data-d="${d}" style="background:${g ? g.color+'18' : ''}; position:relative;" ${err ? 'class="cell-err"' : ''}>
-                <select class="csel" data-k="${k.id}" data-d="${d}" style="${g ? 'color:'+g.color : ''}" onchange="onCell(event)" ${dAttr}>
-                  ${gOpts.map(([v,n]) => `<option value="${v}" ${v===gid ? 'selected' : ''}>${esc(n)}</option>`).join('')}
+
+              const cls = [err ? 'cell-err' : '', d === today ? 'is-today' : ''].filter(Boolean).join(' ');
+              return `<td data-k="${k.id}" data-d="${d}" data-g="${gid}" style="background:${g ? gcolor(g.color) + '18' : ''}; position:relative;" ${cls ? `class="${cls}"` : ''}>
+                <span class="cname${g ? ' gc-ink' : ''}" aria-hidden="true"${g ? ` style="--gc:${gcolor(g.color)}"` : ''}>${g ? esc(g.name) : '—'}</span>
+                <select class="csel" data-k="${k.id}" data-d="${d}" aria-label="${esc(k.id)}, day ${d}" data-change="cell" ${dAttr}>
+                  ${gOpts.map(([v, n]) => `<option value="${v}" ${v === gid ? 'selected' : ''}>${esc(n)}</option>`).join('')}
                 </select>
               </td>`;
             }).join('')}
           </tr>`;
-        }).join('')}
+          })
+          .join('')}
       </tbody>
     </table>
     </div>
@@ -399,7 +838,7 @@ function renderGrid(srv, days, mapData, issues, wipes) {
 }
 
 function renderOcc(srv, occ) {
-  return `<div class="section">
+  return `<div class="section" data-sec="occupation">
     <div class="sec-title">Total Occupation (all days combined)</div>
     <div class="tbl-wrap"><table class="otbl otbl-fixed">
       <thead><tr>
@@ -410,10 +849,12 @@ function renderOcc(srv, occ) {
         <th class="col-total">Total</th>
       </tr></thead>
       <tbody>
-        ${srv.guilds.map(g => `<tr>
+        ${srv.guilds
+          .map(
+            g => `<tr>
           <td class="occ-guild">
             <div class="occ-guild-inner">
-              <div class="guild-dot" style="background:${g.color}; flex-shrink:0;"></div>
+              <div class="guild-dot" style="background:${gcolor(g.color)}; flex-shrink:0;"></div>
               <span class="occ-guild-name">${esc(g.name)}</span>
             </div>
           </td>
@@ -421,62 +862,124 @@ function renderOcc(srv, occ) {
           <td class="occ-lv2">${occ[g.id].lv2}</td>
           <td class="occ-lv3">${occ[g.id].lv3}</td>
           <td class="occ-total">${occ[g.id].total}</td>
-        </tr>`).join('')}
+        </tr>`,
+          )
+          .join('')}
       </tbody>
     </table></div>
   </div>`;
 }
 
-function renderDecTable(srv,days,dec,give){
-  const baseMaxDecl=srv.mode==='goc'?2:3;
-  return `<div class="section">
+function renderDecTable(srv, days, dec, give) {
+  const today = todayDay(srv, days);
+  const baseMaxDecl = srv.mode === 'goc' ? 2 : 3;
+  return `<div class="section" id="sec-declares" data-sec="declares">
     <div class="sec-title">Declares & Giveaways</div>
     <div class="tbl-wrap"><table class="dtbl">
       <thead><tr>
         <th>Guild</th>
-        ${Array.from({length:days},(_,d)=>`<th>${dateLabelShort(srv,d+1)}</th>`).join('')}
+        ${Array.from({ length: days }, (_, d) => `<th${d + 1 === today ? ' class="is-today"' : ''}>${dateLabelShort(srv, d + 1)}</th>`).join('')}
       </tr></thead>
       <tbody>
-        ${srv.guilds.map(g=>{
-          const maxDecl = g.isSmall ? 1 : baseMaxDecl;
-          return `<tr>
+        ${srv.guilds
+          .map(g => {
+            const maxDecl = g.isSmall ? 1 : baseMaxDecl;
+            return `<tr data-g="${g.id}">
           <td class="dec-guild">
             <div class="dec-guild-inner">
-              <div class="guild-dot" style="background:${g.color}"></div>${esc(g.name)}
+              <div class="guild-dot" style="background:${gcolor(g.color)}"></div>${esc(g.name)}
               ${g.isSmall ? `<span class="dec-max">(Max 1)</span>` : ''}
             </div>
           </td>
-          ${Array.from({length:days},(_,d)=>{
-            const cnt=dec[g.id][d].length;
-            const cls=cnt>maxDecl?'dc-bad':cnt>0?'dc-warn':'dc-ok';
-            return `<td>
+          ${Array.from({ length: days }, (_, d) => {
+            const cnt = dec[g.id][d].length;
+            const cls = cnt > maxDecl ? 'dc-bad' : cnt > 0 ? 'dc-warn' : 'dc-ok';
+            return `<td${d + 1 === today ? ' class="is-today"' : ''}>
               <div class="${cls} dec-count">${cnt}▲</div>
-              <div class="dec-towns">${dec[g.id][d].join(', ')||'—'}</div>
-              ${give[g.id][d].length?`<div class="dec-give">↓${give[g.id][d].join(',')}</div>`:''}
+              <div class="dec-towns">${dec[g.id][d].join(', ') || '—'}</div>
+              ${give[g.id][d].length ? `<div class="dec-give">↓${give[g.id][d].join(',<wbr>')}</div>` : ''}
             </td>`;
           }).join('')}
-        </tr>`}).join('')}
+        </tr>`;
+          })
+          .join('')}
       </tbody>
     </table></div>
   </div>`;
 }
 
-function renderMsgs(srv){
-  const msgs = buildMessages(srv);
+// Daily Messages: one day at a time (day buttons, like the Map), opening on today. Either the whole
+// server's message, for Discord, shown the way Discord displays it (headings, bold, lists...) and laid
+// out across the width in columns (one block per guild); clicking copies the Markdown text, as one
+// message, or every guild's message for the in-game chat side by side, each with its length
+// against the game's limit and copied on its own. The guild picked ("your guild") comes first, and is
+// the one Copy Today's Message copies. Click a message to copy it.
+function renderMsgs(srv) {
+  const days = numDays(srv);
+  const today = todayDay(srv, days);
+  const view = getMsgView();
+  const d = getMsgDay(srv, days, today);
+  const plan = dailyPlans(srv)[d];
+  const mine = msgGuild(srv);
+  const copied = `<span class="msg-copied" aria-live="polite"></span>`;
 
-  return `<div class="section" data-tour="messages">
+  const dayBtns = Array.from(
+    { length: days },
+    (_, i) => `<button type="button" class="map-day${i === d ? ' active' : ''}${i + 1 === today ? ' is-today' : ''}"
+      data-action="msg-day" data-day="${i}" aria-pressed="${i === d}"${i + 1 === today ? ' title="Today"' : ''}>D${i + 1}</button>`,
+  ).join('');
+
+  let content;
+  if (!plan || !plan.guilds.length) {
+    content = `<div class="msg-none">Nothing planned for Day ${d + 1} yet.</div>`;
+  } else if (view === 'server') {
+    const parts = messageParts(srv, plan);
+    const text = [parts.head, ...parts.blocks].join('\n').trim();
+    content = `<div class="msg-card msg-card-server${d + 1 === today ? ' is-today' : ''}" data-action="copy-message" data-day="${d}" data-msg="${esc(text)}" role="button" tabindex="0" aria-label="Copy Day ${d + 1}'s message">
+        <div class="msg-date">${d + 1 === today ? '<span class="today-tag">Today</span>' : ''}<span class="msg-hint">Click to copy</span> ${copied}</div>
+        ${parts.head.trim() ? `<div class="msg-discord tpl-discord msg-head">${renderDiscord(parts.head.trim())}</div>` : ''}
+        ${parts.blocks.length ? `<div class="msg-cols">${parts.blocks.map(b => `<div class="msg-block msg-discord tpl-discord">${renderDiscord(b.trim())}</div>`).join('')}</div>` : ''}
+      </div>`;
+  } else {
+    const order = [...plan.guilds].sort((a, b) => (b.g.id === mine?.id) - (a.g.id === mine?.id));
+    const bubbles = order
+      .map(({ g }) => {
+        const text = formatGuildMessage(srv, plan, g.id);
+        const len = gameLength(text);
+        const over = len > GAME_LIMIT;
+        const isMine = mine && g.id === mine.id;
+        return `<div class="msg-card msg-card-game${isMine ? ' is-mine' : ''}" data-action="copy-message" data-day="${d}" data-msg="${esc(text)}" role="button" tabindex="0" aria-label="Copy ${esc(g.name)}'s message">
+          <div class="msg-date msg-who"><span class="guild-dot" style="background:${gcolor(g.color)}"></span>${esc(g.name)}${isMine ? '<span class="msg-mine">Your guild</span>' : ''} ${copied}</div>
+          <div class="msg-body">${esc(text)}</div>
+          <div class="msg-count${over ? ' over' : ''}" title="Characters used, of the game's ${GAME_LIMIT}">${len} / ${GAME_LIMIT}${over ? ': too long for the game' : ''}</div>
+        </div>`;
+      })
+      .join('');
+    const away = srv.guilds.filter(g => !plan.guilds.some(x => x.g.id === g.id));
+    content = `<div class="msg-bubbles">${bubbles}</div>
+      ${away.length ? `<p class="msg-note">Not on the map on Day ${d + 1}: ${away.map(g => esc(g.name)).join(', ')}</p>` : ''}`;
+  }
+
+  return `<div class="section" id="sec-messages" data-sec="messages" data-tour="messages">
     <div class="sec-title sec-title-row">
-      <div>Daily Messages <span class="sec-note"> — click to copy</span></div>
-      <button type="button" class="btn btn-tpl" onclick="openMsgTemplate()">✏️ Template</button>
+      <div>Daily Messages</div>
+      <button type="button" class="btn-tool btn-tool-sm" data-action="message-template">${icon('pencil')}<span class="btn-label">Template</span></button>
     </div>
-    
-    <div class="msg-grid">
-      ${msgs.map((m,d)=>`<div class="msg-card" onclick="cpyMsg(this,${d})" data-msg="${esc(m)}">
-        <div class="msg-date">
-          ${dateLabelShort(srv,d+1).replace('<br>',' ')} <span class="msg-copied" id="cpd-${d}"></span>
-        </div>
-        <div class="msg-body">${esc(m)}</div>
-      </div>`).join('')}
+    <div class="msg-controls">
+      <div class="msg-views" role="group" aria-label="Which message">
+        <button type="button" class="msg-view-btn${view === 'server' ? ' active' : ''}" data-action="msg-view" data-view="server" aria-pressed="${view === 'server'}">Whole server <span class="msg-view-sub">Discord</span></button>
+        <button type="button" class="msg-view-btn${view === 'guild' ? ' active' : ''}" data-action="msg-view" data-view="guild" aria-pressed="${view === 'guild'}">Each guild <span class="msg-view-sub">in game</span></button>
+      </div>
+      ${
+        view === 'guild'
+          ? `<label class="msg-mine-pick">Your guild
+          <select class="msg-guild" data-change="msg-guild">
+            ${srv.guilds.map(x => `<option value="${esc(x.id)}"${mine && x.id === mine.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}
+          </select></label>`
+          : ''
+      }
     </div>
+    <div class="map-days msg-days" role="group" aria-label="Day">${dayBtns}</div>
+    ${content}
   </div>`;
 }

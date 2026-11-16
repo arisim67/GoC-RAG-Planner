@@ -1,0 +1,1010 @@
+/* css/dialogs.css: Dialogs (import, add/delete server), toasts, and the "We've moved" banner */
+
+.modal-bg {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-bg.open {
+  display: flex;
+}
+
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 28px;
+  width: min(480px, 92vw);
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.modal h3 {
+  font-family: var(--font-head);
+  color: var(--title);
+  margin-bottom: 20px;
+  font-size: 18px;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.modal-row {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+/* Import dropzone */
+.import-dropzone {
+  border: 2px dashed var(--border2);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  background: var(--bg3);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 12px;
+}
+
+.import-dropzone:hover,
+.import-dropzone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.import-dropzone .dropzone-content {
+  pointer-events: none;
+}
+
+#import-file {
+  display: none;
+}
+
+/* Modals */
+.modal.modal-wide {
+  width: min(600px, 96vw);
+}
+
+.modal.modal-confirm {
+  width: min(360px, 92vw);
+  text-align: center;
+}
+
+.modal .modal-field {
+  margin-bottom: 10px;
+}
+
+.modal .input-full {
+  width: 100%;
+}
+
+.modal .import-text {
+  min-height: 150px;
+  margin-top: 12px;
+}
+
+.modal .row.import-options {
+  margin-top: 15px;
+  gap: 15px;
+}
+
+.modal .import-help {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 10px;
+}
+
+.modal .modal-row.modal-row-spaced {
+  margin-top: 20px;
+}
+
+.modal .modal-row.modal-row-center {
+  justify-content: center;
+  margin-top: 20px;
+  gap: 12px;
+}
+
+.dropzone-icon {
+  font-size: 26px;
+  margin-bottom: 8px;
+  color: var(--text2);
+  line-height: 0;
+}
+
+.dropzone-title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.dropzone-hint {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+/* A message with one of the stickers (js/stickers.js) */
+.modal-notice .notice-sticker {
+  display: block;
+  height: 96px;
+  width: auto;
+  margin: -6px auto 10px;
+  user-select: none;
+}
+
+.modal-notice .confirm-msg {
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.confirm-msg {
+  color: var(--text2);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.confirm-hint {
+  color: var(--text3);
+  font-size: 11px;
+}
+
+/* Moving to the new address: banner on the old site, import dialog on the new one */
+.moved-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  background: linear-gradient(90deg, rgba(226, 200, 131, 0.16), rgba(226, 200, 131, 0.06));
+  border-bottom: 1px solid rgba(226, 200, 131, 0.45);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.moved-banner .moved-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.moved-banner strong {
+  color: var(--gold2);
+  font-size: 14px;
+}
+
+.moved-banner .moved-text a {
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.moved-banner .moved-text span {
+  color: var(--text2);
+}
+
+.moved-banner .moved-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.moved-banner .moved-actions a {
+  text-decoration: none;
+  display: inline-block;
+}
+
+.moved-banner .btn-gold:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.modal.modal-move {
+  width: min(420px, 92vw);
+}
+
+.modal-move .move-msg {
+  color: var(--text2);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.modal-move .move-list {
+  list-style: none;
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border-radius: 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.modal-move .move-list li::before {
+  content: '• ';
+  color: var(--accent);
+}
+
+.modal-move .move-viewonly {
+  font-size: 10px;
+  color: var(--text3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 0 6px;
+  margin-left: 4px;
+}
+
+.modal-move .move-hint {
+  color: var(--text3);
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.modal.modal-tpl {
+  width: min(920px, 96vw);
+}
+
+.modal-tpl .tpl-help {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.modal-tpl .tpl-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.modal-tpl .tpl-label {
+  display: block;
+  font-size: 10px;
+  color: var(--text2);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 12px 0 6px;
+}
+
+.modal-tpl .tpl-edit .tpl-label:first-child {
+  margin-top: 0;
+}
+
+.modal-tpl .tpl-area,
+.modal-tpl .tpl-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font:
+    12px/1.5 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
+}
+
+.modal-tpl .tpl-area {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.modal-tpl .tpl-area.tpl-area-sm {
+  min-height: 44px;
+}
+
+.modal-tpl .tpl-area:focus,
+.modal-tpl .tpl-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.modal-tpl .tpl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.modal-tpl .tpl-chip {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--accent-ink);
+  border-radius: 10px;
+  padding: 2px 8px;
+  font:
+    11px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
+  cursor: pointer;
+}
+
+.modal-tpl .tpl-chip:hover {
+  background: var(--bg3);
+}
+
+.modal-tpl .tpl-shared {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(107, 242, 199, 0.35);
+  background: rgba(107, 242, 199, 0.08);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.modal-tpl .tpl-import {
+  margin-top: 14px;
+}
+
+.modal-tpl .tpl-import summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.modal-tpl .tpl-code-note {
+  margin: 6px 0 0;
+  min-height: 1em;
+  font-size: 12px;
+  color: var(--accent2);
+}
+
+.modal-tpl .tpl-code-note.bad {
+  color: var(--red);
+}
+
+.modal-tpl .tpl-names {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.modal-tpl .tpl-names summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.modal-tpl .tpl-names .tpl-help {
+  margin: 6px 0 8px;
+}
+
+/* Server message / Guild message tabs at the top of the template editor */
+.modal-tpl .tpl-kinds {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.modal-tpl .tpl-kind {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text2);
+  font: 600 12px var(--font-body);
+  padding: 8px 12px;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+
+.modal-tpl .tpl-kind.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.modal-tpl .tpl-kind:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.modal-tpl .tpl-pane[hidden] {
+  display: none;
+}
+
+.modal-tpl .tpl-label.tpl-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-tpl .tpl-select {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  padding: 5px 8px;
+}
+
+.modal-tpl .tpl-check {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.modal-tpl .tpl-check input {
+  align-self: center;
+}
+
+.modal-tpl .tpl-check .tpl-sub {
+  flex-basis: 100%;
+  padding-left: 36px;
+  font-size: 11px;
+}
+
+/* The guild message preview: like the game's chat bubble */
+.modal-tpl .tpl-preview.tpl-game {
+  background: #f1eff3;
+  color: #2a2530;
+  border-radius: 14px;
+  font: 14px/1.45 var(--font-body);
+  white-space: pre-wrap;
+  max-width: 340px;
+}
+
+.modal-tpl .tpl-sub {
+  font-weight: 400;
+  color: var(--text3);
+}
+
+.modal-tpl .tpl-name-row {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 110px) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.modal-tpl .tpl-name-plain {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modal-tpl .tpl-preview-wrap {
+  position: sticky;
+  top: 0;
+}
+
+.modal-tpl .tpl-preview {
+  margin: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 60vh;
+  overflow-y: auto;
+  color: var(--text);
+}
+
+.modal-tpl .tpl-actions {
+  align-items: center;
+}
+
+.modal-tpl .tpl-spacer {
+  flex: 1;
+}
+
+@media (max-width: 720px) {
+  .modal-tpl .tpl-cols {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-tpl .tpl-preview-wrap {
+    position: static;
+  }
+
+  .modal-tpl .tpl-preview {
+    max-height: 40vh;
+  }
+}
+
+.modal-tpl .tpl-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.modal-tpl .tpl-preview-head .tpl-label {
+  margin: 0;
+}
+
+.modal-tpl .tpl-tabs {
+  display: flex;
+  background: var(--bg3);
+  border-radius: 10px;
+  padding: 2px;
+}
+
+.modal-tpl .tpl-tab {
+  background: transparent;
+  border: none;
+  color: var(--text2);
+  font: 600 11px var(--font-body);
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.modal-tpl .tpl-tab.active {
+  background: var(--bg2);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.modal-tpl .tpl-preview[hidden] {
+  display: none;
+}
+
+/* Discord-style preview */
+.modal-tpl .tpl-preview.tpl-discord {
+  background: #313338;
+  border-color: #3f4147;
+  color: #dbdee1;
+  font:
+    14px/1.375 'gg sans',
+    'Noto Sans',
+    'Helvetica Neue',
+    Helvetica,
+    Arial,
+    sans-serif;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Version History dialog (js/versions.js) */
+.modal.modal-versions {
+  width: min(560px, 94vw);
+}
+
+.modal-versions h3 .icon {
+  vertical-align: -0.15em;
+  margin-right: 4px;
+}
+
+.ver-help {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text2);
+  margin-bottom: 14px;
+}
+
+.ver-sub {
+  margin: 18px 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+
+.ver-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 48vh;
+  overflow-y: auto;
+}
+
+.ver-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.ver-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ver-when {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ver-reason {
+  font-size: 12px;
+  color: var(--accent2);
+}
+
+.ver-desc {
+  font-size: 11px;
+  color: var(--text3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ver-empty {
+  font-size: 13px;
+  color: var(--text3);
+  padding: 12px 0;
+}
+
+/* What's new (whats-new.js) */
+.modal.modal-whatsnew {
+  max-width: 560px;
+}
+
+.modal-whatsnew h3 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.modal-whatsnew .wn-intro {
+  margin: 0 0 14px;
+  color: var(--text2);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.modal-whatsnew .wn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  max-height: min(55vh, 520px);
+  overflow-y: auto;
+}
+
+.modal-whatsnew .wn-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text2);
+}
+
+.modal-whatsnew .wn-item b {
+  color: var(--text);
+}
+
+.modal-whatsnew .wn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--bg3);
+  color: var(--accent2);
+}
+
+.modal-whatsnew .wn-icon .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.modal-whatsnew .wn-more {
+  margin: 14px 0 0;
+  font-size: 12px;
+  text-align: center;
+}
+
+.modal-whatsnew .wn-more a {
+  color: var(--accent2);
+}
+
+/* While Auto-Optimize runs (solve-panel.js): bottom-left, clear of the toasts on the right */
+.solve-panel {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 9000;
+  display: flex;
+  cursor: pointer;
+  /* a click shows the next tip */
+  gap: 16px;
+  align-items: flex-start;
+  width: min(540px, calc(100vw - 40px));
+  min-height: 176px;
+  /* tall enough for the desk scene (.sp-art) */
+  padding: 16px 16px 16px 154px;
+  /* the desk scene sits on the left */
+  border-radius: 14px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
+}
+
+.solve-panel.open {
+  opacity: 1;
+  transform: none;
+}
+
+/* One of the ghouls doing the paperwork (ghouls.js) behind a desk in the theme's colors, on the left of
+   the panel. Three layers on one 335 x 398 frame (the files are 2x, shown at half size): the
+   ghoul's back layer (body, coat, legs), the desk, and the front layer (arms, head, paper). */
+.sp-art {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  width: 167.5px;
+  height: 199px;
+  pointer-events: none;
+  transform: scale(0.8);
+  transform-origin: 0 100%;
+}
+
+.sp-art > * {
+  position: absolute;
+}
+
+.sp-counter {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.sp-ghoul {
+  left: 22.5px;
+  /* the desk's frame starts 45px (22.5 shown) left of the ghoul's */
+  top: 0;
+}
+
+.sp-ghoul img {
+  display: block;
+  width: 136.5px;
+  height: 150px;
+  user-select: none;
+}
+
+.sp-counter-top {
+  /* lifted toward the text color so the top stands out from the page behind it, light or dark */
+  fill: color-mix(in srgb, var(--bg4) 72%, var(--text));
+  stroke: var(--border2);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.sp-counter-edge {
+  fill: color-mix(in srgb, var(--bg4) 85%, var(--text));
+}
+
+.sp-counter-front {
+  fill: color-mix(in srgb, var(--bg3) 88%, var(--text));
+}
+
+.sp-counter-panel {
+  fill: color-mix(in srgb, var(--bg3) 85%, #000);
+  stroke: var(--border2);
+  stroke-width: 1;
+}
+
+.sp-counter-kick {
+  fill: color-mix(in srgb, var(--bg3) 60%, #000);
+}
+
+.sp-counter-end {
+  fill: color-mix(in srgb, var(--bg3) 70%, #000);
+}
+
+.sp-counter-mat {
+  fill: var(--bg3);
+}
+
+.sp-cell {
+  fill: var(--bg2);
+  transition: fill 0.4s;
+}
+
+.sp-cell.on {
+  fill: var(--c);
+  opacity: 0.85;
+}
+
+/* When the plan is ready, a ghoul's special move takes the desk's place (the files are 2x). */
+.sp-win {
+  position: absolute;
+  left: 10px;
+  bottom: 6px;
+  width: 136px;
+  height: 128px;
+  /* stands on the bottom; a raised weapon can reach over the top edge of the panel */
+  pointer-events: none;
+}
+
+/* The same size as the ghoul at the desk (0.8 × 150px for 430 units of the game's size) */
+.sp-win-ghoul {
+  width: 100%;
+  height: 100%;
+  --gz: 0.279;
+}
+
+.sp-win-ghoul img {
+  user-select: none;
+  transform: scaleX(-1);
+  /* the special moves face left in the game files: turn them toward the text */
+  left: calc(50% - var(--gw) * var(--gz) * (1 - var(--gx)));
+  /* mirrored, so the feet are on the other side */
+}
+
+.solve-panel.sp-done {
+  min-height: 124px;
+  /* room for the ghoul standing on the bottom; no desk to make room for */
+}
+
+.sp-done .sp-title {
+  color: var(--accent2);
+}
+
+.sp-body {
+  position: relative;
+  z-index: 1;
+  /* over a special move that reaches across from the ghoul */
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text2);
+}
+
+.sp-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+  color: var(--title);
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sp-time {
+  color: var(--text);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-phase {
+  color: var(--text);
+}
+
+.sp-note {
+  margin-top: 2px;
+}
+
+.sp-tip {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.sp-tip-label {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bg3);
+  color: var(--accent2);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sp-tip-text b {
+  color: var(--text);
+}
+
+.sp-tip-text.in {
+  animation: sp-fade 0.5s ease-out;
+}
+
+@keyframes sp-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sp-stop {
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+@media (max-width: 520px) {
+  .solve-panel {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: auto;
+    gap: 12px;
+    min-height: 136px;
+    padding: 12px 12px 12px 114px;
+  }
+
+  .sp-win {
+    left: 8px;
+    bottom: 4px;
+    width: 98px;
+    height: 104px;
+  }
+
+  .sp-win-ghoul {
+    --gz: 0.209;
+    /* the desk scene is shown at 0.6 here */
+  }
+
+  .solve-panel.sp-done {
+    min-height: 0;
+  }
+
+  /* the same scene, smaller */
+  .sp-art {
+    left: 8px;
+    bottom: 8px;
+    transform: scale(0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-tip-text.in {
+    animation: none;
+  }
+}

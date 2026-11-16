@@ -3,13 +3,13 @@ export const galaxyMap = {
   name: 'Galaxy Terminal',
   mode: 'ragnarok',
   kingdoms: [
-    { id: 'Darkwick',   type: 'lv3', adj: ['Frostheim', 'Hotarubi', 'Obscuary', 'L'] },
-    { id: 'Frostheim',  type: 'lv2', adj: ['Vagastrom', 'M', 'Darkwick', 'P'] },
-    { id: 'Hotarubi',   type: 'lv2', adj: ['G', 'F', 'Darkwick'] },
-    { id: 'Obscuary',   type: 'lv2', adj: ['Darkwick', 'O'] },
-    { id: 'Vagastrom',  type: 'lv2', adj: ['Dionysia', 'Q', 'Frostheim'] },
-    { id: 'Dionysia',   type: 'lv2', adj: ['J', 'H', 'Vagastrom'] },
-    { id: 'Sinostra',   type: 'lv2', adj: ['K', 'J', 'E'] },
+    { id: 'Darkwick', type: 'lv3', adj: ['Frostheim', 'Hotarubi', 'Obscuary', 'L'] },
+    { id: 'Frostheim', type: 'lv2', adj: ['Vagastrom', 'M', 'Darkwick', 'P'] },
+    { id: 'Hotarubi', type: 'lv2', adj: ['G', 'F', 'Darkwick'] },
+    { id: 'Obscuary', type: 'lv2', adj: ['Darkwick', 'O'] },
+    { id: 'Vagastrom', type: 'lv2', adj: ['Dionysia', 'Q', 'Frostheim'] },
+    { id: 'Dionysia', type: 'lv2', adj: ['J', 'H', 'Vagastrom'] },
+    { id: 'Sinostra', type: 'lv2', adj: ['K', 'J', 'E'] },
     { id: 'A', type: 'lv1', adj: ['B', 'F'] },
     { id: 'B', type: 'lv1', adj: ['A', 'C'] },
     { id: 'C', type: 'lv1', adj: ['B', 'D', 'G'] },
@@ -26,6 +26,6 @@ export const galaxyMap = {
     { id: 'O', type: 'lv1', adj: ['Obscuary', 'P'] },
     { id: 'P', type: 'lv1', adj: ['Frostheim', 'O', 'Q'] },
     { id: 'Q', type: 'lv1', adj: ['P', 'R', 'Vagastrom'] },
-    { id: 'R', type: 'lv1', adj: ['N', 'Q'] }
-  ]
+    { id: 'R', type: 'lv1', adj: ['N', 'Q'] },
+  ],
 };

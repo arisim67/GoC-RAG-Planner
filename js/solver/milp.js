@@ -11,9 +11,9 @@ export class MilpBuilder {
   }
 
   variable(name, { lower, upper, isInteger, cost }) {
-  if (!Number.isFinite(cost) || Number.isNaN(lower) || Number.isNaN(upper) || lower > upper) {
-    throw new Error(`Bad variable ${name}: [${lower}, ${upper}] cost=${cost}`);
-  }
+    if (!Number.isFinite(cost) || Number.isNaN(lower) || Number.isNaN(upper) || lower > upper) {
+      throw new Error(`Bad variable ${name}: [${lower}, ${upper}] cost=${cost}`);
+    }
     const col = this.names.length;
     this.names.push(name);
     this.cost.push(cost);
@@ -38,13 +38,13 @@ export class MilpBuilder {
   }
 
   constrain(terms, lower, upper) {
-  if (Number.isNaN(lower) || Number.isNaN(upper)) throw new Error('NaN bound in constraint');
-  for (const [k] of terms) {
-    if (!Number.isFinite(k)) throw new Error(`Non-finite coefficient: ${k}`);
-  }
+    if (Number.isNaN(lower) || Number.isNaN(upper)) throw new Error('NaN bound in constraint');
+    for (const [k] of terms) {
+      if (!Number.isFinite(k)) throw new Error(`Non-finite coefficient: ${k}`);
+    }
     const merged = new Map();
     let constant = 0;
-    
+
     for (const [k, v] of terms) {
       if (typeof v === 'number') {
         constant += k * v;
@@ -59,7 +59,7 @@ export class MilpBuilder {
 
     lower -= constant;
     upper -= constant;
-    
+
     if (merged.size === 0) {
       if (lower > 1e-9 || upper < -1e-9) {
         throw new Error(`Constant constraint cannot hold: ${lower} <= 0 <= ${upper}`);
@@ -94,7 +94,7 @@ export class MilpBuilder {
   toArrays() {
     const numCols = this.columnCount;
     const numRows = this.rows.length;
-    
+
     // 1. Calculate how many items are in each column
     const colCounts = new Int32Array(numCols);
     let nnz = 0;
@@ -114,7 +114,7 @@ export class MilpBuilder {
     // 3. Populate the column-major indices and values
     const index = new Int32Array(nnz);
     const value = new Float64Array(nnz);
-    
+
     // Keep a running tracker of where we are in each column
     const currentPos = new Int32Array(start);
 
@@ -123,7 +123,7 @@ export class MilpBuilder {
       for (let j = 0; j < row.cols.length; j++) {
         const c = row.cols[j];
         const val = row.coefs[j];
-        
+
         const pos = currentPos[c]++;
         index[pos] = r;
         value[pos] = val;

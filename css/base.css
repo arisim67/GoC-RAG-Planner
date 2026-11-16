@@ -1,0 +1,593 @@
+/* css/base.css: Colors, fonts, page layout, sections, generic buttons and form fields, icons */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #191425;
+  --bg2: #241d35;
+  --bg3: #352a4f;
+  --bg4: #483a6b;
+  --border: #423563;
+  --border2: #5c4b8a;
+  --accent: #a5a0ff;
+  --accent-glow: rgba(165, 160, 255, 0.22);
+  --accent2: #c4c0ff;
+  --gold: #e2c883;
+  --gold2: #f2deb0;
+  --title: var(--gold);
+  /* section and dialog titles (a few themes use a paler color so gold can mean "active") */
+  --red: #ff6b88;
+  --red-glow: rgba(255, 94, 126, 0.15);
+  --green: #45d6a8;
+  --green-glow: rgba(69, 214, 168, 0.15);
+  --text: #f0eef5;
+  --text2: #b9aed3;
+  --text3: #a093c0;
+
+  /* Town level colors */
+  --lv1: #78a9f0;
+  --lv2: #b886ee;
+  --lv3: #e2c883;
+
+  /* Theme hooks: css/themes.css overrides these along with the colors above */
+  --on-accent: #14102a;
+  /* text on top of --accent buttons */
+  --accent-ink: var(--accent);
+  /* the accent color when used as text (themes with a dark accent lighten it) */
+  --header-top: #1f1930;
+  /* top of the header gradient */
+  --hairline: rgba(255, 255, 255, 0.03);
+  /* table row dividers */
+  --hover: rgba(255, 255, 255, 0.02);
+  /* table row hover */
+  --overlay: rgba(10, 8, 15, 0.85);
+  /* modal backdrop */
+  --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  --text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --text-shadow-title: 0 2px 4px rgba(0, 0, 0, 0.5);
+  --text-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --text-shadow-err: 0 1px 2px rgba(0, 0, 0, 0.8);
+  --dot-ring: 0 0 6px rgba(255, 255, 255, 0.2);
+
+  --font-head: 'Montserrat', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border2);
+}
+
+.main {
+  padding: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+/* Big screens: room for all 13 days of the grid and the Declares table without scrolling sideways */
+@media (min-width: 1680px) {
+  .main {
+    max-width: 1880px;
+  }
+}
+
+.section {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--card-shadow);
+}
+
+.sec-title {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--title);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sec-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.fg {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fg label {
+  font-size: 10px;
+  color: var(--text2);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+select,
+input[type='text'],
+input[type='number'],
+input[type='date'] {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* iPhone Safari gives a date field a width of its own that ignores the container, so two side by side
+   (the server's start and end dates) run past the edge of their card. Taking the native look off lets
+   it size like any other field; tapping it still opens the date picker. */
+input[type='date'] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 36px;
+  text-align: left;
+}
+
+input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
+  min-width: 0;
+}
+
+select:focus,
+input:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+select option {
+  background: var(--bg2);
+  color: var(--text);
+}
+
+/* Checkboxes are drawn as switches: a dark track with a light knob, which slides over and turns the
+   accent green when on. Still real checkboxes, so clicking the label, the keyboard (Space) and
+   screen readers work as before. */
+input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 30px;
+  height: 17px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  vertical-align: middle;
+  transition:
+    background 0.18s,
+    border-color 0.18s;
+}
+
+input[type='checkbox']::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--text2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  transition:
+    transform 0.18s,
+    background 0.18s;
+}
+
+input[type='checkbox']:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+input[type='checkbox']:checked::before {
+  transform: translateX(13px);
+  background: var(--on-accent);
+}
+
+input[type='checkbox']:focus {
+  border-color: var(--border2);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+input[type='checkbox']:checked:focus {
+  border-color: var(--accent);
+}
+
+input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+input[type='checkbox']:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  input[type='checkbox'],
+  input[type='checkbox']::before {
+    transition: none;
+  }
+}
+
+textarea {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  resize: vertical;
+  min-height: 70px;
+  outline: none;
+  transition: all 0.2s;
+  width: 100%;
+  line-height: 1.5;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  background: var(--bg3);
+  color: var(--text);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    background: var(--bg4);
+    transform: translateY(-1px);
+  }
+}
+
+.btn-accent {
+  padding: 8px 16px;
+  border: none;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+@media (hover: hover) {
+  .btn-accent:hover {
+    background: var(--accent2);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px var(--accent-glow);
+  }
+}
+
+.btn-gold {
+  padding: 8px 16px;
+  border: none;
+  background: var(--gold);
+  color: #241d08;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(226, 200, 131, 0.2);
+}
+
+@media (hover: hover) {
+  .btn-gold:hover {
+    background: var(--gold2);
+    transform: translateY(-1px);
+  }
+}
+
+.diff-ok {
+  color: var(--green);
+}
+
+.diff-warn {
+  color: var(--gold);
+}
+
+.diff-bad {
+  color: var(--red);
+}
+
+.bar-track {
+  height: 6px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 10px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+td.cell-err {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--red-glow),
+    var(--red-glow) 8px,
+    rgba(255, 94, 126, 0.25) 8px,
+    rgba(255, 94, 126, 0.25) 16px
+  ) !important;
+  box-shadow: inset 0 0 0 2px var(--red) !important;
+}
+
+.pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+/* The OK / NO cat right after the Status pills (js/render.js); pulled in so the row doesn't grow */
+.status-sticker {
+  height: 44px;
+  width: auto;
+  margin: -8px 0 -8px 2px;
+  align-self: center;
+  user-select: none;
+}
+
+/* Ghouls drawn to one scale (js/ghouls.js). Each place sets the size of the picture's box and --gz,
+   pixels per unit of the game's own size, so every ghoul there comes out the same size. The picture
+   stands with the ghoul's feet on the bottom of the box, centered across it; whatever their special move
+   reaches past the box (a sword, a motorbike) hangs over its edges. */
+.ghoul-sized {
+  display: block;
+  position: relative;
+}
+
+.ghoul-sized img {
+  position: absolute;
+  width: calc(var(--gw) * var(--gz));
+  height: auto;
+  max-width: none;
+  max-height: none;
+  left: calc(50% - var(--gw) * var(--gz) * var(--gx));
+  bottom: calc(var(--gh) * var(--gz) * (var(--gy) - 1));
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.pill-ok {
+  border-color: rgba(69, 214, 168, 0.3);
+  background: var(--green-glow);
+  color: var(--green);
+}
+
+.pill-fail {
+  border-color: rgba(255, 94, 126, 0.3);
+  background: var(--red-glow);
+  color: var(--red);
+}
+
+/* Status: red chips and the problems listed under them jump to what's wrong (status-jump.js) */
+button.pill {
+  font-family: var(--font-body);
+}
+
+.pill-jump {
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.pill-jump:hover,
+.pill-jump:focus-visible {
+  border-color: var(--red);
+  background: rgba(255, 94, 126, 0.18);
+}
+
+.pill-jump:focus-visible,
+.status-item:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.status-item {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.status-item:hover {
+  text-decoration: underline;
+}
+
+/* What a Status jump lands on flashes a few times */
+.jump-flash {
+  animation: jump-flash 0.8s ease-in-out 3;
+}
+
+@keyframes jump-flash {
+  0%,
+  100% {
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+  }
+
+  50% {
+    outline: 2px solid var(--gold);
+    outline-offset: -2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jump-flash {
+    animation: none;
+    outline: 2px solid var(--gold);
+    outline-offset: -2px;
+  }
+}
+
+.pdot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 4px currentColor;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.repair-info {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  background: var(--bg3);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.repair-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.repair-tbl th {
+  color: var(--text);
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  text-align: left;
+}
+
+.repair-tbl td {
+  padding: 8px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.repair-tbl select {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.btn.btn-danger,
+.btn.btn-danger:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* Line icons (js/icons.js) */
+.icon {
+  width: 1.15em;
+  height: 1.15em;
+  flex-shrink: 0;
+  vertical-align: -0.2em;
+}
+
+.sec-title.sec-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Until the app has drawn the page (it waits for nothing, but a slow connection can still take a moment),
+   show a quiet "Loading…" instead of an empty page. It only fades in after a beat, so a fast load never
+   flashes it. */
+#main-content:empty::after {
+  content: 'Loading…';
+  display: block;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--text2);
+  opacity: 0;
+  animation: loading-in 0.4s ease 0.8s forwards;
+}
+
+@keyframes loading-in {
+  to {
+    opacity: 1;
+  }
+}

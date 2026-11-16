@@ -1,80 +1,388 @@
 // js/app.js
-// Entry point: loads saved data, renders the page, starts the tutorial, and exposes the functions
-// that the inline onclick="..." handlers in the HTML call.
+// Entry point: loads saved data, renders the page, starts the tutorial, and connects the page's
+// buttons and fields to their functions (see js/actions.js for how data-action etc. work).
 
-import { state, load, activeSrv } from './state.js';
-import { closeModal } from './ui.js';
+import { state, load, activeSrv, setAfterSave, save, numDays } from './state.js';
+
+let messagesBefore = null; // the message view they had before the tutorial's message steps changed it
+let demoCell = null; // the broken move put in for the tutorial's Status step
+import { closeModal, showToast, usingTouch } from './ui.js';
 import { renderTabs, renderAll } from './render.js';
-import { createTutorialServer, removeTutorialServer, openAdd, confirmAdd, onAddModalModeChange, onAddModalStartChange, switchSrv, removeSrv, confirmDeleteSrv, ctxRename, ctxDuplicate, ctxDelete } from './servers.js';
-import { updName, updMode, updMap, updStart, updEnd, clearPlan, updGuildName, updGuildSmall, updGuildExcluded, updGuildPoints, updGuildLv3, updGuildLv2, updGuildLv1, addGuild, removeGuild, clearDay, onCell, cpyMsg } from './handlers.js';
-import { openImport, handleDragOver, handleDragLeave, handleDrop, handleFileSelect, processImport, exportServer } from './import-export.js';
-import { autoOptimize, undoOptimize } from './optimize.js';
+import {
+  createTutorialServer,
+  removeTutorialServer,
+  openAdd,
+  confirmAdd,
+  onAddModalModeChange,
+  onAddModalStartChange,
+  switchSrv,
+  removeSrv,
+  confirmDeleteSrv,
+  ctxRename,
+  ctxDuplicate,
+  ctxDelete,
+  duplicateCurrentPlan,
+} from './servers.js';
+import {
+  updName,
+  updMode,
+  updMap,
+  updStart,
+  updEnd,
+  clearPlan,
+  updGuildName,
+  updGuildSmall,
+  updGuildExcluded,
+  pickGuildColor,
+  copyTodayMessage,
+  updGuildPoints,
+  updGuildLv3,
+  updGuildLv2,
+  updGuildLv1,
+  addGuild,
+  removeGuild,
+  clearDay,
+  onCell,
+  cpyMsg,
+} from './handlers.js';
+import {
+  openImport,
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+  handleFileSelect,
+  processImport,
+  exportServer,
+} from './import-export.js';
+import { autoOptimize, optimizeStatus } from './optimize.js';
 import { takeScreenshots } from './screenshots.js';
 import { checkUrlForSharedPlan, publishToCloud, syncFromCloud } from './cloud.js';
 import { initTour } from './tour.js';
-import { openMsgTemplate, setMessagesRerender } from './messages.js';
+import { isOldSite, forwardSharedLink, showMovedBanner, receiveMovedServers } from './move.js';
+import {
+  openMsgTemplate,
+  setMessagesRerender,
+  receiveSharedTemplate,
+  hasSharedTemplate,
+  getMsgView,
+  setMsgView,
+  setMsgDay,
+} from './messages.js';
+import { isMidEvent, validateAdj } from './calc.js';
+import { getMapData } from './maps/index.js';
+import { initActions, registerActions } from './actions.js';
+import { undo, redo, handleUndoKeys, setHistoryHooks, clearHistory, recordChange } from './history.js';
+import { toggleSpotlight, handleSpotlightKeys } from './spotlight.js';
+import { openVersions, autoVersion, setVersionHooks } from './versions.js';
+import { statusJump } from './status-jump.js';
+import {
+  setMapDay,
+  showMapDay,
+  getSelectedTown,
+  selectTown,
+  clearSelectedTown,
+  startingTownLimit,
+  startingCount,
+} from './map-view.js';
+import { zoomButton } from './map-zoom.js';
+import { initWhatsNew, whatsNewAfterTour } from './whats-new.js';
+import './grid-keys.js'; // keyboard editing for the Planning Grid
+import './swipe-lock.js'; // up-and-down swipes no longer nudge a sideways-scrolling table
+import { initThemePicker } from './theme.js';
+import { openSetup, closePanels, initSidebarResize, initTabs } from './sidebar.js';
 
 load();
-checkUrlForSharedPlan().then(() => {
-  renderTabs();
-  renderAll();
-  initTour({
-    getActiveServer: () => activeSrv(),
-    // Lets the guided setup tell a server they just made from ones they already had.
-    getServerCount: () => state.servers.length,
-    isSharedLink: () => new URLSearchParams(window.location.search).has('plan'),
-    createDemoServer: createTutorialServer,
-    removeDemoServer: removeTutorialServer,
-  });
-});
+initThemePicker();
+initSidebarResize();
+initTabs();
+// Guild colors are drawn as a different shade on the Light theme, so redraw when the theme changes
+document.addEventListener('themechange', () => renderAll());
+// Old address: shared plan links go straight to the new site; everything else gets the banner.
+if (!forwardSharedLink()) {
+  if (isOldSite()) showMovedBanner();
+  const sharedTemplate = hasSharedTemplate(); // read before the link is tidied away
+  receiveMovedServers()
+    .then(() => checkUrlForSharedPlan())
+    .then(() => {
+      renderTabs();
+      renderAll();
+      receiveSharedTemplate();
+      // Used the planner before? (Checked before the tutorial marks itself as seen.)
+      let returning = state.servers.some(s => !s.isTutorial && !s.isViewOnly);
+      try {
+        returning = returning || localStorage.getItem('goc_tour_seen') !== null;
+      } catch (_) {
+        /* ignore */
+      }
+      const tourStarting = initTour({
+        getActiveServer: () => activeSrv(),
+        // Lets the guided setup tell a server they just made from ones they already had.
+        getServerCount: () => state.servers.length,
+        // No automatic tutorial on a shared plan or template link, or on the old address (people should move first).
+        isSharedLink: () => new URLSearchParams(window.location.search).has('plan') || sharedTemplate || isOldSite(),
+        createDemoServer: createTutorialServer,
+        // Puts the Map on Day 0, for the tutorial step about setting starting towns there.
+        showMapDay0: () => {
+          const s = activeSrv();
+          if (s) showMapDay(s.id, 0);
+          renderAll();
+        },
+        // The tutorial's message steps show each message view, then put the person's own choice back.
+        showMessages: view => {
+          if (messagesBefore === null) messagesBefore = getMsgView();
+          setMsgView(view);
+          renderAll();
+        },
+        restoreMessages: () => {
+          if (messagesBefore === null) return;
+          setMsgView(messagesBefore);
+          messagesBefore = null;
+          renderAll();
+        },
+        removeDemoServer: removeTutorialServer,
+        // The guided setup's Auto-Optimize step waits for a run to start or finish.
+        optimizeStatus,
+        // The Status step needs something to point at: a guild put on a town it can't reach on Day 1.
+        makeDemoIssue: () => {
+          const s = activeSrv();
+          if (!s || s.isViewOnly || numDays(s) < 1) return false;
+          const md = getMapData(s.mode, s.mapKey);
+          const day1 = s.plan[1] || {};
+          for (const k of [...md.kingdoms].reverse()) {
+            for (const g of s.guilds) {
+              if (day1[k.id] === g.id) continue;
+              const was = day1[k.id];
+              if (!s.plan[1]) s.plan[1] = {};
+              s.plan[1][k.id] = g.id;
+              if (validateAdj(s).some(x => x.day === 1 && x.kingdom === k.id)) {
+                demoCell = { srvId: s.id, k: k.id, was, hadDay: !!day1 };
+                renderAll();
+                return true;
+              }
+              if (was === undefined) delete s.plan[1][k.id];
+              else s.plan[1][k.id] = was;
+            }
+          }
+          return false;
+        },
+        undoDemoIssue: () => {
+          const s = state.servers.find(x => demoCell && x.id === demoCell.srvId);
+          if (s && s.plan[1]) {
+            if (demoCell.was === undefined) delete s.plan[1][demoCell.k];
+            else s.plan[1][demoCell.k] = demoCell.was;
+          }
+          demoCell = null;
+          save(); // in case something else saved while it was in
+          renderAll();
+        },
+        onEnd: whatsNewAfterTour,
+      });
+      // Not on the old address (people should move first), nor over a shared template being opened.
+      if (!isOldSite() && !sharedTemplate) {
+        initWhatsNew({ returning, tourStarting, openTour: () => window.startTour() });
+      }
+    });
+}
 
 setMessagesRerender(renderAll);
-window.openMsgTemplate = openMsgTemplate;
-window.openAdd = openAdd;
-window.confirmAdd = confirmAdd;
-window.closeModal = closeModal;
-window.onAddModalModeChange = onAddModalModeChange;
-window.onAddModalStartChange = onAddModalStartChange;
-window.switchSrv = switchSrv;
-window.removeSrv = removeSrv;
-window.confirmDeleteSrv = confirmDeleteSrv;
 
-// 🚨 Tab Context Menu
-window.ctxRename = ctxRename;
-window.ctxDuplicate = ctxDuplicate;
-window.ctxDelete = ctxDelete;
+// Give a town to a guild on Day 0 ('' clears it), unless that guild already has all its starting towns
+function setStartingTown(srv, k, next) {
+  const cur = (srv.plan[0] || {})[k] || '';
+  if (cur === next) {
+    clearSelectedTown(srv.id);
+    renderAll();
+    return;
+  }
+  const max = startingTownLimit(srv, next);
+  if (next && !isMidEvent(srv) && startingCount(srv, next) >= max) {
+    const g = srv.guilds.find(x => x.id === next);
+    showToast(
+      `${g ? g.name : 'That guild'} ${max ? `already has ${max} starting town${max === 1 ? '' : 's'}. Tap one of them to clear it first.` : 'doesn’t start with any towns on this map.'}`,
+      false,
+      3500,
+    );
+    return;
+  }
+  recordChange(srv, 'Starting towns on the map');
+  if (!srv.plan[0]) srv.plan[0] = {};
+  srv.plan[0][k] = next;
+  clearSelectedTown(srv.id);
+  save();
+  renderAll();
+  const again = document.querySelector(`#sec-map .map-town[data-k="${CSS.escape(k)}"]`);
+  if (again) again.focus({ preventScroll: true });
+}
 
-window.updName = updName;
-window.updMode = updMode;
-window.updMap = updMap;
-window.updStart = updStart;
-window.updEnd = updEnd;
-window.clearPlan = clearPlan;
+// ── What each button and field does ──────────────────────────────
+const guildId = el => el.dataset.guildId || el.dataset.id;
 
-window.openImport = openImport;
-window.handleDragOver = handleDragOver;
-window.handleDragLeave = handleDragLeave;
-window.handleDrop = handleDrop;
-window.handleFileSelect = handleFileSelect;
-window.processImport = processImport;
-window.exportServer = exportServer;
+// Towns on the map are SVG, which has no keyboard click: Enter or Space on a focused town taps it.
+// The same for the daily message card (a div that copies when clicked).
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  if ((e.key === 'Enter' || e.key === ' ') && t.closest && t.closest('.map-town.pickable, .msg-card')) {
+    e.preventDefault();
+    t.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  }
+});
 
-window.takeScreenshots = takeScreenshots;
-window.autoOptimize = autoOptimize;
-window.undoOptimize = undoOptimize;
-window.publishToCloud = publishToCloud;
-window.syncFromCloud = syncFromCloud;
+// One of the Points / Castle / Dorms / Towns boxes changed.
+function midValue(el, upd) {
+  const s = activeSrv();
+  if (s && !s.isViewOnly) s.showMidEvent = true;
+  upd(guildId(el), el.value);
+}
 
-window.updGuildName = updGuildName;
-window.updGuildSmall = updGuildSmall;
-window.updGuildExcluded = updGuildExcluded;
-window.updGuildPoints = updGuildPoints;
-window.updGuildLv3 = updGuildLv3;
-window.updGuildLv2 = updGuildLv2;
-window.updGuildLv1 = updGuildLv1;
-window.addGuild = addGuild;
-window.removeGuild = removeGuild;
+registerActions('click', {
+  // Header, tabs and dialogs
+  tutorial: () => window.startTour && window.startTour(),
+  'open-add': openAdd,
+  'switch-server': el => switchSrv(el.dataset.id),
+  'remove-server': el => removeSrv(el.dataset.id),
+  'close-modal': el => closeModal(el.dataset.modal),
+  'confirm-add': confirmAdd,
+  'confirm-delete': confirmDeleteSrv,
+  'ctx-rename': ctxRename,
+  'ctx-duplicate': ctxDuplicate,
+  'ctx-delete': ctxDelete,
+  // Toolbar
+  optimize: autoOptimize,
+  undo,
+  redo,
+  'open-import': openImport,
+  'export-server': exportServer,
+  screenshots: (el, e) => takeScreenshots(e),
+  'save-cloud': publishToCloud,
+  'sync-cloud': syncFromCloud,
+  'copy-today': copyTodayMessage,
+  spotlight: el => toggleSpotlight(el.dataset.id),
+  versions: openVersions,
+  'status-jump': statusJump,
+  'open-setup': () => openSetup(),
+  'close-setup': () => closePanels(),
+  // Day 0 on the map: tap a town to select it, then tap a guild (or Clear) to place it there.
+  'map-town': el => {
+    const srv = activeSrv();
+    if (!srv || srv.isViewOnly) return;
+    selectTown(srv.id, el.dataset.k);
+    renderAll();
+  },
+  'map-pick': btn => {
+    const srv = activeSrv();
+    if (!srv || srv.isViewOnly) return;
+    const k = getSelectedTown(srv.id);
+    if (!k) {
+      showToast('Tap a town on the map first, then tap its guild.', false, 2500);
+      return;
+    }
+    setStartingTown(srv, k, btn.dataset.g);
+  },
+  'map-zoom': zoomButton,
+  'map-day': btn => {
+    clearSelectedTown(activeSrv()?.id);
+    setMapDay(btn);
+    renderAll();
+  },
+  'clear-plan': clearPlan,
+  'duplicate-plan': duplicateCurrentPlan,
+  // Import dialog
+  'pick-import-file': (el, e) => {
+    if (e.target.id !== 'import-file') document.getElementById('import-file').click();
+  },
+  'process-import': processImport,
+  // Guilds, grid and messages
+  'add-guild': addGuild,
+  'remove-guild': el => removeGuild(el.dataset.id),
+  'guild-color': pickGuildColor,
+  'clear-day': el => clearDay(Number(el.dataset.day)),
+  'copy-message': el => cpyMsg(el, Number(el.dataset.day)),
+  'message-template': openMsgTemplate,
+  // Daily Messages: which day, and the whole server's message or one guild's
+  'msg-day': el => {
+    const s = activeSrv();
+    if (!s) return;
+    setMsgDay(s.id, Number(el.dataset.day));
+    renderAll();
+    focusAgain(`#sec-messages [data-action="msg-day"][data-day="${el.dataset.day}"]`);
+  },
+  'msg-view': el => {
+    setMsgView(el.dataset.view);
+    renderAll();
+    focusAgain(`#sec-messages [data-action="msg-view"][data-view="${el.dataset.view}"]`);
+  },
+});
 
-window.clearDay = clearDay;
-window.onCell = onCell;
-window.cpyMsg = cpyMsg;
+// After a re-render, put the keyboard back on the control that was used. (Not after a tap on a
+// dropdown: on a touch screen that would open its list again.)
+function focusAgain(sel) {
+  const el = document.querySelector(sel);
+  if (el && el.tagName === 'SELECT' && usingTouch()) return;
+  if (el) el.focus({ preventScroll: true });
+}
+
+registerActions('change', {
+  // The guild whose message Daily Messages shows (saved with the server)
+  'msg-guild': el => {
+    const s = activeSrv();
+    if (!s || s.isViewOnly) return;
+    s.msgGuild = el.value;
+    save();
+    renderAll();
+    focusAgain('#sec-messages .msg-guild');
+  },
+  'server-name': el => updName(el.value),
+  'server-mode': el => updMode(el.value),
+  'server-map': el => updMap(el.value),
+  'server-start': el => updStart(el.value),
+  'server-end': el => updEnd(el.value),
+  'guild-small': el => updGuildSmall(el.dataset.id, el.checked),
+  'guild-excluded': el => updGuildExcluded(el.dataset.id, el.checked),
+  // Shows or hides the Points / Castle / Dorms / Towns boxes on the guild list. (Typing in one keeps
+  // them showing, so setting the last one back to 0 doesn't whisk them away mid-edit; see midValue.)
+  'mid-event-toggle': el => {
+    const s = activeSrv();
+    if (!s || s.isViewOnly) return;
+    s.showMidEvent = el.checked;
+    save();
+    renderAll();
+  },
+  'guild-points': el => midValue(el, updGuildPoints),
+  'guild-lv3': el => midValue(el, updGuildLv3),
+  'guild-lv2': el => midValue(el, updGuildLv2),
+  'guild-lv1': el => midValue(el, updGuildLv1),
+  cell: (el, e) => onCell(e),
+  'import-file': (el, e) => handleFileSelect(e),
+  'import-mode': el => {
+    const guildsOnly = el.value === 'guilds';
+    document.getElementById('import-day-container').style.opacity = guildsOnly ? '0.3' : '1';
+    document.getElementById('import-day').disabled = guildsOnly;
+  },
+  'add-modal-mode': onAddModalModeChange,
+  'add-modal-start': onAddModalStartChange,
+});
+
+registerActions('input', {
+  'guild-name': el => updGuildName(guildId(el), el.value),
+});
+
+initActions();
+// Sortable (drag to reorder guilds) loads in the background; draw the page again once it is there
+window.__sortableReady = () => renderAll();
+setHistoryHooks({ render: renderAll, toast: msg => showToast(msg, false, 2500) });
+document.addEventListener('keydown', handleUndoKeys);
+document.addEventListener('keydown', handleSpotlightKeys);
+setAfterSave(autoVersion);
+setVersionHooks({
+  restored: srv => {
+    clearHistory(srv); // undo steps belong to the version that was replaced
+    renderTabs();
+    renderAll();
+  },
+});
+
+// Drag a JSON file onto the import box
+const dropzone = document.getElementById('import-dropzone');
+dropzone.addEventListener('dragover', handleDragOver);
+dropzone.addEventListener('dragleave', handleDragLeave);
+dropzone.addEventListener('drop', handleDrop);

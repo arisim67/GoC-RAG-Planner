@@ -13,7 +13,7 @@ import { woodlandsMap } from './woodlands.js';
 export const RAG_MAPS = {
   floating: floatingMap,
   galaxy: galaxyMap,
-  poseidon: poseidonMap
+  poseidon: poseidonMap,
 };
 
 export const GOC_MAPS = {
@@ -21,18 +21,18 @@ export const GOC_MAPS = {
   wetland: wetlandMap,
   badlands: badlandsMap,
   snowfield: snowfieldMap,
-  woodlands: woodlandsMap
+  woodlands: woodlandsMap,
 };
 
 // Export your helper functions directly from here so app.js stays clean
-export function getMaps(mode) { 
-  return mode === 'ragnarok' ? RAG_MAPS : GOC_MAPS; 
+export function getMaps(mode) {
+  return mode === 'ragnarok' ? RAG_MAPS : GOC_MAPS;
 }
 
-export function getMapList(mode) { 
-  return Object.values(getMaps(mode)).map(m => ({ key: m.id, name: m.name })); 
+export function getMapList(mode) {
+  return Object.values(getMaps(mode)).map(m => ({ key: m.id, name: m.name }));
 }
 
-export function getMapData(mode, mapKey) { 
-  return getMaps(mode)[mapKey]; 
+export function getMapData(mode, mapKey) {
+  return getMaps(mode)[mapKey];
 }

@@ -1,0 +1,210 @@
+/* css/guide.css: the User Guide and Privacy Policy pages (js/guide.js), in the planner's theme colors */
+
+.guide-header {
+  padding-bottom: 2px;
+}
+
+.guide-home {
+  color: inherit;
+  text-decoration: none;
+}
+
+.guide-home:hover .app-name-text {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.guide {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+
+.guide-status {
+  color: var(--text2);
+  padding: 40px 0;
+  text-align: center;
+}
+
+.guide-body {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text);
+}
+
+.guide-body > * + * {
+  margin-top: 14px;
+}
+
+.guide-body h1,
+.guide-body h2,
+.guide-body h3,
+.guide-body h4 {
+  font-family: var(--font-head);
+  color: var(--title);
+  line-height: 1.25;
+  scroll-margin-top: 16px;
+}
+
+.guide-body h1 {
+  font-size: 30px;
+  margin-bottom: 6px;
+}
+
+.guide-body h2 {
+  font-size: 22px;
+  margin-top: 44px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.guide-body h3 {
+  font-size: 17px;
+  margin-top: 30px;
+}
+
+.guide-body h4 {
+  font-size: 15px;
+  margin-top: 22px;
+}
+
+.guide-body a {
+  color: var(--accent-ink);
+  text-underline-offset: 3px;
+}
+
+.guide-body a:hover {
+  color: var(--accent2);
+}
+
+.guide-body strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.guide-body ul,
+.guide-body ol {
+  padding-left: 24px;
+}
+
+.guide-body li + li {
+  margin-top: 6px;
+}
+
+.guide-body li > ul,
+.guide-body li > ol,
+.guide-body li > p,
+.guide-body li > img {
+  margin-top: 8px;
+}
+
+.guide-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+}
+
+.guide-figure img {
+  margin: 4px auto;
+}
+
+.guide-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--bg3);
+  border-radius: 5px;
+  padding: 1px 6px;
+}
+
+.guide-body pre {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  overflow-x: auto;
+}
+
+.guide-body pre code {
+  background: none;
+  padding: 0;
+}
+
+.guide-body blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--bg2);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  color: var(--text2);
+}
+
+/* Tables scroll sideways on a phone instead of squeezing */
+.guide-body table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.guide-body th,
+.guide-body td {
+  border: 1px solid var(--border);
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.guide-body th {
+  background: var(--bg3);
+  font-weight: 600;
+}
+
+/* "More details" boxes */
+.guide-body details {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 16px;
+}
+
+.guide-body details > * + * {
+  margin-top: 12px;
+}
+
+.guide-body summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+
+.guide-body details[open] summary {
+  margin-bottom: 4px;
+}
+
+.guide-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 32px 0;
+}
+
+@media (max-width: 600px) {
+  .guide {
+    padding: 18px 14px 48px;
+  }
+
+  .guide-body {
+    font-size: 14.5px;
+  }
+
+  .guide-body h1 {
+    font-size: 24px;
+  }
+
+  .guide-body h2 {
+    font-size: 19px;
+    margin-top: 36px;
+  }
+}

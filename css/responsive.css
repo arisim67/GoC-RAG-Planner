@@ -1,0 +1,273 @@
+/* css/responsive.css: Phone layout and screenshot mode. Loaded last so these overrides win. */
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE OPTIMIZATIONS
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Shrink outer padding to maximize screen real estate */
+  .main {
+    padding: 10px;
+  }
+  .section {
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  /* Compress the Adjacent Towns column slightly */
+  table.ptbl th.kadj,
+  table.ptbl td.kadj {
+    min-width: 90px;
+    max-width: 100px;
+    padding-left: 8px;
+    font-size: 9px;
+  }
+
+  /* Tighten table cells and font sizes, ensuring text stays readable */
+  table.ptbl th,
+  table.ptbl td {
+    padding: 8px 4px;
+    font-size: 11px;
+  }
+  table.ptbl th.kname,
+  table.ptbl td.kname {
+    min-width: 80px;
+    padding-left: 8px;
+  }
+
+  /* Make the cells taller so they are easier to tap on phones */
+  .cname {
+    padding: 10px 3px;
+    font-size: 12px;
+  }
+  .csel {
+    font-size: 16px;
+  }
+
+  /* Make the final score cards smaller to fit more on screen */
+  .score-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+  .sc-val {
+    font-size: 20px;
+  }
+
+  /* iOS Safari zooms the page when focusing any field under 16px */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+  .guild-row {
+    grid-template-columns: 18px 20px minmax(130px, 1fr) 120px 128px 72px 64px 64px 64px 40px;
+  }
+  /* With the mid-event boxes hidden, a row fits the screen: the name on top, and Small guild /
+     Exclude guild on a second line under it (sharing it, one at each end, so they fit even on a
+     small phone), instead of off to the side behind a sideways scroll.
+     Children: handle, number, color, name, small (or a blank in Ragnarok), exclude, remove. */
+  .guild-list.hide-mid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .guild-list.hide-mid .guild-row {
+    grid-template-columns: 18px 18px 20px minmax(0, 1fr) 40px;
+    row-gap: 0;
+    min-width: 0;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(1) {
+    grid-area: 1 / 1;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(2) {
+    grid-area: 1 / 2;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(3) {
+    grid-area: 1 / 3;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(4) {
+    grid-area: 1 / 4;
+    min-width: 0;
+    width: 100%;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(5) {
+    grid-area: 2 / 3 / 3 / 6;
+    justify-self: start;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(6) {
+    grid-area: 2 / 3 / 3 / 6;
+    justify-self: end;
+  }
+  .guild-list.hide-mid .guild-row > :nth-child(7) {
+    grid-area: 1 / 5;
+  }
+  /* Ragnarok has no Small guild: Exclude guild sits at the start of the line instead */
+  .guild-list.hide-mid .guild-row > span:nth-child(5):empty {
+    display: none;
+  }
+  .guild-list.hide-mid .guild-row > span:nth-child(5):empty + * {
+    justify-self: start;
+  }
+  .guild-color {
+    width: 20px;
+    height: 20px;
+  }
+  .cp-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
+
+  /* Header */
+  .app-header {
+    padding: 12px 12px 0;
+  }
+  .app-title {
+    font-size: 17px;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  /* Bigger touch targets */
+  .btn,
+  .btn-accent,
+  .btn-gold,
+  .add-tab-btn {
+    min-height: 40px;
+  }
+  .tab-btn {
+    padding: 12px 14px;
+  }
+  .tab-close {
+    font-size: 14px;
+    padding: 8px 10px;
+    margin: -6px -6px -6px 0;
+  }
+  .guild-remove {
+    font-size: 18px;
+    padding: 10px;
+  }
+  input[type='checkbox'] {
+    width: 38px;
+    height: 22px;
+  }
+  input[type='checkbox']::before {
+    width: 16px;
+    height: 16px;
+  }
+  input[type='checkbox']:checked::before {
+    transform: translateX(16px);
+  }
+  .guild-flag {
+    font-size: 12px;
+    padding: 8px 0;
+  }
+  .clear-day-btn {
+    font-size: 11px !important;
+    padding: 8px 12px !important;
+  }
+  .ctx-item {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+}
+
+/* Screenshot mode: identical sizing on phone and desktop (class set by takeScreenshots) */
+/* Screenshots never show the spotlight */
+html.capturing .spot-on table.ptbl tbody td[data-g],
+html.capturing .spot-on table.dtbl tbody tr[data-g],
+html.capturing .spot-on .score-card {
+  opacity: 1 !important;
+}
+html.capturing .spot-on table.ptbl tbody td.spot-hit {
+  box-shadow: none;
+}
+html.capturing .spot-bar,
+html.capturing .spot-summary {
+  display: none !important;
+}
+html.capturing .cname {
+  font-size: 12px !important;
+  padding: 4px 6px !important;
+}
+
+html.capturing .clear-day-btn {
+  font-size: 9px !important;
+  padding: 2px 6px !important;
+}
+
+/* The smallest phones (320px wide): Small guild / Exclude guild get the guild row's full width, from
+   under the drag handle, or they run into each other. */
+@media (max-width: 360px) {
+  .guild-list.hide-mid .guild-row > :nth-child(5),
+  .guild-list.hide-mid .guild-row > :nth-child(6) {
+    grid-column: 1 / 6;
+  }
+}
+
+/* Phones: the title on its own line, with User Guide and Tutorial together on the next; and the
+   server settings two to a row (name across the top), so the dates aren't cut off. */
+@media (max-width: 600px) {
+  .app-title {
+    flex-wrap: wrap;
+  }
+  .app-name {
+    flex-basis: 100%;
+  }
+  .app-title .header-link {
+    margin-left: 0;
+  }
+
+  #sec-settings > .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  #sec-settings > .row > .fg:first-child {
+    grid-column: 1 / -1;
+  }
+  #sec-settings > .row .fg {
+    min-width: 0;
+  }
+  #sec-settings > .row .fg select,
+  #sec-settings > .row .fg input.settings-input {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Phones: the day buttons (Map, Daily Messages) are one row that scrolls sideways, instead of
+   taking two rows; the picked day is kept in view (render.js, centerDays). And the Total Occupation
+   table gives the guild names room, wrapping long ones instead of cutting them to "Gu…". */
+@media (max-width: 600px) {
+  .map-days {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    padding: 2px 0;
+  }
+  .map-days::-webkit-scrollbar {
+    display: none;
+  }
+  .map-day {
+    flex-shrink: 0;
+  }
+
+  .otbl th.col-guild {
+    width: 36%;
+  }
+  .otbl th.col-lv1,
+  .otbl th.col-lv2,
+  .otbl th.col-total {
+    width: 15%;
+  }
+  .otbl th.col-lv3 {
+    width: 19%; /* room for "Darkwick" */
+  }
+  .otbl td.occ-guild {
+    white-space: normal;
+    overflow-wrap: break-word;
+    padding-left: 8px;
+  }
+  .otbl th {
+    padding-left: 2px;
+    padding-right: 2px;
+    font-size: 10px;
+  }
+}

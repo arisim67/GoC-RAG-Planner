@@ -13,3 +13,7 @@ Thumbs.db
 # Logs and local scratch
 *.log
 .env
+
+# Cloudflare local dev files
+.wrangler/
+.dev.vars

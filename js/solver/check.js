@@ -6,7 +6,10 @@ export function checkPlan(plan, srv, mapData, FULL, locks = null) {
   const ks = mapData.kingdoms;
   const problems = [];
   for (let d = 1; d <= FULL; d++) {
-    if (!plan[d] || !plan[d - 1]) { problems.push(`missing day ${d}`); continue; }
+    if (!plan[d] || !plan[d - 1]) {
+      problems.push(`missing day ${d}`);
+      continue;
+    }
     for (const g of srv.guilds) {
       const held = ks.filter(k => plan[d][k.id] === g.id);
       const prev = ks.filter(k => plan[d - 1][k.id] === g.id);
@@ -20,7 +23,8 @@ export function checkPlan(plan, srv, mapData, FULL, locks = null) {
         if (k.id === 'Darkwick') {
           const lv2 = prev.filter(x => x.type === 'lv2').length;
           const lv1 = prev.filter(x => x.type === 'lv1').length;
-          if (lv2 + 0.5 * lv1 < 1 - 1e-9) problems.push(`${g.name} takes Darkwick on day ${d} without a dorm or two Lv1 towns`);
+          if (lv2 + 0.5 * lv1 < 1 - 1e-9)
+            problems.push(`${g.name} takes Darkwick on day ${d} without a dorm or two Lv1 towns`);
         }
       }
     }

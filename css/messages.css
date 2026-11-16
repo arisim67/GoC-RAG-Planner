@@ -1,0 +1,324 @@
+/* css/messages.css: Daily messages, the message template editor and its Discord-style preview */
+
+.msg-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+/* One day's message at a time: Whole server / One guild, the guild, then the day buttons (styled
+   like the Map's) */
+.msg-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.msg-views {
+  display: inline-flex;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px;
+}
+
+.msg-view-btn {
+  background: transparent;
+  border: none;
+  color: var(--text2);
+  font: 600 12px var(--font-body);
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.msg-view-btn .msg-view-sub {
+  font-weight: 400;
+  color: var(--text2);
+  margin-left: 2px;
+}
+
+.msg-view-btn.active {
+  background: var(--bg4);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.msg-view-btn:focus-visible,
+.msg-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.msg-guild {
+  min-width: 140px;
+}
+
+/* Whole server: the guilds' parts side by side, as many columns as fit */
+.msg-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px 20px;
+  margin-top: 6px;
+}
+
+.msg-head {
+  margin-bottom: 2px;
+}
+
+/* Each guild: in-game messages side by side, each copied on its own; yours first and outlined */
+.msg-bubbles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 10px;
+}
+
+.msg-card.msg-card-game {
+  margin-bottom: 0;
+}
+
+.msg-card-game .msg-body {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.msg-card.is-mine {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.msg-who {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.msg-mine {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+.msg-mine-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.msg-note {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.msg-hint {
+  color: var(--text3);
+  font-weight: 400;
+}
+
+.msg-count {
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--text3);
+}
+
+.msg-count.over {
+  color: var(--red);
+  font-weight: 600;
+}
+
+.msg-none {
+  font-size: 12px;
+  color: var(--text3);
+  padding: 14px 0;
+}
+
+@media (hover: hover) {
+  .msg-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Section titles */
+.sec-title .sec-note {
+  font-size: 9px;
+  color: var(--text3);
+  font-family: var(--font-body);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* Daily messages */
+.msg-date {
+  font-size: 10px;
+  color: var(--accent2);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.msg-copied {
+  color: var(--green);
+  font-size: 9px;
+}
+
+.msg-body {
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* The whole server's message, shown the way Discord displays it (what's copied is the Markdown) */
+.msg-discord {
+  color: #dbdee1;
+  font:
+    13px/1.375 'gg sans',
+    'Noto Sans',
+    'Helvetica Neue',
+    Helvetica,
+    Arial,
+    sans-serif;
+  word-break: break-word;
+}
+
+.msg-discord .dmd-blank:last-child {
+  display: none; /* the blank line that spaces guilds apart in Discord; the columns do that here */
+}
+
+.tpl-discord strong {
+  font-weight: 700;
+}
+
+.tpl-discord .dmd-h1,
+.tpl-discord .dmd-h2,
+.tpl-discord .dmd-h3 {
+  color: #f2f3f5;
+  font-weight: 700;
+  line-height: 1.375;
+  margin: 8px 0 4px;
+}
+
+.tpl-discord .dmd-h1 {
+  font-size: 21px;
+}
+
+.tpl-discord .dmd-h2 {
+  font-size: 17.5px;
+}
+
+.tpl-discord .dmd-h3 {
+  font-size: 14px;
+}
+
+.tpl-discord > :first-child,
+.tpl-discord .dmd-quote > :first-child {
+  margin-top: 0;
+}
+
+.tpl-discord .dmd-sub {
+  font-size: 11.5px;
+  color: #949ba4;
+}
+
+.tpl-discord .dmd-blank {
+  height: 1.375em;
+}
+
+.tpl-discord .dmd-list {
+  margin: 2px 0 2px 1.1em;
+  padding: 0 0 0 0.6em;
+}
+
+.tpl-discord ul.dmd-list {
+  list-style: disc;
+}
+
+.tpl-discord ul.dmd-list ul.dmd-list {
+  list-style: circle;
+}
+
+.tpl-discord ol.dmd-list {
+  list-style: decimal;
+}
+
+.tpl-discord .dmd-list li {
+  margin: 1px 0;
+}
+
+.tpl-discord .dmd-quote {
+  border-left: 4px solid #4e5058;
+  padding: 0 8px 0 12px;
+  margin: 2px 0;
+}
+
+.tpl-discord .dmd-code {
+  background: #2b2d31;
+  border-radius: 4px;
+  padding: 0 0.2em;
+  font:
+    0.85em/1.4 Consolas,
+    'Andale Mono WT',
+    'Andale Mono',
+    'Lucida Console',
+    Monaco,
+    'Courier New',
+    monospace;
+}
+
+.tpl-discord .dmd-pre {
+  background: #2b2d31;
+  border: 1px solid #1e1f22;
+  border-radius: 4px;
+  padding: 8px;
+  margin: 4px 0;
+  font:
+    0.85em/1.4 Consolas,
+    'Lucida Console',
+    Monaco,
+    'Courier New',
+    monospace;
+  white-space: pre-wrap;
+  color: #dbdee1;
+}
+
+.tpl-discord .dmd-spoiler {
+  background: #1e1f22;
+  color: transparent;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.tpl-discord .dmd-spoiler:hover {
+  background: #2b2d31;
+  color: inherit;
+}
+
+.tpl-discord .dmd-link {
+  color: #00a8fc;
+}
+
+/* Today's message card */
+.msg-card.is-today {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 4px 16px var(--accent-glow);
+}
+.msg-card .today-tag {
+  display: inline-block;
+  margin: 0 6px 0 0;
+}
