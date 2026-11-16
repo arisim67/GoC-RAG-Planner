@@ -11,7 +11,7 @@
 // Everything expires TTL seconds after it was last saved.
 
 const APP_URL = 'https://darkwick-accord.pages.dev/';
-const DEFAULT_IMAGE = APP_URL + 'images/social-preview.png?v=2'; // ?v= changes when the picture does, so Discord fetches the new one
+const DEFAULT_IMAGE = APP_URL + 'images/social-card.png'; // a new name when the picture changes, so Discord can't reuse an old copy
 const TTL = 2592000; // 30 days
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const VER_RE = /^[a-z0-9]{1,16}$/i;
