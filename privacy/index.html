@@ -1,67 +1,81 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Policy · Darkwick Accord</title>
+    <meta
+      name="description"
+      content="What Darkwick Accord, the Game of Claws and Ragnarok Planner, stores and shares: no accounts, no cookies, no ads and no analytics."
+    />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Darkwick Accord" />
+    <meta property="og:title" content="Privacy Policy · Darkwick Accord" />
+    <meta
+      property="og:description"
+      content="What Darkwick Accord stores and shares: no accounts, no cookies, no ads and no analytics."
+    />
+    <meta property="og:url" content="https://darkwick-accord.pages.dev/privacy/" />
+    <meta property="og:image" content="https://darkwick-accord.pages.dev/images/social-card.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#e2c883" />
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Privacy Policy · Darkwick Accord</title>
-  <meta name="description"
-    content="What Darkwick Accord, the Game of Claws and Ragnarok Planner, stores and shares: no accounts, no cookies, no ads and no analytics." />
-  <meta property="og:type" content="article" />
-  <meta property="og:site_name" content="Darkwick Accord" />
-  <meta property="og:title" content="Privacy Policy · Darkwick Accord" />
-  <meta property="og:description"
-    content="What Darkwick Accord stores and shares: no accounts, no cookies, no ads and no analytics." />
-  <meta property="og:url" content="https://darkwick-accord.pages.dev/privacy/" />
-  <meta property="og:image" content="https://darkwick-accord.pages.dev/images/social-card.png" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="theme-color" content="#e2c883" />
+    <link rel="icon" type="image/x-icon" href="../images/favicon.ico?v=2" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png?v=2" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../images/favicon-192.png?v=2" />
 
-  <link rel="icon" type="image/x-icon" href="../images/favicon.ico?v=2" />
-  <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png?v=2" />
-  <link rel="icon" type="image/png" sizes="192x192" href="../images/favicon-192.png?v=2" />
+    <link rel="stylesheet" href="../css/themes.css" />
+    <!-- The theme picked in the planner, before first paint (same as index.html) -->
+    <script>
+      try {
+        var t = localStorage.getItem('goc_theme');
+        if (t && t !== 'dark' && /^[a-z]+$/.test(t)) document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/header.css" />
+    <link rel="stylesheet" href="../css/guide.css" />
+  </head>
 
-  <link rel="stylesheet" href="../css/themes.css" />
-  <!-- The theme picked in the planner, before first paint (same as index.html) -->
-  <script>
-    try {
-      var t = localStorage.getItem('goc_theme');
-      if (t && t !== 'dark' && /^[a-z]+$/.test(t)) document.documentElement.setAttribute('data-theme', t);
-    } catch (e) { }
-  </script>
-  <link rel="stylesheet" href="../css/base.css" />
-  <link rel="stylesheet" href="../css/header.css" />
-  <link rel="stylesheet" href="../css/guide.css" />
-</head>
-
-<body>
-  <div class="app-header guide-header">
-    <div class="app-title app-title-grow">
-      <a class="app-name guide-home" href="../" title="Open the planner"><span class="app-logo"
-          aria-hidden="true"></span><span class="app-name-text">Darkwick Accord<small>Privacy Policy</small></span></a>
-      <a class="header-link" href="../"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect width="18" height="18" x="3" y="3" rx="2" />
-          <path d="M3 9h18" />
-          <path d="M3 15h18" />
-          <path d="M9 3v18" />
-        </svg><span>Open the planner</span></a>
+  <body>
+    <div class="app-header guide-header">
+      <div class="app-title app-title-grow">
+        <a class="app-name guide-home" href="../" title="Open the planner"
+          ><span class="app-logo" aria-hidden="true"></span
+          ><span class="app-name-text">Darkwick Accord<small>Privacy Policy</small></span></a
+        >
+        <a class="header-link" href="../"
+          ><svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <path d="M3 9h18" />
+            <path d="M3 15h18" />
+            <path d="M9 3v18" /></svg
+          ><span>Open the planner</span></a
+        >
+      </div>
     </div>
-  </div>
 
-  <!-- Drawn from PRIVACY.md by js/guide.js, so the policy has one source that GitHub shows too -->
-  <main class="guide" id="guide" data-source="../PRIVACY.md" aria-busy="true">
-    <p class="guide-status">Loading…</p>
-    <noscript>
-      <p class="guide-status">
-        This page needs JavaScript.
-        <a href="https://github.com/arisim67/GoC-RAG-Planner/blob/main/PRIVACY.md">Read it on GitHub</a>
-        instead.
-      </p>
-    </noscript>
-  </main>
+    <!-- Drawn from PRIVACY.md by js/guide.js, so the policy has one source that GitHub shows too -->
+    <main class="guide" id="guide" data-source="../PRIVACY.md" aria-busy="true">
+      <p class="guide-status">Loading…</p>
+      <noscript>
+        <p class="guide-status">
+          This page needs JavaScript.
+          <a href="https://github.com/arisim67/GoC-RAG-Planner/blob/main/PRIVACY.md">Read it on GitHub</a>
+          instead.
+        </p>
+      </noscript>
+    </main>
 
-  <script type="module" src="../js/guide.js"></script>
-</body>
-
+    <script type="module" src="../js/guide.js"></script>
+  </body>
 </html>
