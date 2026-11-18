@@ -181,6 +181,18 @@ html.capturing .spot-bar,
 html.capturing .spot-summary {
   display: none !important;
 }
+/* Final Scores: the cards share out the screenshot's width as they do in the page. (A screenshot is
+   only as wide as its content, which left every card at its narrowest and wrapped a longer guild name
+   such as "ObeyMe (44)" onto two lines.) The row takes the width the tables below set, without making
+   the picture any wider, and a name stays on one line. */
+html.capturing .score-grid {
+  width: 0;
+  min-width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* a few guilds fill the row */
+}
+html.capturing .sc-label {
+  white-space: nowrap;
+}
 html.capturing .cname {
   font-size: 12px !important;
   padding: 4px 6px !important;
