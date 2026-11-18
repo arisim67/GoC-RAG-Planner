@@ -89,7 +89,7 @@ export async function autoOptimize() {
   const panel = showSolvePanel({
     colors: (srv.guilds || []).map(g => g.color).filter(Boolean),
     note: `${est} Keep this tab open until it finishes.`,
-    phase: srv.mode === 'goc' ? 'Getting started…' : 'Working out the whole route…',
+    phase: srv.mode === 'goc' ? 'Getting started…' : 'Sharing out the towns fairly…',
     onStop: stopOptimize,
   });
 
@@ -106,22 +106,32 @@ export async function autoOptimize() {
     const mapData = getMapData(srv.mode, srv.mapKey);
 
     if (srv.mode !== 'goc') {
-      // RAGNAROK: the original single-solve model (model_ragnarok.js), unchanged.
-      // 2. Generate the algebraic matrix and decoder
-      console.time('Matrix Generation');
-      const { milp, decode } = buildModel(srv, mapData);
-      const matrixArrays = milp.toArrays();
-      console.timeEnd('Matrix Generation');
+      // RAGNAROK: model_ragnarok.js, in two passes (see buildModel there).
+      // Pass 1 makes the spread fair; it stops as soon as it is, so the plan may still have extra moves.
+      const fair = buildModel(srv, mapData);
+      const first = await runHighsSolver(fair.milp.toArrays(), { quiet: true, timeLimit: 60, relGap: 0.005 });
 
-      console.log(`Generated ${matrixArrays.numRows} constraints and ${matrixArrays.numCols} binary variables.`);
-
-      // 3. Send to Web Worker to run the Wasm Branch-and-Bound algorithm
-      console.time('Wasm Solve Time');
-      const result = await runHighsSolver(matrixArrays);
-      console.timeEnd('Wasm Solve Time');
-
-      // 4. Decode the binary output array back into town assignments
-      srv.plan = decode(result);
+      // Pass 2 keeps every guild's totals exactly as pass 1 left them and only cuts moves. It starts from
+      // pass 1's plan (slacks at 0, since the totals now match exactly), so it can only make it tidier;
+      // the time limit just decides how much tidier. In tests on all three maps it had the fewest moves
+      // by 8 seconds every time (another 30 seconds never found a better plan).
+      panel.phase('Cutting out extra moves…');
+      const tidy = buildModel(srv, mapData, { fixed: fair.totals(first) });
+      const start = Array.from(first);
+      for (const v of tidy.slacks) start[v.col] = 0;
+      let result = first;
+      try {
+        result = await runHighsSolver(tidy.milp.toArrays(), {
+          quiet: true,
+          timeLimit: 8,
+          absGap: 50,
+          warmStart: start,
+        });
+      } catch (err) {
+        if (err instanceof Stopped) throw err;
+        console.warn('Tidy pass failed; keeping the fair plan', err);
+      }
+      srv.plan = tidy.decode(result);
     } else {
       // GAME OF CLAWS: its own two-phase method (model_goc.js + twophase.js).
       // Phase 1 = Darkwick + dorms (+ the lv1 paths to reach them), phase 2 = lv1 towns for points.

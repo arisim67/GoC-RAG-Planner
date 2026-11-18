@@ -135,46 +135,8 @@ export function getPerfectTargets(srv, mapData) {
       grandPts += parseInt(g.basePoints || 0, 10);
     });
 
-    const baseLv3 = Math.floor(grandLv3 / N);
-    const remLv3 = grandLv3 % N;
-    sortedGuilds.forEach((g, i) => {
-      const isBottom = i >= N - remLv3;
-      target[g.id].grandLv3 = baseLv3 + (isBottom ? 1 : 0);
-    });
-
-    for (let i = 0; i < grandLv2; i++) {
-      let bestIdx = 0;
-      let minVal = Infinity;
-      for (let j = 0; j < N; j++) {
-        const gid = sortedGuilds[j].id;
-        const val = target[gid].grandLv3 * 3 + target[gid].grandLv2 * 2;
-        if (val < minVal) {
-          minVal = val;
-          bestIdx = j;
-        }
-      }
-      target[sortedGuilds[bestIdx].id].grandLv2++;
-    }
-
-    sortedGuilds.forEach(g => {
-      target[g.id].grandPts = target[g.id].grandLv3 * 3 + target[g.id].grandLv2 * 2;
-    });
-
-    const allocatedHTPts = grandLv3 * 3 + grandLv2 * 2;
-    const remainingPts = grandPts - allocatedHTPts;
-
-    for (let i = 0; i < remainingPts; i++) {
-      let bestIdx = 0;
-      let minPts = Infinity;
-      for (let j = 0; j < N; j++) {
-        const gid = sortedGuilds[j].id;
-        if (target[gid].grandPts < minPts) {
-          minPts = target[gid].grandPts;
-          bestIdx = j;
-        }
-      }
-      target[sortedGuilds[bestIdx].id].grandPts++;
-    }
+    const split = splitTargets(sortedGuilds, grandLv3, grandLv2, grandPts);
+    sortedGuilds.forEach(g => Object.assign(target[g.id], split[g.id]));
 
     sortedGuilds.forEach(g => {
       target[g.id].mapLv3 = Math.max(0, target[g.id].grandLv3 - parseInt(g.baseLv3 || 0, 10));
@@ -185,7 +147,73 @@ export function getPerfectTargets(srv, mapData) {
   return target;
 }
 
-export function buildModel(srv, mapData) {
+// Share the event's castle days, dorm days and points out between the active guilds, whose order
+// (most starting points first) breaks ties. Returns { [guildId]: { grandLv3, grandLv2, grandPts } }.
+//
+// Castle days: a flat share, the remainder to the guilds at the bottom.
+// Dorm days: normally they make up for the castle - handed out one at a time to whoever has least from
+//   the castle and dorms so far, so a guild with an extra castle day gets fewer dorms (11/11/11/9 with
+//   one guild on two castle days).
+//   But when the points left over after an even split land exactly on the guilds WITHOUT an extra castle
+//   day, those guilds already come out a point ahead; giving them extra dorms on top would tip it too
+//   far. Then the dorms are split evenly instead (9/9/9/9), and the castle difference is made up in towns.
+// Points: whatever is left (the towns) goes one point at a time to whoever has the lowest total.
+export function splitTargets(sortedGuilds, grandLv3, grandLv2, grandPts) {
+  const N = sortedGuilds.length;
+  const t = {};
+  sortedGuilds.forEach(g => (t[g.id] = { grandLv3: 0, grandLv2: 0, grandPts: 0 }));
+
+  const baseLv3 = Math.floor(grandLv3 / N);
+  const remLv3 = grandLv3 % N;
+  sortedGuilds.forEach((g, i) => {
+    t[g.id].grandLv3 = baseLv3 + (i >= N - remLv3 ? 1 : 0);
+  });
+
+  // The guilds without an extra castle day, and how many guilds end a point ahead overall
+  const fewerCastle = remLv3 ? N - remLv3 : 0;
+  const evenDorms = remLv3 > 0 && grandPts % N === fewerCastle;
+
+  const value = id => t[id].grandLv3 * 3 + t[id].grandLv2 * 2;
+  // A dorm goes to whoever has least so far; on a tie, to the guild lower down the list, since the
+  // top guild already gets the first-place rewards.
+  const giveDorm = () => {
+    let best = 0;
+    for (let j = 1; j < N; j++) if (value(sortedGuilds[j].id) <= value(sortedGuilds[best].id)) best = j;
+    t[sortedGuilds[best].id].grandLv2++;
+  };
+  if (evenDorms) {
+    const base = Math.floor(grandLv2 / N);
+    sortedGuilds.forEach(g => (t[g.id].grandLv2 = base));
+    for (let i = 0; i < grandLv2 % N; i++) giveDorm();
+  } else {
+    for (let i = 0; i < grandLv2; i++) giveDorm();
+  }
+
+  sortedGuilds.forEach(g => (t[g.id].grandPts = value(g.id)));
+  const remaining = grandPts - (grandLv3 * 3 + grandLv2 * 2);
+  for (let i = 0; i < remaining; i++) {
+    let best = 0;
+    for (let j = 1; j < N; j++) {
+      const a = t[sortedGuilds[j].id],
+        b = t[sortedGuilds[best].id];
+      // with even dorms, a tie goes to the guild with fewer castle days, so it gets the extra point
+      if (a.grandPts < b.grandPts || (evenDorms && a.grandPts === b.grandPts && a.grandLv3 < b.grandLv3)) best = j;
+    }
+    t[sortedGuilds[best].id].grandPts++;
+  }
+  return t;
+}
+
+// buildModel(srv, mapData) -> { milp, decode, totals, slacks }
+//
+// Auto-Optimize solves Ragnarok in two passes over the same model:
+//   1. fair: the score targets, as below. Fast, but it stops as soon as the spread is fair, so the plan
+//      can still have moves it doesn't need.
+//   2. tidy: buildModel(srv, mapData, { fixed }) with fixed = totals(pass 1 result). Every guild must
+//      end with exactly the castle days, dorm days and points it got in pass 1, and only the tidiness
+//      costs are left, so the solver spends all its time cutting moves. Started from the pass 1 plan.
+export function buildModel(srv, mapData, opts = {}) {
+  const fixed = opts.fixed || null;
   const milp = new MilpBuilder();
   const isGoC = srv.mode === 'goc';
 
@@ -201,23 +229,22 @@ export function buildModel(srv, mapData) {
   const baseMaxDecl = isGoC ? 2 : 3;
   const pointValues = { lv3: 3, lv2: 2, lv1: 1 };
 
-  // Two tidiness preferences for the last day of the event, both deliberately cheap.
+  // Tidiness, in order of importance. All of it only breaks ties between plans that are equally fair:
+  // missing a guild's point or occupation target costs about 6000.
   //
-  // A declare on the final day is a march that earns its guild a single day of the town, and it has
-  // to be made on the day everyone is busy finishing. Where the plan works just as well without it,
-  // it should go.
-  //
-  // And the castle: a guild that gets it for two days should have those days at the end rather than
-  // in the middle, so the run finishes on it. Holding it on both of the last two days is the same
-  // thing as nobody taking it on the last day, so that is what this charges for.
-  //
-  // The weights matter more than the idea. A miss against a guild's point or occupation target costs
-  // about 6000, and the most that can change hands on one day is one declare per town. At 100 each,
-  // even a whole map turning over on the final day comes to less than that, so neither of these can
-  // ever be bought at the price of a worse spread - they only break ties between plans that are
-  // already equally fair.
+  // 1. Fewer moves. Every declare costs DECLARE_COST, so the solver doesn't shuffle towns around for
+  //    nothing - a guild losing a town and taking it back later is two declares that change nobody's
+  //    total.
+  // 2. No declares on the last day. A declare on the final day earns its guild a single day of the town
+  //    and has to be made on the day everyone is busy finishing, so it costs a little extra. It stays
+  //    BELOW one declare, so the solver never adds a move earlier on just to get rid of one on the last
+  //    day: fewer moves wins.
+  // 3. The castle: a guild that gets it for two days should have those days at the end, so the run
+  //    finishes on it. Taking the castle on the last day is what stops that, so it costs a little more,
+  //    but still less than two extra moves elsewhere.
+  const DECLARE_COST = 150;
   const FINAL_DECLARE_COST = 100;
-  const FINAL_CASTLE_COST = 1500;
+  const FINAL_CASTLE_COST = 200;
 
   const target = getPerfectTargets(srv, mapData);
   const reachFull = getReachableMatrix(GUILDS, KINGDOMS, DAYS, srv);
@@ -297,7 +324,7 @@ export function buildModel(srv, mapData) {
         const gain = milp.continuous(`gain_g${g}_d${d}_${t.id}`, 0, 1);
         declaredTerms.push([1, gain]);
 
-        milp.addCost(gain, 1);
+        milp.addCost(gain, DECLARE_COST);
 
         if (d === DAYS) {
           milp.addCost(gain, FINAL_DECLARE_COST);
@@ -367,12 +394,23 @@ export function buildModel(srv, mapData) {
   }
 
   // 4. OBJECTIVE & ELASTIC WEIGHTS
+  // In the tidy pass (fixed) each total must come out exactly as it did in the fair pass: same slack
+  // columns, so pass 1's plan still fits as a starting point, but held at 0 against the pass 1 totals.
+  const termsOf = [];
+  const slacks = [];
+  const slack = (name, max) => {
+    const v = milp.continuous(name, 0, fixed ? 0 : max);
+    slacks.push(v);
+    return v;
+  };
   for (let i = 0; i < N; i++) {
     const guild = sortedGuilds[i];
     const g = GUILDS.findIndex(x => x.id === guild.id);
     if (!isGoC && GUILDS[g].isExcluded) continue;
 
-    const tgt = target[guild.id];
+    const tgt = fixed
+      ? fixed[g]
+      : { lv3: target[guild.id].mapLv3, lv2: target[guild.id].mapLv2, pts: target[guild.id].mapPts };
     const isBot = i >= Math.floor(N / 2);
     const offset = i * 10;
 
@@ -390,6 +428,7 @@ export function buildModel(srv, mapData) {
     const lv3Terms = [];
     const lv2Terms = [];
     const pointTerms = [];
+    termsOf[g] = { lv3: lv3Terms, lv2: lv2Terms, pts: pointTerms };
 
     for (let d = 1; d <= DAYS; d++) {
       for (const t of VALID_KINGDOMS) {
@@ -399,29 +438,29 @@ export function buildModel(srv, mapData) {
         const pts = pointValues[t.type] || 0;
         pointTerms.push([pts, ownAt(g, d, t.id)]);
 
-        milp.addCost(ownAt(g, d, t.id), -pts * ptReward);
+        if (!fixed) milp.addCost(ownAt(g, d, t.id), -pts * ptReward);
       }
     }
 
     if (lv3Terms.length > 0) {
-      const sPosL3 = milp.continuous(`spos_l3_g${g}`, 0, 99);
-      const sNegL3 = milp.continuous(`sneg_l3_g${g}`, 0, 99);
-      milp.equal([...lv3Terms, [-1, sPosL3], [1, sNegL3]], tgt.mapLv3);
+      const sPosL3 = slack(`spos_l3_g${g}`, 99);
+      const sNegL3 = slack(`sneg_l3_g${g}`, 99);
+      milp.equal([...lv3Terms, [-1, sPosL3], [1, sNegL3]], tgt.lv3);
       milp.addCost(sPosL3, penLv3);
       milp.addCost(sNegL3, penLv3);
     }
 
     if (lv2Terms.length > 0) {
-      const sPosL2 = milp.continuous(`spos_l2_g${g}`, 0, 99);
-      const sNegL2 = milp.continuous(`sneg_l2_g${g}`, 0, 99);
-      milp.equal([...lv2Terms, [-1, sPosL2], [1, sNegL2]], tgt.mapLv2);
+      const sPosL2 = slack(`spos_l2_g${g}`, 99);
+      const sNegL2 = slack(`sneg_l2_g${g}`, 99);
+      milp.equal([...lv2Terms, [-1, sPosL2], [1, sNegL2]], tgt.lv2);
       milp.addCost(sPosL2, penLv2);
       milp.addCost(sNegL2, penLv2);
     }
 
-    const sPosPts = milp.continuous(`spos_pt_g${g}`, 0, 999);
-    const sNegPts = milp.continuous(`sneg_pt_g${g}`, 0, 999);
-    milp.equal([...pointTerms, [-1, sPosPts], [1, sNegPts]], tgt.mapPts);
+    const sPosPts = slack(`spos_pt_g${g}`, 999);
+    const sNegPts = slack(`sneg_pt_g${g}`, 999);
+    milp.equal([...pointTerms, [-1, sPosPts], [1, sNegPts]], tgt.pts);
     milp.addCost(sPosPts, penPts);
     milp.addCost(sNegPts, penPts);
   }
@@ -448,5 +487,16 @@ export function buildModel(srv, mapData) {
     return plan;
   };
 
-  return { milp, decode };
+  // Each guild's castle days, dorm days and points in a solver result (the fixed totals for pass 2)
+  const totals = values => {
+    const val = v => (typeof v === 'number' ? v : Math.round(values[v.col]));
+    const sum = terms => terms.reduce((n, [k, v]) => n + k * val(v), 0);
+    const out = {};
+    termsOf.forEach((t, g) => {
+      if (t) out[g] = { lv3: sum(t.lv3), lv2: sum(t.lv2), pts: sum(t.pts) };
+    });
+    return out;
+  };
+
+  return { milp, decode, totals, slacks };
 }

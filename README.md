@@ -138,7 +138,7 @@ At the root you'll also find `README.md`, `CHANGELOG.md`, `PRIVACY.md`, `LICENSE
 Plans are written as mixed-integer linear programs and solved in the browser with
 [HiGHS](https://highs.dev) compiled to WebAssembly.
 
-- **Ragnarok** is solved in a single pass (up to about a minute).
+- **Ragnarok** is solved in two passes: a fair spread first, then as few moves as possible (about 10 seconds).
 - **Game of Claws** is larger, so it is split in two, the way it is done by hand. Phase 1 shares out
   Darkwick and the dorms a few days at a time with lookahead, and fixes the Lv1 "path" towns each
   guild needs to reach them. Phase 2 hands out the remaining Lv1 towns in one solve to even out total

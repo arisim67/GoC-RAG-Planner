@@ -172,7 +172,7 @@ On a phone the whole map shrinks to fit the screen, with bigger name tags so the
 
 **Auto-Optimize** works out a route that follows every adjacency rule, never wipes a guild off the map, and evens out final scores and time on Darkwick and the dorms.
 
-- **Ragnarok:** the route is found in one pass, which can take up to about a minute. It also keeps the last day tidy: no declare on the final day unless the plan needs it, and a guild with two castle days holds them at the end of the event. A fairer spread always wins over both.
+- **Ragnarok:** takes about 10 seconds, in two passes. The first makes the spread fair. The second keeps every guild's castle days, dorm days and points exactly as they are and cuts the plan down to as few declares as it can. Next it keeps the last day tidy: no declare on the final day unless that saves a move, and a guild with two castle days holds them at the end of the event. A fairer spread always comes first, and fewer moves come before a tidy last day.
 - **Game of Claws:** around **1 to 3 minutes for 10 guilds**, and up to about **10 minutes for 13**.
 - **Speed it up:** filling in a day or two yourself first makes a real difference, because those are days the optimizer no longer has to work out.
 - **While it runs,** a panel in the corner shows how long it has been going, what it's working on and a tip or two. **Stop** ends the run and leaves your plan exactly as it was.

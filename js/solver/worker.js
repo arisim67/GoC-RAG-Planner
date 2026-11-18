@@ -32,14 +32,14 @@ self.onmessage = async function (e) {
       const numVars = payload.colCost ? payload.colCost.length : 0;
       const isMassiveMap = numVars > 3000;
 
-      // Game of Claws solves (options given) log their progress to the page console; Ragnarok stays silent as before.
-      model.options.set('output_flag', !!options);
-      model.options.set('log_to_console', !!options);
+      // Game of Claws solves (options given) log their progress to the page console; Ragnarok's are quiet.
+      model.options.set('output_flag', !!options && !options.quiet);
+      model.options.set('log_to_console', !!options && !options.quiet);
 
       if (options) {
         // Explicit settings from the caller (used by the rolling-horizon windows)
         model.options.set('time_limit', options.timeLimit ?? 120.0);
-        model.options.set('mip_rel_gap', 0);
+        model.options.set('mip_rel_gap', options.relGap ?? 0);
         model.options.set('mip_abs_gap', options.absGap ?? 6000);
         model.options.set('mip_heuristic_effort', options.heuristicEffort ?? 0.3);
       } else if (isMassiveMap) {
